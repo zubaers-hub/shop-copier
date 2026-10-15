@@ -1,0 +1,2880 @@
+var ih=Object.create;var No=Object.defineProperty;var ah=Object.getOwnPropertyDescriptor;var ch=Object.getOwnPropertyNames;var lh=Object.getPrototypeOf,hh=Object.prototype.hasOwnProperty;var Hn=(n,s)=>()=>(n&&(s=n(n=0)),s);var zr=(n,s)=>()=>(s||n((s={exports:{}}).exports,s),s.exports),_a=(n,s)=>{for(var e in s)No(n,e,{get:s[e],enumerable:!0})},uh=(n,s,e,t)=>{if(s&&typeof s=="object"||typeof s=="function")for(let r of ch(s))!hh.call(n,r)&&r!==e&&No(n,r,{get:()=>s[r],enumerable:!(t=ah(s,r))||t.enumerable});return n};var dh=(n,s,e)=>(e=n!=null?ih(lh(n)):{},uh(s||!n||!n.__esModule?No(e,"default",{value:n,enumerable:!0}):e,n));function xe(n){return typeof n=="object"&&n!==null&&("name"in n&&n.name==="AbortError"||"message"in n&&String(n.message).includes("FetchRequestCanceledException"))}var mt,gt=Hn(()=>{mt=n=>{if(n instanceof Error)return n;if(typeof n=="object"&&n!==null){try{let s=Object.prototype.toString.call(n);if(s==="[object Error]"||s==="[object DOMException]"){let e=new Error(n.message,n.cause?{cause:n.cause}:{});return n.stack&&(e.stack=n.stack),n.cause&&!e.cause&&(e.cause=n.cause),n.name&&(e.name=n.name),e}}catch{}try{return new Error(JSON.stringify(n))}catch{}}return new Error(n)}});var T,X,oe,ze,Vn,Zr,Xn,Kn,Gn,Jn,Qn,Zn,er,tr,Y=Hn(()=>{gt();T=(()=>{class n extends Error{}return n})(),X=class n extends T{constructor(s,e,t,r,o){super(`${n.makeMessage(s,e,t)}`),this.status=s,this.headers=r,this.requestID=r?.get("request-id"),this.workspaceID=r?.get("anthropic-workspace-id"),this.error=e,this.type=o??null}static makeMessage(s,e,t){let r=e?.message?typeof e.message=="string"?e.message:JSON.stringify(e.message):e?JSON.stringify(e):t;return s&&r?`${s} ${r}`:s?`${s} status code (no body)`:r||"(no status code or body)"}static generate(s,e,t,r){if(!s||!r)return new ze({message:t,cause:mt(e)});let o=e,i=o?.error?.type;return s===400?new Xn(s,o,t,r,i):s===401?new Kn(s,o,t,r,i):s===403?new Gn(s,o,t,r,i):s===404?new Jn(s,o,t,r,i):s===409?new Qn(s,o,t,r,i):s===422?new Zn(s,o,t,r,i):s===429?new er(s,o,t,r,i):s>=500?new tr(s,o,t,r,i):new n(s,o,t,r,i)}},oe=class extends X{constructor({message:s}={}){super(void 0,void 0,s||"Request was aborted.",void 0)}},ze=class extends X{constructor({message:s,cause:e}){super(void 0,void 0,s||"Connection error.",void 0),e&&(this.cause=e)}},Vn=class extends ze{constructor({message:s}={}){super({message:s??"Request timed out."})}},Zr=class extends T{constructor(s,{cause:e}={}){super(s??"Retryable error."),e!==void 0&&(this.cause=e)}},Xn=class extends X{},Kn=class extends X{},Gn=class extends X{},Jn=class extends X{},Qn=class extends X{},Zn=class extends X{},er=class extends X{},tr=class extends X{}});var Oe={};_a(Oe,{child_process:()=>tu,crypto:()=>nu,fs:()=>ru,os:()=>su,path:()=>ou,stream:()=>iu,util:()=>au});function _t(n){return new Proxy({},{get(s,e){if(typeof e!="symbol")throw new T(`\`${n}.${e}\` is not available in this environment; it needs a Node.js-compatible runtime`)}})}var tu,nu,ru,su,ou,iu,au,$e=Hn(()=>{Y();tu=_t("child_process"),nu=_t("crypto"),ru=_t("fs"),su=_t("os"),ou=_t("path"),iu=_t("stream"),au=_t("util")});var nl=zr(ge=>{"use strict";var Bu=ge&&ge.__extends||(function(){var n=function(s,e){return n=Object.setPrototypeOf||{__proto__:[]}instanceof Array&&function(t,r){t.__proto__=r}||function(t,r){for(var o in r)r.hasOwnProperty(o)&&(t[o]=r[o])},n(s,e)};return function(s,e){n(s,e);function t(){this.constructor=s}s.prototype=e===null?Object.create(e):(t.prototype=e.prototype,new t)}})();Object.defineProperty(ge,"__esModule",{value:!0});var Q=256,yi=(function(){function n(s){s===void 0&&(s="="),this._paddingCharacter=s}return n.prototype.encodedLength=function(s){return this._paddingCharacter?(s+2)/3*4|0:(s*8+5)/6|0},n.prototype.encode=function(s){for(var e="",t=0;t<s.length-2;t+=3){var r=s[t]<<16|s[t+1]<<8|s[t+2];e+=this._encodeByte(r>>>18&63),e+=this._encodeByte(r>>>12&63),e+=this._encodeByte(r>>>6&63),e+=this._encodeByte(r>>>0&63)}var o=s.length-t;if(o>0){var r=s[t]<<16|(o===2?s[t+1]<<8:0);e+=this._encodeByte(r>>>18&63),e+=this._encodeByte(r>>>12&63),o===2?e+=this._encodeByte(r>>>6&63):e+=this._paddingCharacter||"",e+=this._paddingCharacter||""}return e},n.prototype.maxDecodedLength=function(s){return this._paddingCharacter?s/4*3|0:(s*6+7)/8|0},n.prototype.decodedLength=function(s){return this.maxDecodedLength(s.length-this._getPaddingLength(s))},n.prototype.decode=function(s){if(s.length===0)return new Uint8Array(0);for(var e=this._getPaddingLength(s),t=s.length-e,r=new Uint8Array(this.maxDecodedLength(t)),o=0,i=0,a=0,l=0,c=0,d=0,u=0;i<t-4;i+=4)l=this._decodeChar(s.charCodeAt(i+0)),c=this._decodeChar(s.charCodeAt(i+1)),d=this._decodeChar(s.charCodeAt(i+2)),u=this._decodeChar(s.charCodeAt(i+3)),r[o++]=l<<2|c>>>4,r[o++]=c<<4|d>>>2,r[o++]=d<<6|u,a|=l&Q,a|=c&Q,a|=d&Q,a|=u&Q;if(i<t-1&&(l=this._decodeChar(s.charCodeAt(i)),c=this._decodeChar(s.charCodeAt(i+1)),r[o++]=l<<2|c>>>4,a|=l&Q,a|=c&Q),i<t-2&&(d=this._decodeChar(s.charCodeAt(i+2)),r[o++]=c<<4|d>>>2,a|=d&Q),i<t-3&&(u=this._decodeChar(s.charCodeAt(i+3)),r[o++]=d<<6|u,a|=u&Q),a!==0)throw new Error("Base64Coder: incorrect characters for decoding");return r},n.prototype._encodeByte=function(s){var e=s;return e+=65,e+=25-s>>>8&6,e+=51-s>>>8&-75,e+=61-s>>>8&-15,e+=62-s>>>8&3,String.fromCharCode(e)},n.prototype._decodeChar=function(s){var e=Q;return e+=(42-s&s-44)>>>8&-Q+s-43+62,e+=(46-s&s-48)>>>8&-Q+s-47+63,e+=(47-s&s-58)>>>8&-Q+s-48+52,e+=(64-s&s-91)>>>8&-Q+s-65+0,e+=(96-s&s-123)>>>8&-Q+s-97+26,e},n.prototype._getPaddingLength=function(s){var e=0;if(this._paddingCharacter){for(var t=s.length-1;t>=0&&s[t]===this._paddingCharacter;t--)e++;if(s.length<4||e>2)throw new Error("Base64Coder: incorrect padding")}return e},n})();ge.Coder=yi;var fr=new yi;function Fu(n){return fr.encode(n)}ge.encode=Fu;function Hu(n){return fr.decode(n)}ge.decode=Hu;var el=(function(n){Bu(s,n);function s(){return n!==null&&n.apply(this,arguments)||this}return s.prototype._encodeByte=function(e){var t=e;return t+=65,t+=25-e>>>8&6,t+=51-e>>>8&-75,t+=61-e>>>8&-13,t+=62-e>>>8&49,String.fromCharCode(t)},s.prototype._decodeChar=function(e){var t=Q;return t+=(44-e&e-46)>>>8&-Q+e-45+62,t+=(94-e&e-96)>>>8&-Q+e-95+63,t+=(47-e&e-58)>>>8&-Q+e-48+52,t+=(64-e&e-91)>>>8&-Q+e-65+0,t+=(96-e&e-123)>>>8&-Q+e-97+26,t},s})(yi);ge.URLSafeCoder=el;var tl=new el;function Uu(n){return tl.encode(n)}ge.encodeURLSafe=Uu;function ju(n){return tl.decode(n)}ge.decodeURLSafe=ju;ge.encodedLength=function(n){return fr.encodedLength(n)};ge.maxDecodedLength=function(n){return fr.maxDecodedLength(n)};ge.decodedLength=function(n){return fr.decodedLength(n)}});var sl=zr((rl,Es)=>{(function(n,s){var e={};s(e);var t=e.default;for(var r in e)t[r]=e[r];typeof Es=="object"&&typeof Es.exports=="object"?Es.exports=t:typeof define=="function"&&define.amd?define(function(){return t}):n.sha256=t})(rl,function(n){"use strict";n.__esModule=!0,n.digestLength=32,n.blockSize=64;var s=new Uint32Array([1116352408,1899447441,3049323471,3921009573,961987163,1508970993,2453635748,2870763221,3624381080,310598401,607225278,1426881987,1925078388,2162078206,2614888103,3248222580,3835390401,4022224774,264347078,604807628,770255983,1249150122,1555081692,1996064986,2554220882,2821834349,2952996808,3210313671,3336571891,3584528711,113926993,338241895,666307205,773529912,1294757372,1396182291,1695183700,1986661051,2177026350,2456956037,2730485921,2820302411,3259730800,3345764771,3516065817,3600352804,4094571909,275423344,430227734,506948616,659060556,883997877,958139571,1322822218,1537002063,1747873779,1955562222,2024104815,2227730452,2361852424,2428436474,2756734187,3204031479,3329325298]);function e(u,f,m,p,w){for(var y,v,S,P,R,x,C,I,M,A,O,$,L;w>=64;){for(y=f[0],v=f[1],S=f[2],P=f[3],R=f[4],x=f[5],C=f[6],I=f[7],A=0;A<16;A++)O=p+A*4,u[A]=(m[O]&255)<<24|(m[O+1]&255)<<16|(m[O+2]&255)<<8|m[O+3]&255;for(A=16;A<64;A++)M=u[A-2],$=(M>>>17|M<<15)^(M>>>19|M<<13)^M>>>10,M=u[A-15],L=(M>>>7|M<<25)^(M>>>18|M<<14)^M>>>3,u[A]=($+u[A-7]|0)+(L+u[A-16]|0);for(A=0;A<64;A++)$=(((R>>>6|R<<26)^(R>>>11|R<<21)^(R>>>25|R<<7))+(R&x^~R&C)|0)+(I+(s[A]+u[A]|0)|0)|0,L=((y>>>2|y<<30)^(y>>>13|y<<19)^(y>>>22|y<<10))+(y&v^y&S^v&S)|0,I=C,C=x,x=R,R=P+$|0,P=S,S=v,v=y,y=$+L|0;f[0]+=y,f[1]+=v,f[2]+=S,f[3]+=P,f[4]+=R,f[5]+=x,f[6]+=C,f[7]+=I,p+=64,w-=64}return p}var t=(function(){function u(){this.digestLength=n.digestLength,this.blockSize=n.blockSize,this.state=new Int32Array(8),this.temp=new Int32Array(64),this.buffer=new Uint8Array(128),this.bufferLength=0,this.bytesHashed=0,this.finished=!1,this.reset()}return u.prototype.reset=function(){return this.state[0]=1779033703,this.state[1]=3144134277,this.state[2]=1013904242,this.state[3]=2773480762,this.state[4]=1359893119,this.state[5]=2600822924,this.state[6]=528734635,this.state[7]=1541459225,this.bufferLength=0,this.bytesHashed=0,this.finished=!1,this},u.prototype.clean=function(){for(var f=0;f<this.buffer.length;f++)this.buffer[f]=0;for(var f=0;f<this.temp.length;f++)this.temp[f]=0;this.reset()},u.prototype.update=function(f,m){if(m===void 0&&(m=f.length),this.finished)throw new Error("SHA256: can't update because hash was finished.");var p=0;if(this.bytesHashed+=m,this.bufferLength>0){for(;this.bufferLength<64&&m>0;)this.buffer[this.bufferLength++]=f[p++],m--;this.bufferLength===64&&(e(this.temp,this.state,this.buffer,0,64),this.bufferLength=0)}for(m>=64&&(p=e(this.temp,this.state,f,p,m),m%=64);m>0;)this.buffer[this.bufferLength++]=f[p++],m--;return this},u.prototype.finish=function(f){if(!this.finished){var m=this.bytesHashed,p=this.bufferLength,w=m/536870912|0,y=m<<3,v=m%64<56?64:128;this.buffer[p]=128;for(var S=p+1;S<v-8;S++)this.buffer[S]=0;this.buffer[v-8]=w>>>24&255,this.buffer[v-7]=w>>>16&255,this.buffer[v-6]=w>>>8&255,this.buffer[v-5]=w>>>0&255,this.buffer[v-4]=y>>>24&255,this.buffer[v-3]=y>>>16&255,this.buffer[v-2]=y>>>8&255,this.buffer[v-1]=y>>>0&255,e(this.temp,this.state,this.buffer,0,v),this.finished=!0}for(var S=0;S<8;S++)f[S*4+0]=this.state[S]>>>24&255,f[S*4+1]=this.state[S]>>>16&255,f[S*4+2]=this.state[S]>>>8&255,f[S*4+3]=this.state[S]>>>0&255;return this},u.prototype.digest=function(){var f=new Uint8Array(this.digestLength);return this.finish(f),f},u.prototype._saveState=function(f){for(var m=0;m<this.state.length;m++)f[m]=this.state[m]},u.prototype._restoreState=function(f,m){for(var p=0;p<this.state.length;p++)this.state[p]=f[p];this.bytesHashed=m,this.finished=!1,this.bufferLength=0},u})();n.Hash=t;var r=(function(){function u(f){this.inner=new t,this.outer=new t,this.blockSize=this.inner.blockSize,this.digestLength=this.inner.digestLength;var m=new Uint8Array(this.blockSize);if(f.length>this.blockSize)new t().update(f).finish(m).clean();else for(var p=0;p<f.length;p++)m[p]=f[p];for(var p=0;p<m.length;p++)m[p]^=54;this.inner.update(m);for(var p=0;p<m.length;p++)m[p]^=106;this.outer.update(m),this.istate=new Uint32Array(8),this.ostate=new Uint32Array(8),this.inner._saveState(this.istate),this.outer._saveState(this.ostate);for(var p=0;p<m.length;p++)m[p]=0}return u.prototype.reset=function(){return this.inner._restoreState(this.istate,this.inner.blockSize),this.outer._restoreState(this.ostate,this.outer.blockSize),this},u.prototype.clean=function(){for(var f=0;f<this.istate.length;f++)this.ostate[f]=this.istate[f]=0;this.inner.clean(),this.outer.clean()},u.prototype.update=function(f){return this.inner.update(f),this},u.prototype.finish=function(f){return this.outer.finished?this.outer.finish(f):(this.inner.finish(f),this.outer.update(f,this.digestLength).finish(f)),this},u.prototype.digest=function(){var f=new Uint8Array(this.digestLength);return this.finish(f),f},u})();n.HMAC=r;function o(u){var f=new t().update(u),m=f.digest();return f.clean(),m}n.hash=o,n.default=o;function i(u,f){var m=new r(u).update(f),p=m.digest();return m.clean(),p}n.hmac=i;function a(u,f,m,p){var w=p[0];if(w===0)throw new Error("hkdf: cannot expand more");f.reset(),w>1&&f.update(u),m&&f.update(m),f.update(p),f.finish(u),p[0]++}var l=new Uint8Array(n.digestLength);function c(u,f,m,p){f===void 0&&(f=l),p===void 0&&(p=32);for(var w=new Uint8Array([1]),y=i(f,u),v=new r(y),S=new Uint8Array(v.digestLength),P=S.length,R=new Uint8Array(p),x=0;x<p;x++)P===S.length&&(a(S,v,m,w),P=0),R[x]=S[P++];return v.clean(),S.fill(0),w.fill(0),R}n.hkdf=c;function d(u,f,m,p){for(var w=new r(u),y=w.digestLength,v=new Uint8Array(4),S=new Uint8Array(y),P=new Uint8Array(y),R=new Uint8Array(p),x=0;x*y<p;x++){var C=x+1;v[0]=C>>>24&255,v[1]=C>>>16&255,v[2]=C>>>8&255,v[3]=C>>>0&255,w.reset(),w.update(f),w.update(v),w.finish(P);for(var I=0;I<y;I++)S[I]=P[I];for(var I=2;I<=m;I++){w.reset(),w.update(P).finish(P);for(var M=0;M<y;M++)S[M]^=P[M]}for(var I=0;I<y&&x*y+I<p;I++)R[x*y+I]=S[I]}for(var x=0;x<y;x++)S[x]=P[x]=0;for(var x=0;x<4;x++)v[x]=0;return w.clean(),R}n.pbkdf2=d})});var il=zr(Si=>{"use strict";Object.defineProperty(Si,"__esModule",{value:!0});Si.timingSafeEqual=Wu;function ol(n,s=""){if(!n)throw new Error(s)}function Wu(n,s){if(n.byteLength!==s.byteLength)return!1;n instanceof DataView||(n=new DataView(ArrayBuffer.isView(n)?n.buffer:n)),s instanceof DataView||(s=new DataView(ArrayBuffer.isView(s)?s.buffer:s)),ol(n instanceof DataView),ol(s instanceof DataView);let e=n.byteLength,t=0,r=-1;for(;++r<e;)t|=n.getUint8(r)^s.getUint8(r);return t===0}});var ll=zr(Xt=>{"use strict";Object.defineProperty(Xt,"__esModule",{value:!0});Xt.Webhook=Xt.WebhookVerificationError=void 0;var al=nl(),qu=sl(),zu=il(),cl=300,ki=class n extends Error{constructor(s){super(s),Object.setPrototypeOf(this,n.prototype),this.name="ExtendableError",this.stack=new Error(s).stack}},Qe=class n extends ki{constructor(s){super(s),Object.setPrototypeOf(this,n.prototype),this.name="WebhookVerificationError"}};Xt.WebhookVerificationError=Qe;var xs=class n{constructor(s,e){if(e?.format==="raw")s instanceof Uint8Array?this.key=s:this.key=Uint8Array.from(s,t=>t.charCodeAt(0));else{if(typeof s!="string")throw new Error("Expected secret to be of type string");s.startsWith(n.prefix)&&(s=s.substring(n.prefix.length)),this.key=al.decode(s)}if(this.key.length===0)throw new Error("Secret can't be empty.")}verify(s,e,t){var r;let o=(r=t?.jsonParse)!==null&&r!==void 0?r:!0,i={};for(let w of Object.keys(e))i[w.toLowerCase()]=e[w];let a=i["webhook-id"],l=i["webhook-signature"],c=i["webhook-timestamp"];if(!l||!a||!c)throw new Qe("Missing required headers");let d=this.verifyTimestamp(c),f=this.sign(a,d,s).split(",")[1],m=l.split(" "),p=new globalThis.TextEncoder;for(let w of m){let[y,v]=w.split(",");if(y==="v1"&&(0,zu.timingSafeEqual)(p.encode(v),p.encode(f))){let S=s.toString();return S===""?void 0:o?JSON.parse(S):void 0}}throw new Qe("No matching signature found")}sign(s,e,t){if(typeof t!="string")if(t.constructor.name==="Buffer")t=t.toString();else throw new Error("Expected payload to be of type string or Buffer.");let r=new TextEncoder,o=Math.floor(e.getTime()/1e3),i=r.encode(`${s}.${o}.${t}`);return`v1,${al.encode(qu.hmac(this.key,i))}`}verifyTimestamp(s){let e=Math.floor(Date.now()/1e3),t=parseInt(s,10);if(Number.isNaN(t))throw new Qe("Invalid Signature Headers");if(e-t>cl)throw new Qe("Message timestamp too old");if(t>e+cl)throw new Qe("Message timestamp too new");return new Date(t*1e3)}};Xt.Webhook=xs;xs.prefix="whsec_"});function Al(n,s){if(!(n>=qs))throw new T(`${s} must be at least ${qs}ms (got ${n}); to run without memory sync, pass \`memorySyncIntervalMs: null\` to the worker instead`)}var vl,qs,xi=Hn(()=>{Y();vl=15e3,qs=5e3});var El={};_a(El,{BashSession:()=>Mi,BashTimeoutError:()=>Ri,DEFAULT_MEMORY_SYNC_INTERVAL_MS:()=>vl,MARKER_PATH:()=>md,MEMORY_FLUSH_TIMEOUT_MS:()=>pd,MIN_MEMORY_SYNC_INTERVAL_MS:()=>qs,SessionMemoryError:()=>Ti,SessionMemoryStores:()=>Ii,betaAgentToolset20260401:()=>bd,betaBashTool:()=>yd,betaEditTool:()=>vd,betaGlobTool:()=>Ad,betaGrepTool:()=>Ed,betaReadTool:()=>Sd,betaWriteTool:()=>kd,extractSkillArchive:()=>_d,resolvePath:()=>wd,setupSkills:()=>gd});function V(n){throw new T(`${n} requires Node.js or a Node-compatible runtime`)}function gd(n){return V("setupSkills")}function _d(n,s){return V("extractSkillArchive")}function bd(n){return V("betaAgentToolset20260401")}function wd(n,s){return V("resolvePath")}function yd(n){return V("betaBashTool")}function Sd(n){return V("betaReadTool")}function kd(n){return V("betaWriteTool")}function vd(n){return V("betaEditTool")}function Ad(n){return V("betaGlobTool")}function Ed(n){return V("betaGrepTool")}var pd,md,Ti,Ii,Ri,Mi,xl=Hn(()=>{Y();xi();pd=3e4,md=".anthropic-memory-store",Ti=class extends T{constructor(s,e){super(s),this.name="SessionMemoryError",e!==void 0&&(this.cause=e)}},Ii=class{constructor(s,e){V("SessionMemoryStores")}get roots(){return V("SessionMemoryStores")}get readOnlyRoots(){return V("SessionMemoryStores")}download(s){return V("SessionMemoryStores")}finish(){return V("SessionMemoryStores")}syncAll(s){return V("SessionMemoryStores")}syncIfDue(){return V("SessionMemoryStores")}flushWrites(s){return V("SessionMemoryStores")}dispose(){return V("SessionMemoryStores")}};Ri=class extends T{constructor(s){super(`bash command timed out after ${s}ms`),this.name="BashTimeoutError",this.timeoutMs=s}},Mi=class{constructor(s,e){V("BashSession")}get closed(){return V("BashSession")}exec(s,e={}){return V("BashSession")}close(){V("BashSession")}}});var fh="shop-copier",Fo="jobs",Bo=null;function ph(){return Bo||(Bo=new Promise((n,s)=>{let e=indexedDB.open(fh,1);e.onupgradeneeded=()=>e.result.createObjectStore(Fo,{keyPath:"id"}),e.onsuccess=()=>n(e.result),e.onerror=()=>s(e.error)})),Bo}function Yr(n,s){return ph().then(e=>new Promise((t,r)=>{let o=e.transaction(Fo,n),i=s(o.objectStore(Fo));o.oncomplete=()=>t(i&&"result"in i?i.result:void 0),o.onerror=()=>r(o.error)}))}var ht=n=>Yr("readwrite",s=>s.put({...n,updated:Date.now()})),wa=n=>Yr("readonly",s=>s.get(n)),ya=n=>Yr("readwrite",s=>s.delete(n));async function Sa(){return(await Yr("readonly",s=>s.getAll())||[]).sort((s,e)=>(e.updated||0)-(s.updated||0))}function Ge(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}var ka="shop-copier-settings",ba={apiKey:"",model:"claude-opus-5-5",dxfVersion:"R2000",layerOuter:"OUTLINE",layerHole:"CUTOUT",denom:16};function va(){try{return{...ba,...JSON.parse(localStorage.getItem(ka)||"{}")}}catch{return{...ba}}}function Aa(n){try{localStorage.setItem(ka,JSON.stringify(n))}catch{}}var Ea=`  0
+SECTION
+  2
+HEADER
+  9
+$ACADVER
+  1
+AC1015
+  9
+$ACADMAINTVER
+ 70
+6
+  9
+$DWGCODEPAGE
+  3
+ANSI_1252
+  9
+$INSBASE
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+  9
+$EXTMIN
+ 10
+@@MINX@@
+ 20
+@@MINY@@
+ 30
+0.0
+  9
+$EXTMAX
+ 10
+@@MAXX@@
+ 20
+@@MAXY@@
+ 30
+0.0
+  9
+$LIMMIN
+ 10
+0.0
+ 20
+0.0
+  9
+$LIMMAX
+ 10
+420.0
+ 20
+297.0
+  9
+$ORTHOMODE
+ 70
+0
+  9
+$REGENMODE
+ 70
+1
+  9
+$FILLMODE
+ 70
+1
+  9
+$QTEXTMODE
+ 70
+0
+  9
+$MIRRTEXT
+ 70
+1
+  9
+$LTSCALE
+ 40
+1.0
+  9
+$ATTMODE
+ 70
+1
+  9
+$TEXTSIZE
+ 40
+2.5
+  9
+$TRACEWID
+ 40
+1.0
+  9
+$TEXTSTYLE
+  7
+Standard
+  9
+$CLAYER
+  8
+0
+  9
+$CELTYPE
+  6
+ByLayer
+  9
+$CECOLOR
+ 62
+256
+  9
+$CELTSCALE
+ 40
+1.0
+  9
+$DISPSILH
+ 70
+0
+  9
+$DIMSCALE
+ 40
+1.0
+  9
+$DIMASZ
+ 40
+2.5
+  9
+$DIMEXO
+ 40
+0.625
+  9
+$DIMDLI
+ 40
+3.75
+  9
+$DIMRND
+ 40
+0.0
+  9
+$DIMDLE
+ 40
+0.0
+  9
+$DIMEXE
+ 40
+1.25
+  9
+$DIMTP
+ 40
+0.0
+  9
+$DIMTM
+ 40
+0.0
+  9
+$DIMTXT
+ 40
+2.5
+  9
+$DIMCEN
+ 40
+2.5
+  9
+$DIMTSZ
+ 40
+0.0
+  9
+$DIMTOL
+ 70
+0
+  9
+$DIMLIM
+ 70
+0
+  9
+$DIMTIH
+ 70
+0
+  9
+$DIMTOH
+ 70
+0
+  9
+$DIMSE1
+ 70
+0
+  9
+$DIMSE2
+ 70
+0
+  9
+$DIMTAD
+ 70
+1
+  9
+$DIMZIN
+ 70
+8
+  9
+$DIMBLK
+  1
+
+  9
+$DIMASO
+ 70
+1
+  9
+$DIMSHO
+ 70
+1
+  9
+$DIMPOST
+  1
+
+  9
+$DIMAPOST
+  1
+
+  9
+$DIMALT
+ 70
+0
+  9
+$DIMALTD
+ 70
+3
+  9
+$DIMALTF
+ 40
+0.03937007874
+  9
+$DIMLFAC
+ 40
+1.0
+  9
+$DIMTOFL
+ 70
+1
+  9
+$DIMTVP
+ 40
+0.0
+  9
+$DIMTIX
+ 70
+0
+  9
+$DIMSOXD
+ 70
+0
+  9
+$DIMSAH
+ 70
+0
+  9
+$DIMBLK1
+  1
+
+  9
+$DIMBLK2
+  1
+
+  9
+$DIMSTYLE
+  2
+ISO-25
+  9
+$DIMCLRD
+ 70
+0
+  9
+$DIMCLRE
+ 70
+0
+  9
+$DIMCLRT
+ 70
+0
+  9
+$DIMTFAC
+ 40
+1.0
+  9
+$DIMGAP
+ 40
+0.625
+  9
+$DIMJUST
+ 70
+0
+  9
+$DIMSD1
+ 70
+0
+  9
+$DIMSD2
+ 70
+0
+  9
+$DIMTOLJ
+ 70
+0
+  9
+$DIMTZIN
+ 70
+8
+  9
+$DIMALTZ
+ 70
+0
+  9
+$DIMALTTZ
+ 70
+0
+  9
+$DIMUPT
+ 70
+0
+  9
+$DIMDEC
+ 70
+2
+  9
+$DIMTDEC
+ 70
+2
+  9
+$DIMALTU
+ 70
+2
+  9
+$DIMALTTD
+ 70
+3
+  9
+$DIMTXSTY
+  7
+Standard
+  9
+$DIMAUNIT
+ 70
+0
+  9
+$DIMADEC
+ 70
+0
+  9
+$DIMALTRND
+ 40
+0.0
+  9
+$DIMAZIN
+ 70
+0
+  9
+$DIMDSEP
+ 70
+44
+  9
+$DIMATFIT
+ 70
+3
+  9
+$DIMFRAC
+ 70
+0
+  9
+$DIMLDRBLK
+  1
+
+  9
+$DIMLUNIT
+ 70
+2
+  9
+$DIMLWD
+ 70
+-2
+  9
+$DIMLWE
+ 70
+-2
+  9
+$DIMTMOVE
+ 70
+0
+  9
+$LUNITS
+ 70
+2
+  9
+$LUPREC
+ 70
+4
+  9
+$SKETCHINC
+ 40
+1.0
+  9
+$FILLETRAD
+ 40
+10.0
+  9
+$AUNITS
+ 70
+0
+  9
+$AUPREC
+ 70
+2
+  9
+$MENU
+  1
+.
+  9
+$ELEVATION
+ 40
+0.0
+  9
+$PELEVATION
+ 40
+0.0
+  9
+$THICKNESS
+ 40
+0.0
+  9
+$LIMCHECK
+ 70
+0
+  9
+$CHAMFERA
+ 40
+0.0
+  9
+$CHAMFERB
+ 40
+0.0
+  9
+$CHAMFERC
+ 40
+0.0
+  9
+$CHAMFERD
+ 40
+0.0
+  9
+$SKPOLY
+ 70
+0
+  9
+$TDCREATE
+ 40
+2461329.713564815
+  9
+$TDUCREATE
+ 40
+2458532.153996898
+  9
+$TDUPDATE
+ 40
+2461329.713564815
+  9
+$TDUUPDATE
+ 40
+2458532.1544311
+  9
+$TDINDWG
+ 40
+0.0
+  9
+$TDUSRTIMER
+ 40
+0.0
+  9
+$USRTIMER
+ 70
+1
+  9
+$ANGBASE
+ 50
+0.0
+  9
+$ANGDIR
+ 70
+0
+  9
+$PDMODE
+ 70
+0
+  9
+$PDSIZE
+ 40
+0.0
+  9
+$PLINEWID
+ 40
+0.0
+  9
+$SPLFRAME
+ 70
+0
+  9
+$SPLINETYPE
+ 70
+6
+  9
+$SPLINESEGS
+ 70
+8
+  9
+$HANDSEED
+  5
+@@HANDSEED@@
+  9
+$SURFTAB1
+ 70
+6
+  9
+$SURFTAB2
+ 70
+6
+  9
+$SURFTYPE
+ 70
+6
+  9
+$SURFU
+ 70
+6
+  9
+$SURFV
+ 70
+6
+  9
+$UCSBASE
+  2
+
+  9
+$UCSNAME
+  2
+
+  9
+$UCSORG
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+  9
+$UCSXDIR
+ 10
+1.0
+ 20
+0.0
+ 30
+0.0
+  9
+$UCSYDIR
+ 10
+0.0
+ 20
+1.0
+ 30
+0.0
+  9
+$UCSORTHOREF
+  2
+
+  9
+$UCSORTHOVIEW
+ 70
+0
+  9
+$UCSORGTOP
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+  9
+$UCSORGBOTTOM
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+  9
+$UCSORGLEFT
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+  9
+$UCSORGRIGHT
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+  9
+$UCSORGFRONT
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+  9
+$UCSORGBACK
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+  9
+$PUCSBASE
+  2
+
+  9
+$PUCSNAME
+  2
+
+  9
+$PUCSORG
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+  9
+$PUCSXDIR
+ 10
+1.0
+ 20
+0.0
+ 30
+0.0
+  9
+$PUCSYDIR
+ 10
+0.0
+ 20
+1.0
+ 30
+0.0
+  9
+$PUCSORTHOREF
+  2
+
+  9
+$PUCSORTHOVIEW
+ 70
+0
+  9
+$PUCSORGTOP
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+  9
+$PUCSORGBOTTOM
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+  9
+$PUCSORGLEFT
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+  9
+$PUCSORGRIGHT
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+  9
+$PUCSORGFRONT
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+  9
+$PUCSORGBACK
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+  9
+$USERI1
+ 70
+0
+  9
+$USERI2
+ 70
+0
+  9
+$USERI3
+ 70
+0
+  9
+$USERI4
+ 70
+0
+  9
+$USERI5
+ 70
+0
+  9
+$USERR1
+ 40
+0.0
+  9
+$USERR2
+ 40
+0.0
+  9
+$USERR3
+ 40
+0.0
+  9
+$USERR4
+ 40
+0.0
+  9
+$USERR5
+ 40
+0.0
+  9
+$WORLDVIEW
+ 70
+1
+  9
+$SHADEDGE
+ 70
+3
+  9
+$SHADEDIF
+ 70
+70
+  9
+$TILEMODE
+ 70
+1
+  9
+$MAXACTVP
+ 70
+64
+  9
+$PINSBASE
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+  9
+$PLIMCHECK
+ 70
+0
+  9
+$PEXTMIN
+ 10
+1e+20
+ 20
+1e+20
+ 30
+1e+20
+  9
+$PEXTMAX
+ 10
+-1e+20
+ 20
+-1e+20
+ 30
+-1e+20
+  9
+$PLIMMIN
+ 10
+0.0
+ 20
+0.0
+  9
+$PLIMMAX
+ 10
+420.0
+ 20
+297.0
+  9
+$UNITMODE
+ 70
+0
+  9
+$VISRETAIN
+ 70
+1
+  9
+$PLINEGEN
+ 70
+0
+  9
+$PSLTSCALE
+ 70
+1
+  9
+$TREEDEPTH
+ 70
+3020
+  9
+$CMLSTYLE
+  2
+Standard
+  9
+$CMLJUST
+ 70
+0
+  9
+$CMLSCALE
+ 40
+20.0
+  9
+$PROXYGRAPHICS
+ 70
+1
+  9
+$MEASUREMENT
+ 70
+0
+  9
+$CELWEIGHT
+370
+-1
+  9
+$ENDCAPS
+280
+0
+  9
+$JOINSTYLE
+280
+0
+  9
+$LWDISPLAY
+290
+0
+  9
+$INSUNITS
+ 70
+1
+  9
+$HYPERLINKBASE
+  1
+
+  9
+$STYLESHEET
+  1
+
+  9
+$XEDIT
+290
+1
+  9
+$CEPSNTYPE
+380
+0
+  9
+$PSTYLEMODE
+290
+1
+  9
+$FINGERPRINTGUID
+  2
+{8A8F7A7E-9B84-4C1A-97FC-62DE58913461}
+  9
+$VERSIONGUID
+  2
+{00A5BF9E-05F9-4643-B5AC-95211EE29674}
+  9
+$EXTNAMES
+290
+1
+  9
+$PSVPSCALE
+ 40
+0.0
+  9
+$OLESTARTUP
+290
+0
+  0
+ENDSEC
+  0
+SECTION
+  2
+CLASSES
+  0
+CLASS
+  1
+ACDBDICTIONARYWDFLT
+  2
+AcDbDictionaryWithDefault
+  3
+ObjectDBX Classes
+ 90
+0
+280
+0
+281
+0
+  0
+CLASS
+  1
+SUN
+  2
+AcDbSun
+  3
+SCENEOE
+ 90
+1153
+280
+0
+281
+0
+  0
+CLASS
+  1
+VISUALSTYLE
+  2
+AcDbVisualStyle
+  3
+ObjectDBX Classes
+ 90
+4095
+280
+0
+281
+0
+  0
+CLASS
+  1
+MATERIAL
+  2
+AcDbMaterial
+  3
+ObjectDBX Classes
+ 90
+1153
+280
+0
+281
+0
+  0
+CLASS
+  1
+SCALE
+  2
+AcDbScale
+  3
+ObjectDBX Classes
+ 90
+1153
+280
+0
+281
+0
+  0
+CLASS
+  1
+TABLESTYLE
+  2
+AcDbTableStyle
+  3
+ObjectDBX Classes
+ 90
+4095
+280
+0
+281
+0
+  0
+CLASS
+  1
+MLEADERSTYLE
+  2
+AcDbMLeaderStyle
+  3
+ACDB_MLEADERSTYLE_CLASS
+ 90
+4095
+280
+0
+281
+0
+  0
+CLASS
+  1
+DICTIONARYVAR
+  2
+AcDbDictionaryVar
+  3
+ObjectDBX Classes
+ 90
+0
+280
+0
+281
+0
+  0
+CLASS
+  1
+CELLSTYLEMAP
+  2
+AcDbCellStyleMap
+  3
+ObjectDBX Classes
+ 90
+1152
+280
+0
+281
+0
+  0
+CLASS
+  1
+MENTALRAYRENDERSETTINGS
+  2
+AcDbMentalRayRenderSettings
+  3
+SCENEOE
+ 90
+1024
+280
+0
+281
+0
+  0
+CLASS
+  1
+ACDBDETAILVIEWSTYLE
+  2
+AcDbDetailViewStyle
+  3
+ObjectDBX Classes
+ 90
+1025
+280
+0
+281
+0
+  0
+CLASS
+  1
+ACDBSECTIONVIEWSTYLE
+  2
+AcDbSectionViewStyle
+  3
+ObjectDBX Classes
+ 90
+1025
+280
+0
+281
+0
+  0
+CLASS
+  1
+RASTERVARIABLES
+  2
+AcDbRasterVariables
+  3
+ISM
+ 90
+0
+280
+0
+281
+0
+  0
+CLASS
+  1
+ACDBPLACEHOLDER
+  2
+AcDbPlaceHolder
+  3
+ObjectDBX Classes
+ 90
+0
+280
+0
+281
+0
+  0
+CLASS
+  1
+LAYOUT
+  2
+AcDbLayout
+  3
+ObjectDBX Classes
+ 90
+0
+280
+0
+281
+0
+  0
+ENDSEC
+  0
+SECTION
+  2
+TABLES
+  0
+TABLE
+  2
+VPORT
+  5
+8
+330
+0
+100
+AcDbSymbolTable
+ 70
+1
+  0
+VPORT
+  5
+23
+330
+8
+100
+AcDbSymbolTableRecord
+100
+AcDbViewportTableRecord
+  2
+*Active
+ 70
+0
+ 10
+0.0
+ 20
+0.0
+ 11
+1.0
+ 21
+1.0
+ 12
+0.0
+ 22
+0.0
+ 13
+0.0
+ 23
+0.0
+ 14
+0.5
+ 24
+0.5
+ 15
+0.5
+ 25
+0.5
+ 16
+0.0
+ 26
+0.0
+ 36
+1.0
+ 17
+0.0
+ 27
+0.0
+ 37
+0.0
+ 40
+1000.0
+ 41
+1.34
+ 42
+50.0
+ 43
+0.0
+ 44
+0.0
+ 50
+0.0
+ 51
+0.0
+ 71
+0
+ 72
+1000
+ 73
+1
+ 74
+3
+ 75
+0
+ 76
+0
+ 77
+0
+ 78
+0
+281
+0
+ 65
+0
+146
+0.0
+  0
+ENDTAB
+  0
+TABLE
+  2
+LTYPE
+  5
+2
+330
+0
+100
+AcDbSymbolTable
+ 70
+3
+  0
+LTYPE
+  5
+24
+330
+2
+100
+AcDbSymbolTableRecord
+100
+AcDbLinetypeTableRecord
+  2
+ByBlock
+ 70
+0
+  3
+
+ 72
+65
+ 73
+0
+ 40
+0.0
+  0
+LTYPE
+  5
+25
+330
+2
+100
+AcDbSymbolTableRecord
+100
+AcDbLinetypeTableRecord
+  2
+ByLayer
+ 70
+0
+  3
+
+ 72
+65
+ 73
+0
+ 40
+0.0
+  0
+LTYPE
+  5
+26
+330
+2
+100
+AcDbSymbolTableRecord
+100
+AcDbLinetypeTableRecord
+  2
+Continuous
+ 70
+0
+  3
+
+ 72
+65
+ 73
+0
+ 40
+0.0
+  0
+ENDTAB
+  0
+TABLE
+  2
+LAYER
+  5
+1
+330
+0
+100
+AcDbSymbolTable
+ 70
+4
+  0
+LAYER
+  5
+27
+330
+1
+100
+AcDbSymbolTableRecord
+100
+AcDbLayerTableRecord
+  2
+0
+ 70
+0
+ 62
+7
+  6
+Continuous
+370
+-3
+390
+13
+  0
+LAYER
+  5
+28
+330
+1
+100
+AcDbSymbolTableRecord
+100
+AcDbLayerTableRecord
+  2
+Defpoints
+ 70
+0
+ 62
+7
+  6
+Continuous
+290
+0
+370
+-3
+390
+13
+  0
+LAYER
+  5
+2F
+330
+1
+100
+AcDbSymbolTableRecord
+100
+AcDbLayerTableRecord
+  2
+OUTLINE
+ 70
+0
+ 62
+7
+  6
+Continuous
+370
+-3
+390
+13
+  0
+LAYER
+  5
+30
+330
+1
+100
+AcDbSymbolTableRecord
+100
+AcDbLayerTableRecord
+  2
+CUTOUT
+ 70
+0
+ 62
+1
+  6
+Continuous
+370
+-3
+390
+13
+  0
+ENDTAB
+  0
+TABLE
+  2
+STYLE
+  5
+5
+330
+0
+100
+AcDbSymbolTable
+ 70
+1
+  0
+STYLE
+  5
+29
+330
+5
+100
+AcDbSymbolTableRecord
+100
+AcDbTextStyleTableRecord
+  2
+Standard
+ 70
+0
+ 40
+0.0
+ 41
+1.0
+ 50
+0.0
+ 71
+0
+ 42
+2.5
+  3
+txt
+  4
+
+  0
+ENDTAB
+  0
+TABLE
+  2
+VIEW
+  5
+7
+330
+0
+100
+AcDbSymbolTable
+ 70
+0
+  0
+ENDTAB
+  0
+TABLE
+  2
+UCS
+  5
+6
+330
+0
+100
+AcDbSymbolTable
+ 70
+0
+  0
+ENDTAB
+  0
+TABLE
+  2
+APPID
+  5
+3
+330
+0
+100
+AcDbSymbolTable
+ 70
+3
+  0
+APPID
+  5
+2A
+330
+3
+100
+AcDbSymbolTableRecord
+100
+AcDbRegAppTableRecord
+  2
+ACAD
+ 70
+0
+  0
+APPID
+  5
+31
+330
+3
+100
+AcDbSymbolTableRecord
+100
+AcDbRegAppTableRecord
+  2
+HATCHBACKGROUNDCOLOR
+ 70
+0
+  0
+APPID
+  5
+32
+330
+3
+100
+AcDbSymbolTableRecord
+100
+AcDbRegAppTableRecord
+  2
+EZDXF
+ 70
+0
+  0
+ENDTAB
+  0
+TABLE
+  2
+DIMSTYLE
+  5
+4
+330
+0
+100
+AcDbSymbolTable
+ 70
+1
+100
+AcDbDimStyleTable
+  0
+DIMSTYLE
+105
+2B
+330
+4
+100
+AcDbSymbolTableRecord
+100
+AcDbDimStyleTableRecord
+  2
+Standard
+ 70
+0
+  3
+
+  4
+
+ 40
+1.0
+ 41
+2.5
+ 42
+0.625
+ 43
+3.75
+ 44
+1.25
+ 45
+0.0
+ 46
+0.0
+ 47
+0.0
+ 48
+0.0
+140
+2.5
+141
+2.5
+142
+0.0
+143
+0.03937007874
+144
+1.0
+145
+0.0
+146
+1.0
+147
+0.625
+148
+0.0
+ 71
+0
+ 72
+0
+ 73
+0
+ 74
+0
+ 75
+0
+ 76
+0
+ 77
+1
+ 78
+8
+ 79
+3
+170
+0
+171
+3
+172
+1
+173
+0
+174
+0
+175
+0
+176
+0
+177
+0
+178
+0
+179
+2
+271
+2
+272
+2
+273
+2
+274
+3
+275
+0
+276
+0
+277
+2
+278
+44
+279
+0
+280
+0
+281
+0
+282
+0
+283
+0
+284
+8
+285
+0
+286
+0
+288
+0
+289
+3
+371
+-2
+372
+-2
+  0
+ENDTAB
+  0
+TABLE
+  2
+BLOCK_RECORD
+  5
+9
+330
+0
+100
+AcDbSymbolTable
+ 70
+2
+  0
+BLOCK_RECORD
+  5
+17
+330
+9
+100
+AcDbSymbolTableRecord
+100
+AcDbBlockTableRecord
+  2
+*Model_Space
+340
+1A
+  0
+BLOCK_RECORD
+  5
+1B
+330
+9
+100
+AcDbSymbolTableRecord
+100
+AcDbBlockTableRecord
+  2
+*Paper_Space
+340
+1E
+  0
+ENDTAB
+  0
+ENDSEC
+  0
+SECTION
+  2
+BLOCKS
+  0
+BLOCK
+  5
+18
+330
+17
+100
+AcDbEntity
+  8
+0
+100
+AcDbBlockBegin
+  2
+*Model_Space
+ 70
+0
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+  3
+*Model_Space
+  1
+
+  0
+ENDBLK
+  5
+19
+330
+17
+100
+AcDbEntity
+  8
+0
+100
+AcDbBlockEnd
+  0
+BLOCK
+  5
+1C
+330
+1B
+100
+AcDbEntity
+  8
+0
+100
+AcDbBlockBegin
+  2
+*Paper_Space
+ 70
+0
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+  3
+*Paper_Space
+  1
+
+  0
+ENDBLK
+  5
+1D
+330
+1B
+100
+AcDbEntity
+  8
+0
+100
+AcDbBlockEnd
+  0
+ENDSEC
+  0
+SECTION
+  2
+ENTITIES
+@@ENTITIES@@
+  0
+ENDSEC
+  0
+SECTION
+  2
+OBJECTS
+  0
+DICTIONARY
+  5
+A
+330
+0
+100
+AcDbDictionary
+281
+1
+  3
+ACAD_COLOR
+350
+B
+  3
+ACAD_GROUP
+350
+C
+  3
+ACAD_LAYOUT
+350
+D
+  3
+ACAD_MATERIAL
+350
+E
+  3
+ACAD_MLEADERSTYLE
+350
+F
+  3
+ACAD_MLINESTYLE
+350
+10
+  3
+ACAD_PLOTSETTINGS
+350
+11
+  3
+ACAD_PLOTSTYLENAME
+350
+12
+  3
+ACAD_SCALELIST
+350
+14
+  3
+ACAD_TABLESTYLE
+350
+15
+  3
+ACAD_VISUALSTYLE
+350
+16
+  3
+EZDXF_META
+350
+2D
+  0
+DICTIONARY
+  5
+B
+330
+A
+100
+AcDbDictionary
+281
+1
+  0
+DICTIONARY
+  5
+C
+330
+A
+100
+AcDbDictionary
+281
+1
+  0
+DICTIONARY
+  5
+D
+330
+A
+100
+AcDbDictionary
+281
+1
+  3
+Model
+350
+1A
+  3
+Layout1
+350
+1E
+  0
+DICTIONARY
+  5
+E
+330
+A
+100
+AcDbDictionary
+281
+1
+  3
+ByBlock
+350
+1F
+  3
+ByLayer
+350
+20
+  3
+Global
+350
+21
+  0
+DICTIONARY
+  5
+F
+330
+A
+100
+AcDbDictionary
+281
+1
+  3
+Standard
+350
+2C
+  0
+DICTIONARY
+  5
+10
+330
+A
+100
+AcDbDictionary
+281
+1
+  3
+Standard
+350
+22
+  0
+DICTIONARY
+  5
+11
+330
+A
+100
+AcDbDictionary
+281
+1
+  0
+ACDBDICTIONARYWDFLT
+  5
+12
+330
+A
+100
+AcDbDictionary
+281
+1
+  3
+Normal
+350
+13
+100
+AcDbDictionaryWithDefault
+340
+13
+  0
+ACDBPLACEHOLDER
+  5
+13
+330
+12
+  0
+DICTIONARY
+  5
+14
+330
+A
+100
+AcDbDictionary
+281
+1
+  0
+DICTIONARY
+  5
+15
+330
+A
+100
+AcDbDictionary
+281
+1
+  0
+DICTIONARY
+  5
+16
+330
+A
+100
+AcDbDictionary
+281
+1
+  0
+LAYOUT
+  5
+1A
+330
+D
+100
+AcDbPlotSettings
+  1
+
+  4
+A3
+  6
+
+ 40
+7.5
+ 41
+20.0
+ 42
+7.5
+ 43
+20.0
+ 44
+420.0
+ 45
+297.0
+ 46
+0.0
+ 47
+0.0
+ 48
+0.0
+ 49
+0.0
+140
+0.0
+141
+0.0
+142
+1.0
+143
+1.0
+ 70
+1024
+ 72
+1
+ 73
+0
+ 74
+5
+  7
+
+ 75
+16
+ 76
+0
+ 77
+2
+ 78
+300
+147
+1.0
+148
+0.0
+149
+0.0
+100
+AcDbLayout
+  1
+Model
+ 70
+1
+ 71
+0
+ 10
+0.0
+ 20
+0.0
+ 11
+420.0
+ 21
+297.0
+ 12
+0.0
+ 22
+0.0
+ 32
+0.0
+ 14
+1e+20
+ 24
+1e+20
+ 34
+1e+20
+ 15
+-1e+20
+ 25
+-1e+20
+ 35
+-1e+20
+146
+0.0
+ 13
+0.0
+ 23
+0.0
+ 33
+0.0
+ 16
+1.0
+ 26
+0.0
+ 36
+0.0
+ 17
+0.0
+ 27
+1.0
+ 37
+0.0
+ 76
+1
+330
+17
+  0
+LAYOUT
+  5
+1E
+330
+D
+100
+AcDbPlotSettings
+  1
+
+  4
+A3
+  6
+
+ 40
+7.5
+ 41
+20.0
+ 42
+7.5
+ 43
+20.0
+ 44
+420.0
+ 45
+297.0
+ 46
+0.0
+ 47
+0.0
+ 48
+0.0
+ 49
+0.0
+140
+0.0
+141
+0.0
+142
+1.0
+143
+1.0
+ 70
+0
+ 72
+1
+ 73
+0
+ 74
+5
+  7
+
+ 75
+16
+ 76
+0
+ 77
+2
+ 78
+300
+147
+1.0
+148
+0.0
+149
+0.0
+100
+AcDbLayout
+  1
+Layout1
+ 70
+1
+ 71
+1
+ 10
+0.0
+ 20
+0.0
+ 11
+420.0
+ 21
+297.0
+ 12
+0.0
+ 22
+0.0
+ 32
+0.0
+ 14
+1e+20
+ 24
+1e+20
+ 34
+1e+20
+ 15
+-1e+20
+ 25
+-1e+20
+ 35
+-1e+20
+146
+0.0
+ 13
+0.0
+ 23
+0.0
+ 33
+0.0
+ 16
+1.0
+ 26
+0.0
+ 36
+0.0
+ 17
+0.0
+ 27
+1.0
+ 37
+0.0
+ 76
+1
+330
+1B
+  0
+MATERIAL
+  5
+1F
+102
+{ACAD_REACTORS
+330
+E
+102
+}
+330
+E
+100
+AcDbMaterial
+  1
+ByBlock
+  2
+
+ 70
+0
+ 40
+1.0
+ 71
+1
+ 41
+1.0
+ 91
+-1023410177
+ 42
+1.0
+ 72
+1
+  3
+
+ 73
+1
+ 74
+1
+ 75
+1
+ 44
+0.5
+ 73
+0
+ 45
+1.0
+ 46
+1.0
+ 77
+1
+  4
+
+ 78
+1
+ 79
+1
+170
+1
+ 48
+1.0
+171
+1
+  6
+
+172
+1
+173
+1
+174
+1
+140
+1.0
+141
+1.0
+175
+1
+  7
+
+176
+1
+177
+1
+178
+1
+143
+1.0
+179
+1
+  8
+
+270
+1
+271
+1
+272
+1
+145
+1.0
+146
+1.0
+273
+1
+  9
+
+274
+1
+275
+1
+276
+1
+ 42
+1.0
+ 72
+1
+  3
+
+ 73
+1
+ 74
+1
+ 75
+1
+ 94
+63
+  0
+MATERIAL
+  5
+20
+102
+{ACAD_REACTORS
+330
+E
+102
+}
+330
+E
+100
+AcDbMaterial
+  1
+ByLayer
+  2
+
+ 70
+0
+ 40
+1.0
+ 71
+1
+ 41
+1.0
+ 91
+-1023410177
+ 42
+1.0
+ 72
+1
+  3
+
+ 73
+1
+ 74
+1
+ 75
+1
+ 44
+0.5
+ 73
+0
+ 45
+1.0
+ 46
+1.0
+ 77
+1
+  4
+
+ 78
+1
+ 79
+1
+170
+1
+ 48
+1.0
+171
+1
+  6
+
+172
+1
+173
+1
+174
+1
+140
+1.0
+141
+1.0
+175
+1
+  7
+
+176
+1
+177
+1
+178
+1
+143
+1.0
+179
+1
+  8
+
+270
+1
+271
+1
+272
+1
+145
+1.0
+146
+1.0
+273
+1
+  9
+
+274
+1
+275
+1
+276
+1
+ 42
+1.0
+ 72
+1
+  3
+
+ 73
+1
+ 74
+1
+ 75
+1
+ 94
+63
+  0
+MATERIAL
+  5
+21
+102
+{ACAD_REACTORS
+330
+E
+102
+}
+330
+E
+100
+AcDbMaterial
+  1
+Global
+  2
+
+ 70
+0
+ 40
+1.0
+ 71
+1
+ 41
+1.0
+ 91
+-1023410177
+ 42
+1.0
+ 72
+1
+  3
+
+ 73
+1
+ 74
+1
+ 75
+1
+ 44
+0.5
+ 73
+0
+ 45
+1.0
+ 46
+1.0
+ 77
+1
+  4
+
+ 78
+1
+ 79
+1
+170
+1
+ 48
+1.0
+171
+1
+  6
+
+172
+1
+173
+1
+174
+1
+140
+1.0
+141
+1.0
+175
+1
+  7
+
+176
+1
+177
+1
+178
+1
+143
+1.0
+179
+1
+  8
+
+270
+1
+271
+1
+272
+1
+145
+1.0
+146
+1.0
+273
+1
+  9
+
+274
+1
+275
+1
+276
+1
+ 42
+1.0
+ 72
+1
+  3
+
+ 73
+1
+ 74
+1
+ 75
+1
+ 94
+63
+  0
+MLINESTYLE
+  5
+22
+102
+{ACAD_REACTORS
+330
+10
+102
+}
+330
+10
+100
+AcDbMlineStyle
+  2
+Standard
+ 70
+0
+  3
+
+ 62
+256
+ 51
+90.0
+ 52
+90.0
+ 71
+2
+ 49
+0.5
+ 62
+256
+  6
+BYLAYER
+ 49
+-0.5
+ 62
+256
+  6
+BYLAYER
+  0
+MLEADERSTYLE
+  5
+2C
+102
+{ACAD_REACTORS
+330
+F
+102
+}
+330
+F
+100
+AcDbMLeaderStyle
+179
+2
+170
+2
+171
+1
+172
+0
+ 90
+2
+ 40
+0.0
+ 41
+0.0
+173
+1
+ 91
+-1056964608
+ 92
+-2
+290
+1
+ 42
+2.0
+291
+1
+ 43
+8.0
+  3
+Standard
+ 44
+4.0
+300
+
+342
+29
+174
+1
+175
+1
+176
+0
+178
+1
+ 93
+-1056964608
+ 45
+4.0
+292
+0
+297
+0
+ 46
+4.0
+ 94
+-1056964608
+ 47
+1.0
+ 49
+1.0
+140
+1.0
+294
+1
+141
+0.0
+177
+0
+142
+1.0
+295
+0
+296
+0
+143
+3.75
+271
+0
+272
+9
+273
+9
+  0
+DICTIONARY
+  5
+2D
+330
+A
+100
+AcDbDictionary
+280
+1
+281
+1
+  3
+CREATED_BY_EZDXF
+350
+2E
+  3
+WRITTEN_BY_EZDXF
+350
+33
+  0
+DICTIONARYVAR
+  5
+2E
+330
+2D
+100
+DictionaryVariables
+280
+0
+  1
+1.4.4 @ 2026-10-15T17:07:32.377832+00:00
+  0
+DICTIONARYVAR
+  5
+33
+330
+2D
+100
+DictionaryVariables
+280
+0
+  1
+1.4.4 @ 2026-10-15T17:07:32.378762+00:00
+  0
+ENDSEC
+  0
+EOF
+`;function ft(n){if(n==null)return NaN;let s=String(n).trim().toLowerCase().replace(/[″”"]|inches|inch|in\b/g," ").replace(/[′’]|feet|foot|ft\b/g,"'").replace(/\s+/g," ").trim();if(!s)return NaN;let e=0,t=s.match(/^(-?\d+(?:\.\d+)?)\s*'\s*-?\s*(.*)$/);if(t&&(e=parseFloat(t[1]),s=t[2].trim(),!s))return e*12;let r;if(r=s.match(/^(-?\d+(?:\.\d+)?)$/))return e*12+parseFloat(r[1]);if(r=s.match(/^(\d+)\s*\/\s*(\d+)$/))return r[2]==="0"?NaN:e*12+r[1]/r[2];if(r=s.match(/^(-?)(\d+)(?:\s+|\s*-\s*)(\d+)\s*\/\s*(\d+)$/)){if(r[4]==="0")return NaN;let o=parseInt(r[2],10)+r[3]/r[4];return e*12+(r[1]?-o:o)}return NaN}function Ca(n,s){return s?Ca(s,n%s):n}function ce(n,s=16,e='"'){if(n==null||!isFinite(n))return"\u2014";let t=n<0,r=Math.round(Math.abs(n)*s),o=Math.floor(r/s),i=r-o*s,a;if(i===0)a=String(o);else{let l=Ca(i,s),c=`${i/l}/${s/l}`;a=o?`${o} ${c}`:c}return(t&&r?"-":"")+a+e}var U=(n,s)=>[n[0]-s[0],n[1]-s[1]],re=(n,s)=>[n[0]+s[0],n[1]+s[1]],j=(n,s)=>[n[0]*s,n[1]*s],Pe=(n,s)=>n[0]*s[0]+n[1]*s[1],Un=(n,s)=>n[0]*s[1]-n[1]*s[0],Vr=n=>Math.hypot(n[0],n[1]),N=(n,s)=>Math.hypot(n[0]-s[0],n[1]-s[1]);function qo(n,s,e){let t=U(e,s),r=Pe(t,t);if(r<1e-18)return N(n,s);let o=Math.max(0,Math.min(1,Pe(U(n,s),t)/r));return N(n,re(s,j(t,o)))}function Da(n,s){let e=[],t=[];for(let o=0;o<4;o++){let[i,a]=n[o],[l,c]=s[o];e.push([i,a,1,0,0,0,-l*i,-l*a]),t.push(l),e.push([0,0,0,i,a,1,-c*i,-c*a]),t.push(c)}let r=_h(e,t);return r?[...r,1]:null}function _h(n,s){let e=s.length,t=n.map((r,o)=>[...r,s[o]]);for(let r=0;r<e;r++){let o=r;for(let i=r+1;i<e;i++)Math.abs(t[i][r])>Math.abs(t[o][r])&&(o=i);if(Math.abs(t[o][r])<1e-12)return null;[t[r],t[o]]=[t[o],t[r]];for(let i=0;i<e;i++){if(i===r)continue;let a=t[i][r]/t[r][r];for(let l=r;l<=e;l++)t[i][l]-=a*t[r][l]}}return t.map((r,o)=>r[e]/r[o])}function Oa(n,s,e){let t=n[6]*s+n[7]*e+n[8];return[(n[0]*s+n[1]*e+n[2])/t,(n[3]*s+n[4]*e+n[5])/t]}function $a(n){let[s,e,t,r,o,i,a,l,c]=n,d=o*c-i*l,u=-(r*c-i*a),f=r*l-o*a,m=s*d+e*u+t*f,p=[d,-(e*c-t*l),e*i-t*o,u,s*c-t*a,-(s*i-t*r),f,-(s*l-e*a),s*o-e*r].map(w=>w/m);return p.map(w=>w/p[8])}function zo(n){let s=n.reduce((o,i)=>[o[0]+i[0]/4,o[1]+i[1]/4],[0,0]),e=[...n].sort((o,i)=>Math.atan2(o[1]-s[1],o[0]-s[0])-Math.atan2(i[1]-s[1],i[0]-s[0])),t=0,r=1/0;return e.forEach((o,i)=>{let a=o[0]+o[1];a<r&&(r=a,t=i)}),[0,1,2,3].map(o=>e[(t+o)%4])}function La(n){let s=(N(n[0],n[1])+N(n[3],n[2]))/2,e=(N(n[0],n[3])+N(n[1],n[2]))/2;return s/e}function bh(n,s,e){let t=2*(n[0]*(s[1]-e[1])+s[0]*(e[1]-n[1])+e[0]*(n[1]-s[1]));if(Math.abs(t)<1e-12)return null;let r=Pe(n,n),o=Pe(s,s),i=Pe(e,e),a=(r*(s[1]-e[1])+o*(e[1]-n[1])+i*(n[1]-s[1]))/t,l=(r*(e[0]-s[0])+o*(n[0]-e[0])+i*(s[0]-n[0]))/t;return{c:[a,l],r:N([a,l],n)}}var Ot=Math.PI*2,ut=n=>(n%Ot+Ot)%Ot;function qe(n){let s=bh(n.a,n.m,n.b);if(!s)return null;let{c:e,r:t}=s,r=Math.atan2(n.a[1]-e[1],n.a[0]-e[0]),o=Math.atan2(n.m[1]-e[1],n.m[0]-e[0]),i=Math.atan2(n.b[1]-e[1],n.b[0]-e[0]),a=ut(o-r)<ut(i-r);return a?{c:e,r:t,ccw:a,start:r,sweep:ut(i-r)}:{c:e,r:t,ccw:a,start:i,sweep:ut(r-i)}}function jn(n,s=.05){if(n.type==="line")return[n.a,n.b];let e=qe(n);if(!e)return[n.a,n.b];let t=Math.max(4,Math.ceil(e.r*e.sweep/s)),r=[];for(let o=0;o<=t;o++){let i=e.ccw?e.start+e.sweep*o/t:e.start+e.sweep-e.sweep*o/t;r.push([e.c[0]+e.r*Math.cos(i),e.c[1]+e.r*Math.sin(i)])}return r[0]=n.a,r[r.length-1]=n.b,r}function wh(n){let s=[n.a,n.b];if(n.type==="arc"){let e=qe(n);if(e)for(let t=0;t<4;t++){let r=t*Math.PI/2;ut(r-e.start)<=e.sweep+1e-12&&s.push([e.c[0]+e.r*Math.cos(r),e.c[1]+e.r*Math.sin(r)])}}return qn(s)}function qn(n){let s=1/0,e=1/0,t=-1/0,r=-1/0;for(let o of n)o[0]<s&&(s=o[0]),o[0]>t&&(t=o[0]),o[1]<e&&(e=o[1]),o[1]>r&&(r=o[1]);return{minX:s,minY:e,maxX:t,maxY:r,w:t-s,h:r-e}}function $t(n){let s=[n.outer,...n.holes].flat().map(wh);return qn(s.flatMap(e=>[[e.minX,e.minY],[e.maxX,e.maxY]]))}function Dt(n,s){let e={type:n.type,a:s(n.a),b:s(n.b)};return n.type==="arc"&&(e.m=s(n.m)),e}var Na=n=>n.type==="arc"?{type:"arc",a:n.b,b:n.a,m:n.m}:{type:"line",a:n.b,b:n.a};function xa(n,s=.2,e=!0){let t=n.length,r=new Array(t).fill(0),o=(i,a)=>{let l=0,c=i;for(let d=0;d<t;d++){let u=c+a;if(!e&&(u<0||u>=t))return n[c];let f=n[(u+t)%t],m=N(n[(c+t)%t],f);if(l+m>=s){let p=(s-l)/m;return re(n[(c+t)%t],j(U(f,n[(c+t)%t]),p))}l+=m,c=u}return n[(c+t)%t]};for(let i=0;i<t;i++){if(!e&&(i===0||i===t-1)){r[i]=180;continue}let a=o(i,-1),l=o(i,1),c=U(n[i],a),d=U(l,n[i]);Vr(c)<1e-9||Vr(d)<1e-9||(r[i]=Math.abs(Math.atan2(Un(c,d),Pe(c,d)))*180/Math.PI)}return r}var Ho=.4,Ba=30,yh=22;function Sh(n,s=!0,e=Ba){let t=n.map(m=>[m.x,m.y]),r=t.length,o=0;for(let m=1;m<r;m++)o+=N(t[m-1],t[m]);if(r>8&&o/r<.15)for(let m=0;m<4;m++)t=t.map((p,w)=>{if(!s&&(w===0||w===r-1))return p;let y=t[(w-1+r)%r],v=t[(w+1)%r];return[(y[0]+2*p[0]+v[0])/4,(y[1]+2*p[1]+v[1])/4]});let i=xa(t,Ho,s),a=xa(t,Ho*2,s),l=i.map((m,p)=>a[p]<1.6*m?Math.min(m,a[p]):0),c=l.map(m=>m>=e),d=[0];for(let m=1;m<r;m++)d.push(d[m-1]+N(t[m-1],t[m]));let u=d[r-1]+(s?N(t[r-1],t[0]):0),f=(m,p)=>{let w=Math.abs(d[m]-d[p]);return(s?Math.min(w,u-w):w)<Ho};for(let m=0;m<r;m++)if(!(!c[m]||!s&&(m===0||m===r-1))){for(let p=1;p<r;p++){let w=s?(m+p)%r:m+p;if(w>=r||!f(m,w))break;if(l[w]>l[m]||l[w]===l[m]&&w<m){c[m]=!1;break}}if(c[m])for(let p=1;p<r;p++){let w=s?(m-p+r)%r:m-p;if(w<0||!f(m,w))break;if(l[w]>l[m]){c[m]=!1;break}}}return n.map((m,p)=>m.corner===!0?!0:m.corner===!1?!1:c[p])}function kh(n,s){if(n.length===2){let r=Math.max(1,Math.ceil(N(n[0],n[1])/s));return Array.from({length:r+1},(o,i)=>re(n[0],j(U(n[1],n[0]),i/r)))}let e=[U(j(n[0],2),n[1]),...n,U(j(n[n.length-1],2),n[n.length-2])],t=[n[0]];for(let r=1;r<e.length-2;r++){let o=e[r-1],i=e[r],a=e[r+1],l=e[r+2],c=N(i,a),d=Math.max(1,Math.ceil(c/s)),u=Math.pow(N(o,i)||1e-6,.5),f=Math.pow(c||1e-6,.5),m=Math.pow(N(a,l)||1e-6,.5),p=re(U(a,i),j(U(j(U(i,o),1/u),j(U(a,o),1/(u+f))),f)),w=re(U(a,i),j(U(j(U(l,a),1/m),j(U(l,i),1/(f+m))),f));for(let y=1;y<=d;y++){let v=y/d,S=v*v,P=S*v,R=2*P-3*S+1,x=P-2*S+v,C=-2*P+3*S,I=P-S;t.push(y===d?a:re(re(j(i,R),j(p,x)),re(j(a,C),j(w,I))))}}return t}function vh(n,s){let e=n.map(r=>[...r]),t=e.length;if(t<3)return e;for(let r=0;r<s;r++){let o=e.map(i=>[...i]);for(let i=1;i<t-1;i++)o[i]=[(e[i-1][0]+2*e[i][0]+e[i+1][0])/4,(e[i-1][1]+2*e[i][1]+e[i+1][1])/4];o[0]=[(e[0][0]+2*e[1][0]-e[2][0])/2,(e[0][1]+2*e[1][1]-e[2][1])/2],o[t-1]=[(e[t-1][0]+2*e[t-2][0]-e[t-3][0])/2,(e[t-1][1]+2*e[t-2][1]-e[t-3][1])/2],e=o}return e}function Ah(n,s=0){let e=n.length,t=n.reduce((l,c)=>[l[0]+c[0]/e,l[1]+c[1]/e],[0,0]),r=0,o=0,i=0;for(let l of n){let c=l[0]-t[0],d=l[1]-t[1];r+=c*c,o+=c*d,i+=d*d}let a=.5*Math.atan2(2*o,r-i);if(s){let l=Math.round(a/(Math.PI/2))*(Math.PI/2);Math.abs(a-l)<s*Math.PI/180&&(a=l)}return{c:t,d:[Math.cos(a),Math.sin(a)]}}var Fa=(n,s,e=.5,t=1.5)=>Math.max(s*t,n*e);function jo(n){let s=Ah(n),e=0,t=0;for(let r of n){let o=Math.abs(Un(U(r,s.c),s.d));e=Math.max(e,o),t+=o*o}return{kind:"line",c:s.c,d:s.d,worst:e,err:Fa(e,Math.sqrt(t/n.length))}}function Eh(n){let s=n.length;if(s<5)return null;let e=n.reduce((I,M)=>I+M[0],0)/s,t=n.reduce((I,M)=>I+M[1],0)/s,r=0,o=0,i=0,a=0,l=0,c=0,d=0;for(let I of n){let M=I[0]-e,A=I[1]-t;r+=M*M,o+=M*A,i+=A*A,a+=M*M*M,l+=A*A*A,c+=M*A*A,d+=A*M*M}let u=r*i-o*o;if(Math.abs(u)<1e-12)return null;let f=.5*(a+c),m=.5*(l+d),p=[e+(f*i-m*o)/u,t+(r*m-o*f)/u],w=0;for(let I=0;I<6;I++){w=n.reduce((Me,Ee)=>Me+N(Ee,p),0)/s;let M=0,A=0,O=0,$=0,L=0,z=0,Xe=0,We=n.map(Me=>{let Ee=N(Me,p)||1e-9,fe=[(p[0]-Me[0])/Ee,(p[1]-Me[1])/Ee];return z+=fe[0]/s,Xe+=fe[1]/s,{d:Ee,j:fe}});for(let{d:Me,j:Ee}of We){let fe=Ee[0]-z,ct=Ee[1]-Xe,Ct=Me-w;M+=fe*fe,A+=fe*ct,O+=ct*ct,$+=fe*Ct,L+=ct*Ct}let Ke=M*O-A*A;if(Math.abs(Ke)<1e-14)break;let Ae=[(O*$-A*L)/Ke,(M*L-A*$)/Ke];if(p=[p[0]-Ae[0],p[1]-Ae[1]],Math.hypot(Ae[0],Ae[1])<1e-7)break}if(w=n.reduce((I,M)=>I+N(M,p),0)/s,!isFinite(w)||w>600||w<.03)return null;let y=0,v=0;for(let I of n){let M=Math.abs(N(I,p)-w);y=Math.max(y,M),v+=M*M}let S=Fa(y,Math.sqrt(v/s),.67,2),P=0,R=Math.atan2(n[0][1]-p[1],n[0][0]-p[0]),x=0,C=0;for(let I=1;I<s;I++){let M=Math.atan2(n[I][1]-p[1],n[I][0]-p[0]),A=M-R;A>Math.PI&&(A-=Ot),A<-Math.PI&&(A+=Ot),P+=A,R=M,A>0?C+=A:x-=A}return Math.abs(P)>Math.PI*1.9||Math.min(C,x)>.15*Math.max(C,x)+.02?null:{kind:"arc",c:p,r:w,worst:y,err:S}}function Yo(n,s,e=!1){let t=jo(n);if((e?t.worst:t.err)<=s)return t;let r=Eh(n);if(!r||(e?r.worst:r.err)>s)return null;let o=N(Wn(n[0],r),Wn(n[n.length-1],r))/2;return(o>=r.r?r.r:r.r-Math.sqrt(r.r*r.r-o*o))>s?r:null}function xh(n,s){let e=[],t=0,r=n.length-1,o=i=>Yo(n.slice(t,i+1),s);for(;t<r;){let i=Math.min(t+1,r),a=jo(n.slice(t,i+1)),l=2,c=-1;for(;;){let d=Math.min(r,t+l),u=o(d);if(u){if(i=d,a=u,d===r)break;l*=2}else{c=d;break}}if(c>0){let d=i,u=c;for(;u-d>1;){let f=d+u>>1,m=o(f);m?(d=f,a=m):u=f}i=d,a=o(i)||jo(n.slice(t,i+1))}e.push({...a,pts:n.slice(t,i+1)}),t=i}return e}function Ta(n,s,e){let t=!0;for(;t&&n.length>1;){t=!1;for(let r=0;r<n.length&&n.length>1;r++){let o=r+1<n.length?r+1:e?0:-1;if(o<0||o===r||n[r].lockEnd)continue;let i=[...n[r].pts,...n[o].pts.slice(1)],a=Yo(i,s,n[r].cornerEnd);if(!a)continue;let l={...a,pts:i,lockEnd:n[o].lockEnd,cornerEnd:n[o].cornerEnd};o===r+1?n.splice(r,2,l):(n.splice(r,1,l),n.shift()),t=!0}}return n}function Th(n,s=4){for(let e of n){if(e.kind!=="line")continue;let t=Math.atan2(e.d[1],e.d[0]),r=Math.round(t/(Math.PI/2))*(Math.PI/2);Math.abs(t-r)<=s*Math.PI/180&&(e.d=[Math.round(Math.cos(r)),Math.round(Math.sin(r))])}return n}var Ha=(n,s)=>re(s.c,j(s.d,Pe(U(n,s.c),s.d))),Wn=(n,s)=>{let e=U(n,s.c);return re(s.c,j(e,s.r/(Vr(e)||1)))},dt=(n,s)=>s.kind==="line"?Ha(n,s):Wn(n,s);function Ia(n,s,e){let t=U(n.c,s.c),r=Pe(t,n.d),o=Pe(t,t)-s.r*s.r,i=r*r-o;if(i<0)return null;let a=Math.sqrt(i),l=re(n.c,j(n.d,-r+a)),c=re(n.c,j(n.d,-r-a));return N(l,e)<N(c,e)?l:c}function Ih(n,s,e){let t=N(n.c,s.c);if(t<1e-9||t>n.r+s.r||t<Math.abs(n.r-s.r))return null;let r=(n.r*n.r-s.r*s.r+t*t)/(2*t),o=Math.sqrt(Math.max(0,n.r*n.r-r*r)),i=j(U(s.c,n.c),1/t),a=re(n.c,j(i,r)),l=[-i[1],i[0]],c=re(a,j(l,o)),d=re(a,j(l,-o));return N(c,e)<N(d,e)?c:d}function Wo(n,s,e){let t=null;if(n.kind==="line"&&s.kind==="line"){let r=Un(n.d,s.d);Math.abs(r)>Math.sin(3*Math.PI/180)&&(t=re(n.c,j(n.d,Un(U(s.c,n.c),s.d)/r)))}else n.kind==="line"?t=Ia(n,s,e):s.kind==="line"?t=Ia(s,n,e):t=Ih(n,s,e);return t&&N(t,e)<.5?t:j(re(dt(e,n),dt(e,s)),.5)}function Ra(n,s,e){if(n.kind==="line"){if(Math.abs(n.d[0])>.05){let r=(s-n.c[0])/n.d[0];return[s,n.c[1]+r*n.d[1]]}return[s,Ha(e,n)[1]]}let t=s-n.c[0];if(Math.abs(t)<=n.r){let r=Math.sqrt(n.r*n.r-t*t),o=n.c[1]+r,i=n.c[1]-r;return[s,Math.abs(o-e[1])<Math.abs(i-e[1])?o:i]}return[s,Wn(e,n)[1]]}function Rh(n,s){return n.map((e,t)=>{let r=s[t],o=s[t+1];if(e.kind==="line")return{type:"line",a:r,b:o};let i=Wn(e.pts[e.pts.length>>1],e);return Oh({type:"arc",a:r,b:o,m:i})})}function Ua(n,s,e){let t=n.length,r=[];if(s){for(let o=0;o<t;o++){let i=n[(o-1+t)%t];r.push(Wo(i,n[o],n[o].pts[0]))}r.push(r[0])}else{r.push(e==null?dt(n[0].pts[0],n[0]):Ra(n[0],e,n[0].pts[0]));for(let a=1;a<t;a++)r.push(Wo(n[a-1],n[a],n[a].pts[0]));let o=n[t-1],i=o.pts[o.pts.length-1];r.push(e==null?dt(i,o):Ra(o,e,i))}return r}function Mh(n,s,e,t){let r=i=>{let a=i.pts[0],l=i.pts[i.pts.length-1];return i.pts.reduce((c,d,u)=>u?c+N(i.pts[u-1],d):0,0)||N(a,l)},o=(i,a)=>i.reduce((l,c)=>Math.max(l,N(c,dt(c,a))),0);for(let i=0;i<40;i++){let a=!1,l=n.length;if(l<(e?4:2))break;for(let c=0;c<l&&!a;c++){let d=n[c];if(r(d)>.75)continue;let u=e||c>0,f=e||c<l-1,m=(c-1+l)%l,p=(c+1)%l;if(!(!(!e&&(c===0||c===l-1))&&(d.lockEnd||u&&n[m].lockEnd)))if(u&&f){let y=n[m],v=n[p],S=d.pts[d.pts.length>>1],P=Wo(y,v,S),R=d.pts.reduce((x,C)=>Math.max(x,Math.min(N(C,dt(C,y)),N(C,dt(C,v)))),0);if(N(P,S)<=.5&&R<=3*s){let x=d.pts.length>>1;y.pts=[...y.pts,...d.pts.slice(1,x+1)],v.pts=[...d.pts.slice(x),...v.pts.slice(1)];for(let C of[y,v]){let I=Yo(C.pts,s*1.5);I&&I.kind===C.kind&&Object.assign(C,I)}n.splice(c,1),a=!0}}else{let y=u?n[m]:n[p];o(d.pts,y)<=2*s&&(y.pts=u?[...y.pts,...d.pts.slice(1)]:[...d.pts,...y.pts.slice(1)],u&&d.lockEnd&&(y.lockEnd=!0),n.splice(c,1),a=!0)}}if(!a)break}return n}function Ph(n,s,e,t=.02){for(let r=0;r<50&&n.length>(s?2:1);r++){let o=Ua(n,s,e),i=n.findIndex((c,d)=>N(o[d],o[d+1])<t);if(i<0)break;let a=i+1<n.length?i+1:s?0:i-1;if(a<0)break;let l=n[a];l.pts=a>i?[...n[i].pts,...l.pts.slice(1)]:[...l.pts,...n[i].pts.slice(1)],a<i&&n[i].lockEnd&&(l.lockEnd=!0),n.splice(i,1)}return n}function Ch(n,s){let e=n.length;if(e<12)return 0;let t=0;for(let i=1;i<e;i++)t+=N(n[i-1],n[i]);if(t/e>.15)return 0;let r=n;for(let i=0;i<3;i++)r=r.map((a,l)=>{if(!s&&(l===0||l===e-1))return a;let c=r[(l-1+e)%e],d=r[(l+1)%e];return[(c[0]+2*a[0]+d[0])/4,(c[1]+2*a[1]+d[1])/4]});let o=n.map((i,a)=>{let l=r[(a-1+e)%e],c=r[(a+1)%e],d=U(c,l),u=Vr(d)||1;return Math.abs(Un(U(i,r[a]),d))/u}).sort((i,a)=>i-a);return o[Math.floor(o.length/2)]*1.48}function ja(n){return .02+.015*n}function Xr(n){if(n.length<3)return null;let s=n.map(m=>m.x),e=Math.min(...s),t=Math.max(...s),r=t-e,o=Math.max(1,Math.floor(n.length/600)),i=n.filter((m,p)=>p%o===0).map(m=>[m.x,m.y]),a=n.map(m=>[m.x,m.y]),l=m=>{let p=0;for(let w of i){let y=[2*m-w[0],w[1]],v=1/0;for(let S=0;S<a.length;S++){let P=qo(y,a[S],a[(S+1)%a.length]);P<v&&(v=P)}p+=v}return p/i.length},c=e+r*.35,d=e+r*.65,u=(c+d)/2,f=1/0;for(let m=0;m<3;m++){for(let y=0;y<=16;y++){let v=c+(d-c)*y/16,S=l(v);S<f&&(f=S,u=v)}let w=(d-c)/16;c=u-w,d=u+w}return u}function Wa(n,s,e,t,r=null){let o=n.map(p=>[p.x,p.y]);if(o.length<(t?3:2))return[];let i=Ch(o,t),a=Math.max(ja(s),1.5*i),c=Sh(n,t,i<.01?yh:Ba).map((p,w)=>p?w:-1).filter(p=>p>=0);if(t&&c.length<2){let p=c.length?c[0]:0;c=[p,(p+Math.floor(o.length/2))%o.length].sort((w,y)=>w-y)}let d=Math.round(s*s),u=[],f=t?c.length:c.length-1;for(let p=0;p<f;p++){let w=c[p],y=c[(p+1)%c.length],v=[];for(let R=w;v.push(o[R]),!(R===y&&v.length>1);R=(R+1)%o.length);let S=vh(kh(v,.05),d);i>0&&S.length>16&&(S=S.slice(2,-2));let P=xh(S,a);n[y].corner===!0&&(P[P.length-1].lockEnd=!0),P[P.length-1].cornerEnd=!0,u.push(...P)}t||(u[u.length-1].lockEnd=!0),u=Ta(u,a,t),u=Mh(u,a,t,r),u=Ta(u,a,t),e&&Th(u),u=Ph(u,t,r);let m=Ua(u,t,r);return Rh(u,m)}function Uo(n,s,e=!0){return Wa(n,s,e,!0)}function Dh(n,s,e){let t=!0,r=n.map(o=>({...o}));for(;t&&r.length>1;){t=!1;for(let o=0;o<(e?r.length:r.length-1)&&r.length>1;o++){let i=r[o],a=r[(o+1)%r.length],l=null;if(i.type==="line"&&a.type==="line")qo(i.b,i.a,a.b)<=1e-4&&Pe(U(i.b,i.a),U(a.b,a.a))>0&&(l={type:"line",a:i.a,b:a.b});else if(i.type==="arc"&&a.type==="arc"){let c=qe(i),d=qe(a);if(c&&d&&c.ccw===d.ccw&&N(c.c,d.c)<=s&&Math.abs(c.r-d.r)<=s&&c.sweep+d.sweep<Math.PI*1.9){let u={type:"arc",a:i.a,b:a.b,m:i.b},f=qe(u);if(f&&f.ccw===c.ccw){let m=0;for(let p of[...jn(i,.1),...jn(a,.1)])m=Math.max(m,Math.abs(N(p,f.c)-f.r));m<=s&&(l=u)}}}l&&(o+1<r.length?r.splice(o,2,l):(r.splice(o,1,l),r.shift()),t=!0)}}return r}function Oh(n){if(n.type!=="arc")return n;let s=qe(n);return!s||s.r>600||qo(n.m,n.a,n.b)<.003?{type:"line",a:n.a,b:n.b}:n}function $h(n,s,e="left"){let t=d=>e==="left"?s-d.x:d.x-s,r=n.length;if(r<2)return null;let o=[];for(let d=0;d<r;d++){let u=n[d],f=n[(d+1)%r],m=t(u),p=t(f);if(m>=0!=p>=0){let w=m/(m-p);o.push({i:d,t:w,pt:{x:s,y:u.y+(f.y-u.y)*w,corner:!0},entering:p>=0})}}let i=null;if(o.length===0){if(!n.some(m=>t(m)>=-1e-9))return null;let d=0,u=1/0;for(let m=0;m<r;m++){let p=Math.abs(n[m].x-s)+Math.abs(n[(m+1)%r].x-s);p<u&&(u=p,d=m)}let f=[];for(let m=1;m<=r;m++)f.push({...n[(d+m)%r]});return f[0]={...f[0],x:s,corner:!0},f[f.length-1]={...f[f.length-1],x:s,corner:!0},{chain:f,warning:i}}o.length>2&&(i="The outline crosses the centerline more than twice; only the largest piece was mirrored.");let a=null;for(let d=0;d<o.length;d++){let u=o[d];if(!u.entering)continue;let f=o[(d+1)%o.length],m=[u.pt];for(let p=(u.i+1)%r;m.push({...n[p]}),p!==f.i;p=(p+1)%r);m.push(f.pt),(!a||m.length>a.length)&&(a=m)}if(!a)return null;let l=(d,u)=>Math.abs(d.x-u.x)<1e-6&&Math.abs(d.y-u.y)<1e-6;return{chain:a.filter((d,u)=>u===0||u===a.length-1?!0:!l(d,a[u-1])&&!l(d,a[a.length-1])),warning:i}}function Ma(n,s,e,t){let r=$h(n,s.cx,s.keep);if(!r||r.chain.length<2)return{segs:[],warning:"Nothing on the kept side of the centerline."};let o=s.cx,i=Wa(r.chain,e,t,!1,o);if(!i.length)return{segs:[],warning:r.warning};let a=d=>[2*o-d[0],d[1]],l=i.map(d=>Na(Dt(d,a))).reverse(),c=[...i,...l];return c=Dh(c,ja(e),!0),{segs:c,warning:r.warning}}function qa(n,{mirror:s={on:!1},smooth:e=3,snap:t=!0}={}){let r=[],i=(l=>{if(!l||l.length<3)return[];if(!s.on)return Uo(l,e,t);let c=Ma(l,s,e,t);return c.warning&&r.push(c.warning),c.segs})(n.outer),a=[];for(let l of n.holes||[]){if(!l||l.length<3)continue;if(!s.on){a.push(Uo(l,e,t));continue}let c=s.cx,d=f=>s.keep==="left"?f.x<=c:f.x>=c,u=l.filter(d).length;if(u!==0)if(u===l.length){let f=Uo(l,e,t);a.push(f),a.push(f.map(m=>Na(Dt(m,p=>[2*c-p[0],p[1]]))).reverse())}else{let f=Ma(l,s,e,t);f.segs.length&&a.push(f.segs)}}return{outer:i,holes:a.filter(l=>l.length),warnings:r}}function Kr(n){let s=o=>[o[0],-o[1]],e={outer:n.outer.map(o=>Dt(o,s)),holes:n.holes.map(o=>o.map(i=>Dt(i,s)))},t=$t(e),r=o=>[o[0]-t.minX,o[1]-t.minY];return{outer:e.outer.map(o=>Dt(o,r)),holes:e.holes.map(o=>o.map(i=>Dt(i,r)))}}var ae=n=>(Math.abs(n)<5e-10?0:n).toFixed(6),Pa=n=>{let s=n*180/Math.PI;return s=(s%360+360)%360,s.toFixed(6)};function Lh(n,s,e){let t=[],r=52,o=s==="R2000",i=(l,c)=>{t.push("0",l),o&&t.push("5",(r++).toString(16).toUpperCase(),"330","17","100","AcDbEntity"),t.push("8",c)},a=(l,c)=>{for(let d of l)if(d.type==="line")i("LINE",c),o&&t.push("100","AcDbLine"),t.push("10",ae(d.a[0]),"20",ae(d.a[1]),"30","0.0","11",ae(d.b[0]),"21",ae(d.b[1]),"31","0.0");else{let u=qe(d);i("ARC",c),o&&t.push("100","AcDbCircle"),t.push("10",ae(u.c[0]),"20",ae(u.c[1]),"30","0.0","40",ae(u.r)),o&&t.push("100","AcDbArc"),t.push("50",Pa(u.start),"51",Pa(u.start+u.sweep))}};return a(n.outer,e.outer),n.holes.forEach(l=>a(l,e.hole)),{lines:t,nextHandle:r}}function za(n,{version:s="R2000",layerOuter:e="OUTLINE",layerHole:t="CUTOUT"}={}){let r=Kr(n),o=$t(r),{lines:i,nextHandle:a}=Lh(r,s,{outer:e,hole:t}),l;if(s==="R2000"){let d=Ea;(!["OUTLINE","CUTOUT","0"].includes(e)||!["OUTLINE","CUTOUT","0"].includes(t))&&(d=d.replace(/\n\s*2\nOUTLINE\n/g,`
+  2
+${e}
+`).replace(/\n\s*2\nCUTOUT\n/g,`
+  2
+${t}
+`)),l=d.replace("@@HANDSEED@@",a.toString(16).toUpperCase()).replace("@@MINX@@",ae(o.minX)).replace("@@MINY@@",ae(o.minY)).replace("@@MAXX@@",ae(o.maxX)).replace("@@MAXY@@",ae(o.maxY)).replace("@@ENTITIES@@",i.join(`
+`))}else l=["0","SECTION","2","HEADER","9","$ACADVER","1","AC1009","9","$INSBASE","10","0.0","20","0.0","30","0.0","9","$EXTMIN","10",ae(o.minX),"20",ae(o.minY),"30","0.0","9","$EXTMAX","10",ae(o.maxX),"20",ae(o.maxY),"30","0.0","9","$LUNITS","70","2","0","ENDSEC","0","SECTION","2","TABLES","0","TABLE","2","LTYPE","70","1","0","LTYPE","2","CONTINUOUS","70","0","3","Solid line","72","65","73","0","40","0.0","0","ENDTAB","0","TABLE","2","LAYER","70","3",...[["0",7],[e,7],[t,1]].filter((u,f,m)=>m.findIndex(p=>p[0]===u[0])===f).flatMap(([u,f])=>["0","LAYER","2",u,"70","0","62",String(f),"6","CONTINUOUS"]),"0","ENDTAB","0","ENDSEC","0","SECTION","2","ENTITIES",...i,"0","ENDSEC","0","EOF"].join(`
+`);let c=l.split(`
+`);for(let d=0;d<c.length;d+=2){let u=c[d].trim();/^-?\d+$/.test(u)&&(c[d]=u.padStart(3," "))}return c.join(`\r
+`)+`\r
+`}function Nh(n){let s=n.split(/\r?\n/),e=[];for(let d=0;d+1<s.length;d+=2)e.push([parseInt(s[d].trim(),10),s[d+1].trim()]);let t={},r=[],o=null,i=null,a=null;for(let[d,u]of e){if(d===0){if(i&&(r.push(i),i=null),u==="SECTION"){o="pending";continue}if(u==="ENDSEC"){o=null;continue}o==="ENTITIES"&&(i={type:u,g:{}});continue}if(o==="pending"&&d===2){o=u;continue}o==="HEADER"?d===9?(a=u,t[a]={}):a&&(t[a][d]=u):i&&(i.g[d]=u)}i&&r.push(i);let l=(d,u)=>parseFloat(d.g[u]),c=r.map(d=>{if(d.type==="LINE")return{type:"LINE",layer:d.g[8],a:[l(d,10),l(d,20)],b:[l(d,11),l(d,21)]};if(d.type==="ARC"){let u=[l(d,10),l(d,20)],f=l(d,40),m=l(d,50)*Math.PI/180,p=l(d,51)*Math.PI/180;return{type:"ARC",layer:d.g[8],c:u,r:f,startDeg:l(d,50),endDeg:l(d,51),a:[u[0]+f*Math.cos(m),u[1]+f*Math.sin(m)],b:[u[0]+f*Math.cos(p),u[1]+f*Math.sin(p)]}}return{type:d.type,layer:d.g[8]}});return{header:t,entities:c}}function Bh(n,s=1e-4){let e=n.filter(a=>a.type==="LINE"||a.type==="ARC"),t=n.filter(a=>a.type!=="LINE"&&a.type!=="ARC"),r=new Array(e.length).fill(!1),o=[],i=0;for(let a=0;a<e.length;a++){if(r[a])continue;r[a]=!0;let l=[e[a]],c=e[a].a,d=e[a].b,u=0;for(;N(d,c)>s&&u++<e.length;){let m=e.findIndex((p,w)=>!r[w]&&(N(p.a,d)<=s||N(p.b,d)<=s));if(m<0)break;r[m]=!0,l.push(e[m]),d=N(e[m].a,d)<=s?e[m].b:e[m].a}let f=N(d,c)<=s;f||(i+=2),o.push({segs:l,closed:f})}return{loops:o,openEnds:i,other:t}}function Fh(n){let s=[];for(let e of n)if(e.type==="LINE"&&s.push(e.a,e.b),e.type==="ARC"){s.push(e.a,e.b);let t=e.startDeg*Math.PI/180,r=ut((e.endDeg-e.startDeg)*Math.PI/180)||Ot;for(let o=0;o<4;o++){let i=o*Math.PI/2;ut(i-t)<=r+1e-9&&s.push([e.c[0]+e.r*Math.cos(i),e.c[1]+e.r*Math.sin(i)])}}return qn(s)}function Ya(n){let{header:s,entities:e}=Nh(n),t=[],r=[...new Set(e.map(u=>u.type))],o=r.filter(u=>u!=="LINE"&&u!=="ARC");o.length&&t.push(`Has ${o.join(", ")} entities (only LINE and ARC allowed).`);let{loops:i,openEnds:a}=Bh(e);a&&t.push(`${i.filter(u=>!u.closed).length} outline(s) are not closed.`);let l=Fh(e);(Math.abs(l.minX)>1e-4||Math.abs(l.minY)>1e-4)&&t.push(`Lower-left corner is at ${l.minX.toFixed(4)}, ${l.minY.toFixed(4)} instead of 0,0.`);let c=s.$ACADVER?s.$ACADVER[1]:"?",d=s.$INSUNITS?parseInt(s.$INSUNITS[70],10):null;return c==="AC1015"&&d!==1&&t.push("Units are not set to inches."),{ok:t.length===0,problems:t,version:c,insunits:d,width:l.w,height:l.h,loops:i.length,closedLoops:i.filter(u=>u.closed).length,lines:e.filter(u=>u.type==="LINE").length,arcs:e.filter(u=>u.type==="ARC").length,kinds:r}}async function Nt(n,s=2400){let e=URL.createObjectURL(n);try{let t=await new Promise((i,a)=>{let l=new Image;l.onload=()=>i(l),l.onerror=a,l.src=e}),r=Math.min(1,s/Math.max(t.naturalWidth,t.naturalHeight)),o=document.createElement("canvas");return o.width=Math.round(t.naturalWidth*r),o.height=Math.round(t.naturalHeight*r),o.getContext("2d").drawImage(t,0,0,o.width,o.height),o}finally{URL.revokeObjectURL(e)}}var zn=(n,s="image/jpeg",e=.88)=>new Promise(t=>n.toBlob(t,s,e));function Va(n,s,e,t,r=2e3){let o=Da(s,[[0,0],[e,0],[e,t],[0,t]]);if(!o)throw new Error("Those 4 corners don\u2019t make a usable rectangle. Move them and try again.");let i=n.width,a=n.height,l=[[0,0],[i,0],[i,a],[0,a],[i/2,0],[i,a/2],[i/2,a],[0,a/2]].map(([O,$])=>Oa(o,O,$)).filter(O=>isFinite(O[0])&&isFinite(O[1])),c=Math.max(e,t)*.75,d=qn(l.length?l:[[0,0],[e,t]]),u=Math.max(d.minX,-c),f=Math.max(d.minY,-c),m=Math.min(d.maxX,e+c),p=Math.min(d.maxY,t+c),w=Math.max(m-u,e),y=Math.max(p-f,t),v=Math.max(8,Math.min(60,r/Math.max(w,y))),S=Math.round(w*v),P=Math.round(y*v),R=n.getContext("2d").getImageData(0,0,i,a).data,x=document.createElement("canvas");x.width=S,x.height=P;let C=x.getContext("2d"),I=C.createImageData(S,P),M=I.data,A=$a(o);for(let O=0;O<P;O++){let $=f+(O+.5)/v;for(let L=0;L<S;L++){let z=u+(L+.5)/v,Xe=A[6]*z+A[7]*$+A[8],We=(A[0]*z+A[1]*$+A[2])/Xe-.5,Ke=(A[3]*z+A[4]*$+A[5])/Xe-.5,Ae=(O*S+L)*4;if(Xe<=0||We<0||Ke<0||We>=i-1||Ke>=a-1){M[Ae]=43,M[Ae+1]=47,M[Ae+2]=54,M[Ae+3]=255;continue}let Me=We|0,Ee=Ke|0,fe=We-Me,ct=Ke-Ee,Ct=(Ee*i+Me)*4,sh=Ct+4,ga=Ct+i*4,oh=ga+4;for(let lt=0;lt<3;lt++)M[Ae+lt]=(R[Ct+lt]*(1-fe)+R[sh+lt]*fe)*(1-ct)+(R[ga+lt]*(1-fe)+R[oh+lt]*fe)*ct;M[Ae+3]=255}}return C.putImageData(I,0,0),{canvas:x,ppi:v,ox:u,oy:f}}var Lt=null;function Hh(){return Lt||(Lt=new Promise((n,s)=>{let e=()=>{let r=Date.now(),o=()=>{let i=window.cv;if(i&&i.Mat){try{delete i.then}catch{}i.then&&(i.then=void 0),n(i);return}if(Date.now()-r>6e4){Lt=null,s(new Error("The edge-detection library didn\u2019t start. Use \u201CDraw by hand\u201D instead."));return}setTimeout(o,100)};o()};if(window.cv){e();return}let t=document.createElement("script");t.src="opencv.js",t.async=!0,t.onload=e,t.onerror=()=>{Lt=null,s(new Error("Could not load the edge-detection library. Use \u201CDraw by hand\u201D instead."))},document.head.appendChild(t)}),Lt)}async function Xa(n,{mode:s="edges",sensitivity:e=5,seed:t=null}={}){let r=await Hh(),o=[],i=a=>(o.push(a),a);try{let a=i(r.imread(n)),l=i(new r.Mat);r.cvtColor(a,l,r.COLOR_RGBA2GRAY);let c=i(new r.Mat);r.GaussianBlur(l,c,new r.Size(5,5),0);let d=i(new r.Mat),u=i(r.getStructuringElement(r.MORPH_ELLIPSE,new r.Size(3,3))),f=!0;if(s==="edges"){f=!1;let C=15+(10-e)*9,I=i(new r.Mat);r.Canny(c,I,C,C*2.5);let M=i(new r.Mat);r.dilate(I,M,u,new r.Point(-1,-1),2);let A=i(M.clone()),O=i(r.Mat.zeros(A.rows+2,A.cols+2,r.CV_8U));for(let L=0;L<A.cols;L+=4)for(let z of[0,A.rows-1])A.ucharPtr(z,L)[0]===0&&r.floodFill(A,O,new r.Point(L,z),new r.Scalar(128));for(let L=0;L<A.rows;L+=4)for(let z of[0,A.cols-1])A.ucharPtr(L,z)[0]===0&&r.floodFill(A,O,new r.Point(z,L),new r.Scalar(128));r.threshold(A,d,200,255,r.THRESH_BINARY);let $=i(new r.Mat);r.threshold(A,$,0,255,r.THRESH_BINARY_INV),r.bitwise_or(d,$,d),r.erode(d,d,u,new r.Point(-1,-1),2)}else{r.threshold(c,d,0,255,(s==="dark"?r.THRESH_BINARY_INV:r.THRESH_BINARY)+r.THRESH_OTSU);let C=i(r.getStructuringElement(r.MORPH_ELLIPSE,new r.Size(5,5)));r.morphologyEx(d,d,r.MORPH_OPEN,C),r.morphologyEx(d,d,r.MORPH_CLOSE,C)}let m=i(new r.MatVector),p=i(new r.Mat);r.findContours(d,m,p,r.RETR_CCOMP,r.CHAIN_APPROX_NONE);let w=n.width*n.height,y=-1,v=0;for(let C=0;C<m.size();C++){if(p.intPtr(0,C)[3]!==-1)continue;let I=m.get(C),M=r.contourArea(I),A=r.boundingRect(I),O=A.x<=1&&A.y<=1&&A.x+A.width>=n.width-1&&A.y+A.height>=n.height-1,$=M>w*.002&&!O;$&&t&&($=r.pointPolygonTest(I,new r.Point(t[0],t[1]),!1)>=0),$&&(y<0||(t?M<v:M>v))&&(y=C,v=M),I.delete()}if(y<0)return null;let S=C=>{let I=C.data32S,M=[];for(let A=0;A<I.length;A+=2)M.push([I[A],I[A+1]]);return M},P=m.get(y),R=S(P);P.delete();let x=[];if(f)for(let C=p.intPtr(0,y)[2];C!==-1;C=p.intPtr(0,C)[0]){let I=m.get(C);r.contourArea(I)>v*.002&&x.push(S(I)),I.delete()}return{outer:R,holes:x}}finally{o.forEach(a=>{try{a.delete()}catch{}})}}function Ka(n,s){let e=n.length;if(e<3)return n;let t=[],r=[0,0],o=0,i=0;for(let a=0;a<e;a++){let l=n[a],c=n[(a+1)%e];r[0]+=l[0],r[1]+=l[1],o++,i+=Math.hypot(c[0]-l[0],c[1]-l[1]),i>=s&&(t.push([r[0]/o,r[1]/o]),r=[0,0],o=0,i=0)}return o&&t.push([r[0]/o,r[1]/o]),t}var Yn=class{constructor(s,{onTap:e,onPress:t,onDrag:r,onRelease:o,draw:i}={}){this.wrap=s,this.canvas=document.createElement("canvas"),s.appendChild(this.canvas),this.ctx=this.canvas.getContext("2d"),this.cb={onTap:e,onPress:t,onDrag:r,onRelease:o,draw:i},this.image=null,this.view={s:1,tx:0,ty:0},this.pointers=new Map,this.mode=null,this.loupe=null,this.dpr=Math.min(window.devicePixelRatio||1,2.5),this.ro=new ResizeObserver(()=>this.resize()),this.ro.observe(s);let a=this.canvas;a.addEventListener("pointerdown",l=>this.down(l)),a.addEventListener("pointermove",l=>this.move(l)),a.addEventListener("pointerup",l=>this.up(l)),a.addEventListener("pointercancel",l=>this.up(l,!0)),a.addEventListener("wheel",l=>{l.preventDefault();let c=this.local(l);this.zoomAt(c,Math.exp(-l.deltaY*.0015))},{passive:!1}),this.resize(),window.__stage=this}destroy(){this.ro.disconnect(),this.canvas.remove()}setImage(s,e=!0){this.image=s,e&&this.fit(),this.render()}get imgW(){return this.image?this.image.width||this.image.naturalWidth:1e3}get imgH(){return this.image?this.image.height||this.image.naturalHeight:1e3}resize(){let s=this.wrap.getBoundingClientRect(),e=Math.max(1,Math.round(s.width*this.dpr)),t=Math.max(1,Math.round(s.height*this.dpr));if(this.canvas.width!==e||this.canvas.height!==t){let r=!this.cssW;this.canvas.width=e,this.canvas.height=t,this.cssW=s.width,this.cssH=s.height,(r||this.autoFit)&&this.fit()}this.render()}fit(s){let e=this.cssW||1,t=this.cssH||1,r=s||{x:0,y:0,w:this.imgW,h:this.imgH},o=Math.min(e/r.w,t/r.h)*.94;this.view={s:o,tx:(e-r.w*o)/2-r.x*o,ty:(t-r.h*o)/2-r.y*o},this.render()}toImg(s){return[(s[0]-this.view.tx)/this.view.s,(s[1]-this.view.ty)/this.view.s]}toScr(s){return[s[0]*this.view.s+this.view.tx,s[1]*this.view.s+this.view.ty]}local(s){let e=this.canvas.getBoundingClientRect();return[s.clientX-e.left,s.clientY-e.top]}zoomAt(s,e){let t=Math.max(.02,Math.min(this.view.s*e,60)),r=this.toImg(s);this.view.s=t,this.view.tx=s[0]-r[0]*t,this.view.ty=s[1]-r[1]*t,this.render()}down(s){this.canvas.setPointerCapture(s.pointerId);let e=this.local(s);if(this.pointers.set(s.pointerId,e),this.pointers.size===1){this.start={p:e,t:performance.now(),moved:!1};let t=this.cb.onPress?this.cb.onPress(this.toImg(e),this):!1;this.mode=t?"tool":"pan",t&&(this.loupe=e)}else if(this.pointers.size===2){this.mode==="tool"&&this.cb.onRelease&&this.cb.onRelease(null,this,!0),this.mode="pinch",this.loupe=null;let[t,r]=[...this.pointers.values()];this.pinch={d:Math.hypot(t[0]-r[0],t[1]-r[1]),c:[(t[0]+r[0])/2,(t[1]+r[1])/2]}}this.render()}move(s){if(!this.pointers.has(s.pointerId))return;let e=this.pointers.get(s.pointerId),t=this.local(s);if(this.pointers.set(s.pointerId,t),this.start&&Math.hypot(t[0]-this.start.p[0],t[1]-this.start.p[1])>8&&(this.start.moved=!0),this.mode==="tool")this.loupe=t,this.cb.onDrag&&this.cb.onDrag(this.toImg(t),this);else if(this.mode==="pan"&&this.start?.moved)this.view.tx+=t[0]-e[0],this.view.ty+=t[1]-e[1];else if(this.mode==="pinch"&&this.pointers.size>=2){let[r,o]=[...this.pointers.values()],i=Math.hypot(r[0]-o[0],r[1]-o[1]),a=[(r[0]+o[0])/2,(r[1]+o[1])/2];this.view.tx+=a[0]-this.pinch.c[0],this.view.ty+=a[1]-this.pinch.c[1],this.zoomAt(a,i/(this.pinch.d||i)),this.pinch={d:i,c:a}}this.render()}up(s,e=!1){if(!this.pointers.has(s.pointerId))return;let t=this.local(s);this.pointers.delete(s.pointerId),this.mode==="tool"&&this.cb.onRelease&&this.cb.onRelease(this.toImg(t),this,e),this.pointers.size===0&&(this.start&&!this.start.moved&&performance.now()-this.start.t<450&&!e&&this.mode!=="pinch"&&this.cb.onTap&&this.cb.onTap(this.toImg(t),this,this.mode==="tool"),this.mode=null,this.loupe=null,this.start=null),this.render()}render(){this.raf||(this.raf=requestAnimationFrame(()=>{this.raf=null,this.paint()}))}paint(){let{ctx:s,canvas:e,dpr:t}=this;s.setTransform(1,0,0,1,0,0),s.fillStyle="#2b2f36",s.fillRect(0,0,e.width,e.height),s.setTransform(t*this.view.s,0,0,t*this.view.s,t*this.view.tx,t*this.view.ty),this.image&&(s.imageSmoothingEnabled=this.view.s<3,s.drawImage(this.image,0,0)),s.setTransform(t,0,0,t,0,0),this.cb.draw&&this.cb.draw(s,this),this.loupe&&this.image&&this.paintLoupe()}paintLoupe(){let{ctx:s}=this,e=62,t=3,r=this.loupe,o=Math.min(Math.max(r[0],e+4),this.cssW-e-4),i=r[1]-120>e+4?r[1]-120:r[1]+120;s.save(),s.beginPath(),s.arc(o,i,e,0,Math.PI*2),s.clip(),s.fillStyle="#2b2f36",s.fillRect(o-e,i-e,2*e,2*e),s.translate(o,i),s.scale(t,t),s.translate(-r[0],-r[1]),s.save(),s.translate(this.view.tx,this.view.ty),s.scale(this.view.s,this.view.s),s.drawImage(this.image,0,0),s.restore(),s.lineWidth=1/t,this.cb.draw&&this.cb.draw(s,this,!0),s.restore(),s.save(),s.strokeStyle="#fff",s.lineWidth=3,s.beginPath(),s.arc(o,i,e,0,Math.PI*2),s.stroke(),s.strokeStyle="#e85d04",s.lineWidth=1.5,s.beginPath(),s.moveTo(o-12,i),s.lineTo(o+12,i),s.moveTo(o,i-12),s.lineTo(o,i+12),s.stroke(),s.restore()}};var Je="Sizes from a photo are estimates. Lens distortion, camera angle and parts that aren\u2019t flat all add error. Entering one real measured edge (tape measure) makes everything else much more accurate.";function g(n,s={},...e){let t=document.createElement(n);for(let[r,o]of Object.entries(s||{}))o==null||o===!1||(r==="class"?t.className=o:r==="style"?t.style.cssText=o:r.startsWith("on")&&typeof o=="function"?t[r]=o:r==="value"?t.value=o:o===!0?t.setAttribute(r,""):t.setAttribute(r,o));for(let r of e.flat())r!=null&&r!==!1&&t.append(r instanceof Node?r:String(r));return t}var Ga;function G(n,s=2600){let e=document.getElementById("toast");e&&(e.textContent=n,e.classList.add("show"),clearTimeout(Ga),Ga=setTimeout(()=>e.classList.remove("show"),s))}function Gr(n,s){let e=URL.createObjectURL(n),t=g("a",{href:e,download:s});document.body.appendChild(t),t.click(),t.remove(),setTimeout(()=>URL.revokeObjectURL(e),3e4)}async function Ja(n,s){try{if(navigator.canShare&&navigator.canShare({files:[n]}))return await navigator.share({files:[n],title:s}),!0}catch(e){if(e&&e.name==="AbortError")return!0}return!1}function Jr(n){return String(n||"file").trim().replace(/\.dxf$/i,"").replace(/[\\/:*?"<>|#%]+/g,"-").replace(/\s+/g," ").slice(0,80)||"file"}function pt(n){return new Date(n).toLocaleDateString(void 0,{year:"numeric",month:"short",day:"numeric"})}var Qa=[["photo","Photo"],["corners","Corners"],["size","Size"],["trace","Trace"],["clean","Clean"],["export","Export"]];async function ec(n,s,e,{onTitle:t}){let r=new Vo(n,s,e,t);return await r.init(),r}var Vo=class{constructor(s,e,t,r){this.view=s,this.job=e,this.settings=t,this.onTitle=r,e.contours||(e.contours={outer:[],holes:[]}),e.mirror||(e.mirror={on:!1,cx:null,keep:"left"}),e.smooth??(e.smooth=3),e.snap??(e.snap=!0),e.corners||(e.corners=[]),this.tool="move",this.active=-1,this.drawing=!1,this.undo=[],this.shape=null,this.seed=null}async init(){window.__editor=this,this.job.photo&&(this.photo=await Nt(this.job.photo)),this.photo&&this.job.corners.length===4&&this.job.rectIn&&this.restraighten(),this.go(this.job.step&&this.canGo(this.job.step)?this.job.step:this.photo?this.straight?"trace":"corners":"photo")}destroy(){this.stage&&this.stage.destroy()}canGo(s){return s==="photo"?!0:s==="corners"?!!this.photo:s==="size"?this.photo&&this.job.corners.length===4:s==="trace"||s==="clean"?!!this.straight:s==="export"?!!this.straight&&this.job.contours.outer.length>=3:!1}save(){clearTimeout(this.saveT),this.saveT=setTimeout(()=>ht(this.job).catch(s=>G("Could not save: "+s.message)),400)}go(s){this.refreshTools=null,this.step=s,this.job.step=s,this.save(),this.stage&&(this.stage.destroy(),this.stage=null),this.view.innerHTML="";let e=g("nav",{class:"steps"}),t=Qa.map(r=>r[0]);Qa.forEach(([r,o])=>{let i=g("button",{class:(r===s?"current ":"")+(t.indexOf(r)<t.indexOf(s)?"done":"")},o);i.disabled=!this.canGo(r),i.onclick=()=>this.go(r),e.appendChild(i)}),this.view.appendChild(e),{photo:()=>this.stepPhoto(),corners:()=>this.stepCorners(),size:()=>this.stepSize(),trace:()=>this.stepTrace(),clean:()=>this.stepClean(),export:()=>this.stepExport()}[s](),e.querySelector(".current")?.scrollIntoView({inline:"center",block:"nearest"})}stepPhoto(){let s=g("div",{class:"page"});s.append(g("h2",{},"Take or choose a photo"),g("p",{},"Stand square to the part if you can. Get a rectangle in the shot that is truly rectangular: the door, the panel, or a sheet of paper held flat against the part."),g("div",{class:"note"},Je));let e=g("input",{type:"file",accept:"image/*",capture:"environment",hidden:!0}),t=g("input",{type:"file",accept:"image/*",hidden:!0}),r=g("button",{class:"primary"},"\u{1F4F7} Take photo"),o=g("button",{},"\u{1F5BC} Choose photo");r.onclick=()=>e.click(),o.onclick=()=>t.click();let i=async a=>{let l=a.files&&a.files[0];l&&(G("Loading photo\u2026"),this.photo=await Nt(l),this.job.photo=await zn(this.photo),this.job.thumb=Wh(this.photo),this.job.corners=[],this.straight=null,this.go("corners"))};if(e.onchange=()=>i(e),t.onchange=()=>i(t),s.append(g("div",{class:"stack"},r,o),e,t),this.photo){let a=g("button",{class:"go"},"Keep current photo \u2192");a.onclick=()=>this.go("corners"),s.append(g("h3",{},"Current photo"),g("img",{class:"preview-img",src:this.photo.toDataURL("image/jpeg",.6)}),a)}this.view.appendChild(s)}stepCorners(){let s=g("div",{class:"stage-wrap"}),e=g("div",{class:"hint-badge"});s.appendChild(e);let t=g("div",{class:"editor"},s),r=g("div",{class:"panel"}),o=g("button",{class:"danger"},"Clear corners"),i=g("button",{class:"go"},"Next: size \u2192");o.onclick=()=>{this.job.corners=[],this.straight=null,l()},i.onclick=()=>this.go("size"),r.append(g("div",{class:"row"},o,i)),t.appendChild(r),this.view.appendChild(t);let a=-1,l=()=>{let c=this.job.corners.length;e.textContent=c<4?`Tap corner ${c+1} of 4 of something truly rectangular. Pinch to zoom for accuracy.`:"Drag a corner to fine-tune it (the magnifier helps). Then tap Next.",i.disabled=c!==4,this.stage.render(),this.save()};this.stage=new Yn(s,{onPress:(c,d)=>{let u=this.nearest(this.job.corners.map(f=>d.toScr(f)),d.toScr(c),34);return u>=0?(a=u,!0):!1},onDrag:c=>{a>=0&&(this.job.corners[a]=c)},onRelease:()=>{a>=0&&this.job.corners.length===4&&(this.job.corners=zo(this.job.corners)),a=-1,this.straight=null,l()},onTap:(c,d,u)=>{u||this.job.corners.length>=4||(this.job.corners.push(c),this.job.corners.length===4&&(this.job.corners=zo(this.job.corners)),this.straight=null,l())},draw:(c,d)=>{let u=this.job.corners.map(f=>d.toScr(f));c.lineWidth=2.5,c.strokeStyle="#ffd60a",u.length>1&&(c.beginPath(),u.forEach((f,m)=>m?c.lineTo(...f):c.moveTo(...f)),u.length===4&&c.closePath(),c.stroke()),u.forEach((f,m)=>{c.fillStyle="rgba(232,93,4,.35)",c.beginPath(),c.arc(f[0],f[1],18,0,7),c.fill(),c.strokeStyle="#fff",c.lineWidth=2,c.stroke(),c.fillStyle="#fff",c.font="bold 14px system-ui",c.textAlign="center",c.textBaseline="middle",c.fillText(String(m+1),f[0],f[1]-28),c.beginPath(),c.moveTo(f[0]-6,f[1]),c.lineTo(f[0]+6,f[1]),c.moveTo(f[0],f[1]-6),c.lineTo(f[0],f[1]+6),c.stroke()})}}),this.stage.setImage(this.photo),l()}stepSize(){let s=g("div",{class:"page"}),e=g("input",{inputmode:"text",placeholder:"e.g. 14 3/4",value:this.job.realW||""}),t=g("input",{inputmode:"text",placeholder:"e.g. 22 1/2",value:this.job.realH||""}),r=g("div"),o=g("button",{class:"go"},"Straighten photo \u2192");s.append(g("h2",{},"How big is that rectangle?"),g("p",{},"Enter the real size of the rectangle you tapped, in inches. Fractions are fine (14 3/4). Width is corner 1 to 2, height is corner 2 to 3."),g("label",{},"Width (inches)"),e,g("label",{},"Height (inches)"),t,g("div",{class:"note"},"Best: enter both. With only one, the other is estimated from the photo and the shape may be stretched a little."),r,o);let i=()=>{let a=ft(e.value),l=ft(t.value),c=a>0,d=l>0;return r.className="",r.textContent="",e.value&&!c?(r.className="bad-box",r.textContent="Can\u2019t read the width. Try 14 3/4 or 14.75"):t.value&&!d&&(r.className="bad-box",r.textContent="Can\u2019t read the height. Try 22 1/2 or 22.5"),o.disabled=!(c||d),{W:a,H:l,okW:c,okH:d}};e.oninput=t.oninput=i,i(),o.onclick=()=>{let{W:a,H:l,okW:c,okH:d}=i(),u=La(this.job.corners);this.job.realW=e.value,this.job.realH=t.value,this.job.aspectGuess=!(c&&d),this.job.rectIn={W:c?a:l*u,H:d?l:a/u};let f=this.job.contours.outer.length>0;try{this.restraighten()}catch(m){r.className="bad-box",r.textContent=m.message;return}f&&G("Photo re-straightened. Your traced points were kept."),this.go("trace")},this.view.appendChild(s),setTimeout(()=>e.focus(),50)}restraighten(){let{W:s,H:e}=this.job.rectIn;this.straight=Va(this.photo,this.job.corners,s,e)}px(s){let e=this.straight;return[(s.x-e.ox)*e.ppi,(s.y-e.oy)*e.ppi]}inch(s){let e=this.straight;return{x:s[0]/e.ppi+e.ox,y:s[1]/e.ppi+e.oy}}contour(s=this.active){return s<0?this.job.contours.outer:this.job.contours.holes[s]}setContour(s,e=this.active){e<0?this.job.contours.outer=s:this.job.contours.holes[e]=s}pushUndo(){this.undo.push(JSON.stringify({c:this.job.contours,m:this.job.mirror})),this.undo.length>40&&this.undo.shift()}popUndo(){let s=this.undo.pop();if(!s){G("Nothing to undo");return}let e=JSON.parse(s);this.job.contours=e.c,this.job.mirror=e.m,this.active>=this.job.contours.holes.length&&(this.active=-1),this.changed()}rebuild(){let s=this.job.contours;if(s.outer.length<3){this.shape=null;return}let e=this.job.mirror;e.on&&e.cx==null&&(e.cx=Xr(s.outer));try{this.shape=qa(s,{mirror:e,smooth:this.job.smooth,snap:this.job.snap})}catch(t){console.error(t),this.shape=null}}changed(s=!1){clearTimeout(this.buildT);let e=()=>{this.rebuild(),this.updateBadges&&this.updateBadges(),this.stage&&this.stage.render()};s?e():this.buildT=setTimeout(e,120),this.stage&&this.stage.render(),this.save()}buildCanvasEditor(s,e){let t=g("div",{class:"stage-wrap"}),r=g("div",{class:"dims-badge"}),o=g("div",{class:"hint-badge"},e);t.append(r,o);let i=g("div",{class:"editor"},t),a=g("div",{class:"panel"});i.appendChild(a),this.view.appendChild(i),this.hintEl=o,this.updateBadges=()=>{if(this.shape&&this.shape.outer.length){let m=$t(this.shape),p=this.settings.denom;r.textContent=`${ce(m.w,p)} W \xD7 ${ce(m.h,p)} H`,r.style.display=""}else r.style.display="none"};let l=null;this.stage=new Yn(t,{onPress:(m,p)=>{let w=p.toScr(m);if(this.step==="clean"&&this.job.mirror.on&&this.job.mirror.cx!=null){let y=p.toScr(this.px({x:this.job.mirror.cx,y:0}))[0];if(Math.abs(w[0]-y)<26)return this.pushUndo(),l={kind:"center"},!0}if(this.tool==="move"){let y=this.contour(),v=y?this.nearest(y.map(S=>p.toScr(this.px(S))),w,26):-1;if(v>=0)return this.pushUndo(),l={kind:"point",i:v},!0}return!1},onDrag:m=>{if(!l)return;let p=this.inch(m);if(l.kind==="center")this.job.mirror.cx=p.x;else{let w=this.contour();w[l.i]={...w[l.i],x:p.x,y:p.y}}this.stage.render()},onRelease:()=>{l&&(l=null,this.changed())},onTap:(m,p,w)=>{w||this.tap(m,p)},draw:(m,p,w)=>this.drawOverlay(m,p,w)}),this.stage.setImage(this.straight.canvas);let c=[...this.job.contours.outer.map(m=>this.px(m)),this.px({x:0,y:0}),this.px({x:this.job.rectIn.W,y:this.job.rectIn.H})],d=c.map(m=>m[0]),u=c.map(m=>m[1]),f=30;this.stage.fit({x:Math.min(...d)-f,y:Math.min(...u)-f,w:Math.max(...d)-Math.min(...d)+2*f,h:Math.max(...u)-Math.min(...u)+2*f}),s(a),this.changed(!0)}tap(s,e){let t=e.toScr(s),r=this.contour()||[],o=this.inch(s);if(this.drawing){if(r.length>=3&&Math.hypot(...tc(e.toScr(this.px(r[0])),t))<28){this.finishDrawing();return}this.pushUndo(),r.push({x:o.x,y:o.y}),this.setContour(r),this.changed();return}if(this.tool==="add"){if(r.length<2)return;let i=-1,a=1/0;for(let l=0;l<r.length;l++){let c=e.toScr(this.px(r[l])),d=e.toScr(this.px(r[(l+1)%r.length])),u=jh(t,c,d);u<a&&(a=u,i=l)}if(a>40){G("Tap closer to the outline to add a point there");return}this.pushUndo(),r.splice(i+1,0,{x:o.x,y:o.y}),this.changed()}else if(this.tool==="delete"||this.tool==="corner"){let i=this.nearest(r.map(a=>e.toScr(this.px(a))),t,30);if(i<0)return;if(this.pushUndo(),this.tool==="delete")r.splice(i,1);else{let a=r[i].corner;r[i]={...r[i],corner:a===void 0?!0:a===!0?!1:void 0},r[i].corner===void 0&&delete r[i].corner,G(r[i].corner===!0?"Sharp corner":r[i].corner===!1?"Smooth point (never a corner)":"Automatic")}this.changed()}else this.tool==="seed"&&(this.seed=s,G("Got it. Now tap Auto-detect."),this.tool="move",this.refreshTools&&this.refreshTools(),this.stage.render())}finishDrawing(){if(this.drawing=!1,this.contour().length<3){G("Need at least 3 points");return}G("Shape closed"),this.refreshTools&&this.refreshTools(),this.changed()}drawOverlay(s,e,t){let r=a=>e.toScr(this.px(a));if(this.job.rectIn){let a=[[0,0],[this.job.rectIn.W,0],[this.job.rectIn.W,this.job.rectIn.H],[0,this.job.rectIn.H]].map(([l,c])=>r({x:l,y:c}));s.setLineDash([6,6]),s.strokeStyle="rgba(255,214,10,.8)",s.lineWidth=1.5,s.beginPath(),a.forEach((l,c)=>c?s.lineTo(...l):s.moveTo(...l)),s.closePath(),s.stroke(),s.setLineDash([])}let o=this.job.mirror;if(this.step==="clean"&&o.on&&o.cx!=null){let a=r({x:o.cx,y:0})[0];s.fillStyle="rgba(0,0,0,.35)",o.keep==="left"?s.fillRect(a,0,e.cssW-a,e.cssH):s.fillRect(0,0,a,e.cssH),s.strokeStyle="#ff2fd0",s.lineWidth=2.5,s.setLineDash([10,6]),s.beginPath(),s.moveTo(a,0),s.lineTo(a,e.cssH),s.stroke(),s.setLineDash([]),t||(s.fillStyle="#ff2fd0",s.beginPath(),s.roundRect(a-22,46,44,44,10),s.fill(),s.fillStyle="#fff",s.font="bold 20px system-ui",s.textAlign="center",s.textBaseline="middle",s.fillText("\u21D4",a,68))}if([this.job.contours.outer,...this.job.contours.holes].forEach((a,l)=>{if(!a||!a.length)return;let c=l-1===this.active,d=a.map(r);if(s.strokeStyle=c?"rgba(66,165,245,.95)":"rgba(66,165,245,.5)",s.lineWidth=c?2:1.25,s.beginPath(),d.forEach((u,f)=>f?s.lineTo(...u):s.moveTo(...u)),this.drawing&&c||s.closePath(),s.stroke(),c&&this.step==="trace"){let u=d.length>150&&e.view.s<4&&!t;d.forEach((f,m)=>{let p=a[m];u&&p.corner===void 0&&m%4||(p.corner===!0?(s.fillStyle="#ffd60a",s.fillRect(f[0]-6,f[1]-6,12,12),s.strokeStyle="#000",s.lineWidth=1,s.strokeRect(f[0]-6,f[1]-6,12,12)):(s.fillStyle=p.corner===!1?"#00e5ff":"#fff",s.strokeStyle="#1565c0",s.lineWidth=1.5,s.beginPath(),s.arc(f[0],f[1],u?3:5.5,0,7),s.fill(),s.stroke()))}),this.drawing&&d.length&&(s.strokeStyle="#ffd60a",s.lineWidth=2,s.beginPath(),s.arc(d[0][0],d[0][1],14,0,7),s.stroke())}}),this.shape){s.strokeStyle="#ff6b00",s.lineWidth=this.step==="clean"?3.5:2.5,s.lineJoin="round";for(let a of[this.shape.outer,...this.shape.holes])s.beginPath(),a.forEach((l,c)=>jn(l,.05).forEach((d,u)=>{let f=r({x:d[0],y:d[1]});c===0&&u===0?s.moveTo(...f):s.lineTo(...f)})),s.closePath(),s.stroke();if(this.step==="clean"&&!t){s.fillStyle="#fff";for(let a of[this.shape.outer,...this.shape.holes])for(let l of a){let c=r({x:l.a[0],y:l.a[1]});s.beginPath(),s.arc(c[0],c[1],3.5,0,7),s.fill()}}}if(this.seed&&this.step==="trace"){let a=e.toScr(this.seed);s.strokeStyle="#00e676",s.lineWidth=3,s.beginPath(),s.arc(a[0],a[1],10,0,7),s.stroke()}}stepTrace(){this.buildCanvasEditor(s=>{let e=g("button",{class:"primary"},"\u2728 Auto-detect"),t=g("button",{},"\u{1F446} Tap inside part"),r=g("button",{},"\u270F\uFE0F Draw by hand"),o=g("select",{},g("option",{value:"edges"},"Find edges (any photo)"),g("option",{value:"dark"},"Dark part on light background"),g("option",{value:"light"},"Light part on dark background"));o.value=this.job.detectMode||"edges";let i=g("input",{type:"range",min:1,max:10,step:1,value:this.job.sensitivity||5}),a=g("div",{class:"toolbar"}),l=g("div",{class:"chips"}),c={};[["move","\u270B Move"],["add","\u2795 Add"],["delete","\u{1F5D1} Delete"],["corner","\u25C6 Corner"]].forEach(([p,w])=>{c[p]=g("button",{},w),c[p].onclick=()=>{this.tool=p,this.drawing=!1,this.refreshTools()},a.appendChild(c[p])});let d=g("button",{},"\u21B6 Undo"),u=g("button",{class:"go"},"Close shape"),f=g("button",{class:"go"},"Next: clean up \u2192");d.onclick=()=>this.popUndo(),u.onclick=()=>this.finishDrawing(),f.onclick=()=>this.go("clean");let m={move:"Drag points to fix the outline. Pinch to zoom, drag empty space to pan.",add:"Tap on the outline to add a point there.",delete:"Tap a point to delete it.",corner:"Tap a point: sharp corner (yellow square) \u2192 smooth (cyan) \u2192 automatic.",seed:"Tap inside the part you want, then Auto-detect."};this.refreshTools=()=>{Object.entries(c).forEach(([y,v])=>v.classList.toggle("on",y===this.tool&&!this.drawing)),r.classList.toggle("on",this.drawing),u.style.display=this.drawing?"":"none",this.hintEl.textContent=this.drawing?"Tap around the edge, one point at a time. Tap the first point (or Close shape) to finish. Mark sharp corners afterwards with \u25C6.":m[this.tool],l.innerHTML="";let p=(y,v)=>{let S=g("button",{class:v===this.active?"on":""},y);S.onclick=()=>{this.active=v,this.drawing=!1,this.refreshTools(),this.stage.render()},l.appendChild(S)};p(`Outline (${this.job.contours.outer.length} pts)`,-1),this.job.contours.holes.forEach((y,v)=>p(`Cutout ${v+1}`,v));let w=g("button",{},"+ Cutout");if(w.onclick=()=>{this.pushUndo(),this.job.contours.holes.push([]),this.active=this.job.contours.holes.length-1,this.drawing=!0,this.refreshTools()},l.appendChild(w),this.active>=0){let y=g("button",{class:"danger"},"Remove cutout");y.onclick=()=>{this.pushUndo(),this.job.contours.holes.splice(this.active,1),this.active=-1,this.refreshTools(),this.changed()},l.appendChild(y)}},t.onclick=()=>{this.tool="seed",this.drawing=!1,this.refreshTools()},r.onclick=()=>{this.pushUndo(),this.setContour([]),this.drawing=!0,this.refreshTools(),this.changed()},e.onclick=async()=>{this.job.detectMode=o.value,this.job.sensitivity=+i.value,e.disabled=!0,e.textContent="Working\u2026";try{let p=await Xa(this.straight.canvas,{mode:o.value,sensitivity:+i.value,seed:this.seed});if(!p){G("No clear outline found. Try \u201CTap inside part\u201D, another detect mode, or Draw by hand.");return}this.pushUndo();let w=.08*this.straight.ppi,y=v=>Ka(v,w).map(S=>this.inch(S));this.job.contours.outer=y(p.outer),this.job.contours.holes=p.holes.map(y).filter(v=>v.length>=3),this.active=-1,this.drawing=!1,this.refreshTools(),this.changed(),G(`Found the outline${p.holes.length?` and ${p.holes.length} cutout(s)`:""}. Check it, then clean up.`)}catch(p){G(p.message)}finally{e.disabled=!1,e.textContent="\u2728 Auto-detect"}},s.append(g("div",{class:"grid2"},e,t),g("label",{},"Detect mode"),o,g("label",{},"Edge sensitivity"),i,g("div",{class:"row",style:"margin-top:10px"},r,u),l,a,g("div",{class:"row",style:"margin-top:8px"},d,f)),this.refreshTools()},"")}stepClean(){this.buildCanvasEditor(s=>{let e=this.job.mirror,t=g("button",{},""),r=g("button",{},""),o=g("button",{},"\u2316 Find center"),i=g("input",{type:"range",min:0,max:10,step:1,value:this.job.smooth}),a=g("span",{class:"muted"}),l=g("input",{type:"checkbox"});l.checked=this.job.snap;let c=g("button",{},"\u21B6 Undo"),d=g("button",{class:"go"},"Next: export \u2192"),u=g("div"),f=()=>{t.textContent=e.on?"\u{1FA9E} Mirror: ON":"\u{1FA9E} Mirror: off",t.classList.toggle("on",e.on),r.textContent=e.keep==="left"?"Keep: left half":"Keep: right half",r.disabled=o.disabled=!e.on,a.textContent=` ${this.job.smooth} (${["none","very light","light","normal","normal","medium","medium","strong","strong","very strong","max"][this.job.smooth]})`,this.hintEl.textContent=e.on?"Drag the pink \u21D4 handle to move the centerline. The shaded half is replaced by the mirror image of the other.":"Orange = clean shape (lines and true arcs). Blue = your trace. Turn on Mirror for symmetric parts."};t.onclick=()=>{this.pushUndo(),e.on=!e.on,e.on&&e.cx==null&&(e.cx=Xr(this.job.contours.outer)),f(),this.changed()},r.onclick=()=>{this.pushUndo(),e.keep=e.keep==="left"?"right":"left",f(),this.changed()},o.onclick=()=>{this.pushUndo(),e.cx=Xr(this.job.contours.outer),G("Centerline moved to the best match"),this.changed()},i.oninput=()=>{this.job.smooth=+i.value,f(),this.changed()},l.onchange=()=>{this.job.snap=l.checked,this.changed()},c.onclick=()=>{this.popUndo(),f()},d.onclick=()=>this.go("export");let m=this.updateBadges;this.updateBadges=()=>{m();let p=this.shape?.warnings||[];if(u.className=p.length?"note":"",u.textContent=p.join(" "),this.shape){let w=[this.shape.outer,...this.shape.holes].flat(),y=w.filter(S=>S.type==="line").length,v=w.length-y;this.hintEl.textContent=`${y} lines + ${v} arcs. `+(e.on?"Drag the pink \u21D4 handle to move the centerline.":"Orange = clean shape. Blue = your trace.")}},s.append(g("div",{class:"grid2"},t,r),o,g("label",{},"Smoothing",a),i,g("label",{class:"check"},l,"Snap near-straight edges to level / plumb"),u,g("div",{class:"row"},c,d)),f()},"")}stepExport(){this.rebuild();let s=g("div",{class:"page"}),e=this.settings;if(!this.shape||!this.shape.outer.length){s.append(g("div",{class:"bad-box"},"No clean shape yet. Go back to Trace.")),this.view.appendChild(s);return}let t=$t(this.shape),r=e.denom,o=Za(this.shape,{name:this.job.name,denom:r,width:900}),i=g("input",{value:this.job.fileName||Jr(this.job.name||"shape")}),a=g("select",{},g("option",{value:"R2000"},"DXF 2000 (units stored as inches)"),g("option",{value:"R12"},"DXF R12 (oldest, most compatible)"));a.value=this.job.dxfVersion||e.dxfVersion;let l=g("div"),c=g("button",{class:"go"},"\u2B07 Download DXF"),d=g("button",{},"\u{1F4E4} Share DXF"),u=g("button",{},"\u{1F5BC} Save PNG with dimensions"),f=()=>{this.job.fileName=i.value,this.job.dxfVersion=a.value,this.save();let p=za(this.shape,{version:a.value,layerOuter:e.layerOuter,layerHole:e.layerHole}),w=Ya(p);return Uh(l,w,r),{text:p,chk:w,file:Jr(i.value||"shape")+".dxf"}};f(),i.oninput=a.onchange=()=>f(),c.onclick=()=>{let{text:p,chk:w,file:y}=f();!w.ok&&!confirm("The self-check found a problem (see below). Download anyway?")||Gr(new Blob([p],{type:"application/dxf"}),y)},d.onclick=async()=>{let{text:p,file:w}=f();await Ja(new File([p],w,{type:"application/dxf"}),"DXF for Mozaik")||Gr(new Blob([p],{type:"application/dxf"}),w)},u.onclick=async()=>{let p=Za(this.shape,{name:this.job.name,denom:r,width:1800,footer:!0});Gr(await zn(p,"image/png"),Jr(i.value||"shape")+".png")};let m=Kr(this.shape);s.append(g("h2",{},`${ce(t.w,r)} wide \xD7 ${ce(t.h,r)} tall`),g("img",{class:"preview-img",src:o.toDataURL("image/png"),alt:"Shape preview"}),g("div",{class:"note"},Je+(this.job.aspectGuess?" Only one side of the reference rectangle was entered, so the other direction is a photo estimate.":"")),g("label",{},"File name"),i,g("label",{},"DXF format"),a,g("div",{class:"stack",style:"margin-top:12px"},c,d,u),g("h3",{},"Self-check (the file is re-opened and tested)"),l,g("h3",{},"In Mozaik"),g("p",{class:"small"},`Part Editor \u2192 DXF In \u2192 pick this file. Lower-left corner is at 0,0. Outline on layer \u201C${e.layerOuter}\u201D`+(m.holes.length?`, ${m.holes.length} cutout(s) on layer \u201C${e.layerHole}\u201D.`:"."))),this.view.appendChild(s)}nearest(s,e,t){let r=-1,o=t;return s.forEach((i,a)=>{let l=Math.hypot(i[0]-e[0],i[1]-e[1]);l<o&&(o=l,r=a)}),r}};function Uh(n,s,e){n.innerHTML="";let t=(r,o)=>g("li",{},(r?"\u2705 ":"\u274C ")+o);n.className=s.ok?"ok-box":"bad-box",n.append(g("ul",{class:"checks"},t(s.closedLoops===s.loops,`${s.loops} contour(s), all closed`),t(s.kinds.every(r=>r==="LINE"||r==="ARC"),`Only lines and arcs (${s.lines} lines, ${s.arcs} arcs, no splines)`),t(s.version==="AC1009"||s.insunits===1,s.version==="AC1015"?"Units: inches ($INSUNITS = 1)":"R12 file: no units field, all values are inches"),t(!s.problems.some(r=>r.includes("Lower-left")),"Lower-left corner at 0,0"),t(!0,`Size in file: ${ce(s.width,e)} \xD7 ${ce(s.height,e)}`))),s.problems.length&&n.append(g("p",{},s.problems.join(" ")))}var tc=(n,s)=>[n[0]-s[0],n[1]-s[1]];function jh(n,s,e){let t=tc(e,s),r=t[0]*t[0]+t[1]*t[1],o=r?Math.max(0,Math.min(1,((n[0]-s[0])*t[0]+(n[1]-s[1])*t[1])/r)):0;return Math.hypot(n[0]-s[0]-t[0]*o,n[1]-s[1]-t[1]*o)}function Wh(n){let s=document.createElement("canvas"),e=160/Math.max(n.width,n.height);return s.width=Math.round(n.width*e),s.height=Math.round(n.height*e),s.getContext("2d").drawImage(n,0,0,s.width,s.height),s.toDataURL("image/jpeg",.7)}function Za(n,{name:s="",denom:e=16,width:t=1200,footer:r=!1}={}){let o=Kr(n),i=$t(o),a=t*.12,l=(t-2*a)/Math.max(i.w,i.h*.75),c=t,d=Math.round(i.h*l+2*a+(r?70:0)),u=document.createElement("canvas");u.width=c,u.height=d;let f=u.getContext("2d");f.fillStyle="#fff",f.fillRect(0,0,c,d);let m=(c-i.w*l)/2,p=M=>[m+M[0]*l,a+(i.h-M[1])*l];f.beginPath();for(let M of[o.outer,...o.holes])M.forEach((A,O)=>jn(A,.02).forEach(($,L)=>{let z=p($);O===0&&L===0?f.moveTo(...z):f.lineTo(...z)})),f.closePath();f.fillStyle="#ffe8d6",f.fill("evenodd"),f.strokeStyle="#000",f.lineWidth=Math.max(2,t/500),f.stroke();let w=Math.round(t/32);f.font=`bold ${w}px system-ui, sans-serif`,f.fillStyle="#000",f.strokeStyle="#000",f.lineWidth=Math.max(1,t/900);let[y,v]=p([0,0]),[S,P]=p([i.w,i.h]),R=v+a*.45;f.beginPath(),f.moveTo(y,v+6),f.lineTo(y,R+10),f.moveTo(S,v+6),f.lineTo(S,R+10),f.moveTo(y,R),f.lineTo(S,R),f.stroke(),Qr(f,y,R,-1,0,w*.5),Qr(f,S,R,1,0,w*.5),f.textAlign="center",f.textBaseline="bottom",f.fillText(ce(i.w,e),(y+S)/2,R-6);let x=S+a*.35;f.beginPath(),f.moveTo(S+6,v),f.lineTo(x+10,v),f.moveTo(S+6,P),f.lineTo(x+10,P),f.moveTo(x,v),f.lineTo(x,P),f.stroke(),Qr(f,x,v,0,1,w*.5),Qr(f,x,P,0,-1,w*.5),f.save(),f.translate(x-8,(v+P)/2),f.rotate(-Math.PI/2),f.textBaseline="bottom",f.fillText(ce(i.h,e),0,0),f.restore();let C=o.outer.filter(M=>M.type==="arc").map(M=>({s:M,g:qe(M)})).filter(M=>M.g).sort((M,A)=>A.g.r*A.g.sweep-M.g.r*M.g.sweep).slice(0,4);f.font=`${Math.round(w*.7)}px system-ui, sans-serif`,f.fillStyle="#7a2e00";let I=new Set;for(let{s:M,g:A}of C){let O=A.r.toFixed(2);if(I.has(O))continue;I.add(O);let[$,L]=p(M.m);f.textAlign="center",f.textBaseline="middle",f.fillText(`R ${ce(A.r,e)}`,$,L+(L<(P+v)/2?-w*.6:w*.6))}return r&&(f.fillStyle="#333",f.textAlign="left",f.textBaseline="bottom",f.font=`bold ${Math.round(w*.75)}px system-ui, sans-serif`,f.fillText(`${s||"Shape"} \xB7 ${new Date().toLocaleDateString()}`,20,d-40),f.font=`${Math.round(w*.6)}px system-ui, sans-serif`,f.fillText("Measured from a photo: an estimate. Check one real edge before cutting.",20,d-12)),u}function Qr(n,s,e,t,r,o){n.beginPath(),n.moveTo(s,e),n.lineTo(s-t*o-r*o*.4,e-r*o+t*o*.4),n.lineTo(s-t*o+r*o*.4,e-r*o-t*o*.4),n.closePath(),n.fill()}function k(n,s,e,t,r){if(t==="m")throw new TypeError("Private method is not writable");if(t==="a"&&!r)throw new TypeError("Private accessor was defined without a setter");if(typeof s=="function"?n!==s||!r:!s.has(n))throw new TypeError("Cannot write private member to an object whose class did not declare it");return t==="a"?r.call(n,e):r?r.value=e:s.set(n,e),e}function h(n,s,e,t){if(e==="a"&&!t)throw new TypeError("Private accessor was defined without a getter");if(typeof s=="function"?n!==s||!t:!s.has(n))throw new TypeError("Cannot read private member from an object whose class did not declare it");return e==="m"?t:e==="a"?t.call(n):t?t.value:s.get(n)}Y();var zh=/^[a-z][a-z0-9+.-]*:/i,nc=n=>zh.test(n),ie=n=>(ie=Array.isArray,ie(n)),Xo=ie;function nr(n){return typeof n!="object"?{}:n??{}}function Ko(n){if(!n)return!0;for(let s in n)return!1;return!0}function rc(n,s){return Object.prototype.hasOwnProperty.call(n,s)}function Go(n){return n!=null&&typeof n=="object"&&!Array.isArray(n)}var es=(n,s)=>{if(typeof s!="number"||!Number.isInteger(s))throw new T(`${n} must be an integer`);if(s<0)throw new T(`${n} must be a positive integer`);return s};var ts=n=>{try{return JSON.parse(n)}catch{return}};var Te=(n,s)=>new Promise(e=>{if(s?.aborted)return e();let t=()=>{clearTimeout(r),e()},r=setTimeout(()=>{s?.removeEventListener("abort",t),e()},n);s?.addEventListener("abort",t,{once:!0})});gt();var we="0.129.0";var ac=()=>typeof window<"u"&&typeof window.document<"u"&&typeof navigator<"u";function Yh(){return typeof Deno<"u"&&Deno.build!=null?"deno":typeof EdgeRuntime<"u"?"edge":Object.prototype.toString.call(typeof globalThis.process<"u"?globalThis.process:0)==="[object process]"?"node":"unknown"}var Vh=()=>{let n=Yh();if(n==="deno")return{"X-Stainless-Lang":"js","X-Stainless-Package-Version":we,"X-Stainless-OS":oc(Deno.build.os),"X-Stainless-Arch":sc(Deno.build.arch),"X-Stainless-Runtime":"deno","X-Stainless-Runtime-Version":typeof Deno.version=="string"?Deno.version:Deno.version?.deno??"unknown"};if(typeof EdgeRuntime<"u")return{"X-Stainless-Lang":"js","X-Stainless-Package-Version":we,"X-Stainless-OS":"Unknown","X-Stainless-Arch":`other:${EdgeRuntime}`,"X-Stainless-Runtime":"edge","X-Stainless-Runtime-Version":globalThis.process?.version??"unknown"};if(n==="node")return{"X-Stainless-Lang":"js","X-Stainless-Package-Version":we,"X-Stainless-OS":oc(globalThis.process.platform??"unknown"),"X-Stainless-Arch":sc(globalThis.process.arch??"unknown"),"X-Stainless-Runtime":"node","X-Stainless-Runtime-Version":globalThis.process.version??"unknown"};let s=Xh();return s?{"X-Stainless-Lang":"js","X-Stainless-Package-Version":we,"X-Stainless-OS":"Unknown","X-Stainless-Arch":"unknown","X-Stainless-Runtime":`browser:${s.browser}`,"X-Stainless-Runtime-Version":s.version}:{"X-Stainless-Lang":"js","X-Stainless-Package-Version":we,"X-Stainless-OS":"Unknown","X-Stainless-Arch":"unknown","X-Stainless-Runtime":"unknown","X-Stainless-Runtime-Version":"unknown"}};function Xh(){if(typeof navigator>"u"||!navigator)return null;let n=[{key:"edge",pattern:/Edge(?:\W+(\d+)\.(\d+)(?:\.(\d+))?)?/},{key:"ie",pattern:/MSIE(?:\W+(\d+)\.(\d+)(?:\.(\d+))?)?/},{key:"ie",pattern:/Trident(?:.*rv\:(\d+)\.(\d+)(?:\.(\d+))?)?/},{key:"chrome",pattern:/Chrome(?:\W+(\d+)\.(\d+)(?:\.(\d+))?)?/},{key:"firefox",pattern:/Firefox(?:\W+(\d+)\.(\d+)(?:\.(\d+))?)?/},{key:"safari",pattern:/(?:Version\W+(\d+)\.(\d+)(?:\.(\d+))?)?(?:\W+Mobile\S*)?\W+Safari/}];for(let{key:s,pattern:e}of n){let t=e.exec(navigator.userAgent);if(t){let r=t[1]||0,o=t[2]||0,i=t[3]||0;return{browser:s,version:`${r}.${o}.${i}`}}}return null}var sc=n=>n==="x32"?"x32":n==="x86_64"||n==="x64"?"x64":n==="arm"?"arm":n==="aarch64"||n==="arm64"?"arm64":n?`other:${n}`:"unknown",oc=n=>(n=n.toLowerCase(),n.includes("ios")?"iOS":n==="android"?"Android":n==="darwin"?"MacOS":n==="win32"?"Windows":n==="freebsd"?"FreeBSD":n==="openbsd"?"OpenBSD":n==="linux"?"Linux":n?`Other:${n}`:"Unknown"),ic,rr=()=>ic??(ic=Vh());var ns=new WeakMap,cc=typeof globalThis.FinalizationRegistry=="function"?new globalThis.FinalizationRegistry(n=>Ce(n)):null;function Kh(n,s){return()=>n.removeEventListener("abort",s)}function lc(n,s,e){ns.set(n,Kh(s,e))}function hc(n,s){ns.has(s)&&cc?.register(n,s,s)}function Ce(n){let s=ns.get(n);s&&(ns.delete(n),cc?.unregister(n),s())}function uc(){if(typeof fetch<"u")return fetch;throw new Error("`fetch` is not defined as a global; Either pass `fetch` to the client, `new Anthropic({ fetch })` or polyfill the global, `globalThis.fetch = fetch`")}function Jo(...n){let s=globalThis.ReadableStream;if(typeof s>"u")throw new Error("`ReadableStream` is not defined as a global; You will need to polyfill it, `globalThis.ReadableStream = ReadableStream`");return new s(...n)}function rs(n){let s=Symbol.asyncIterator in n?n[Symbol.asyncIterator]():n[Symbol.iterator]();return Jo({start(){},async pull(e){let{done:t,value:r}=await s.next();t?e.close():e.enqueue(r)},async cancel(){await s.return?.()}})}function sr(n){if(n[Symbol.asyncIterator])return n;let s=n.getReader();return{async next(){try{let e=await s.read();return e?.done&&s.releaseLock(),e}catch(e){throw s.releaseLock(),e}},async return(){let e=s.cancel();return s.releaseLock(),await e,{done:!0,value:void 0}},[Symbol.asyncIterator](){return this}}}async function dc(n){if(n===null||typeof n!="object")return;if(n[Symbol.asyncIterator]){await n[Symbol.asyncIterator]().return?.();return}let s=n.getReader(),e=s.cancel();s.releaseLock(),await e}var fc=({headers:n,body:s})=>({bodyHeaders:{"content-type":"application/json"},body:JSON.stringify(s)});var Qo="RFC3986",Zo=n=>String(n),ei={RFC1738:n=>String(n).replace(/%20/g,"+"),RFC3986:Zo},pc="RFC1738";var ss=(n,s)=>(ss=Object.hasOwn??Function.prototype.call.bind(Object.prototype.hasOwnProperty),ss(n,s)),De=(()=>{let n=[];for(let s=0;s<256;++s)n.push("%"+((s<16?"0":"")+s.toString(16)).toUpperCase());return n})();var ti=1024,mc=(n,s,e,t,r)=>{if(n.length===0)return n;let o=n;if(typeof n=="symbol"?o=Symbol.prototype.toString.call(n):typeof n!="string"&&(o=String(n)),e==="iso-8859-1")return escape(o).replace(/%u[0-9a-f]{4}/gi,function(a){return"%26%23"+parseInt(a.slice(2),16)+"%3B"});let i="";for(let a=0;a<o.length;a+=ti){let l=o.length>=ti?o.slice(a,a+ti):o,c=[];for(let d=0;d<l.length;++d){let u=l.charCodeAt(d);if(u===45||u===46||u===95||u===126||u>=48&&u<=57||u>=65&&u<=90||u>=97&&u<=122||r===pc&&(u===40||u===41)){c[c.length]=l.charAt(d);continue}if(u<128){c[c.length]=De[u];continue}if(u<2048){c[c.length]=De[192|u>>6]+De[128|u&63];continue}if(u<55296||u>=57344){c[c.length]=De[224|u>>12]+De[128|u>>6&63]+De[128|u&63];continue}d+=1,u=65536+((u&1023)<<10|l.charCodeAt(d)&1023),c[c.length]=De[240|u>>18]+De[128|u>>12&63]+De[128|u>>6&63]+De[128|u&63]}i+=c.join("")}return i};function gc(n){return!n||typeof n!="object"?!1:!!(n.constructor&&n.constructor.isBuffer&&n.constructor.isBuffer(n))}function ni(n,s){if(ie(n)){let e=[];for(let t=0;t<n.length;t+=1)e.push(s(n[t]));return e}return s(n)}var bc={brackets(n){return String(n)+"[]"},comma:"comma",indices(n,s){return String(n)+"["+s+"]"},repeat(n){return String(n)}},wc=function(n,s){Array.prototype.push.apply(n,ie(s)?s:[s])},_c,ee={addQueryPrefix:!1,allowDots:!1,allowEmptyArrays:!1,arrayFormat:"indices",charset:"utf-8",charsetSentinel:!1,delimiter:"&",encode:!0,encodeDotInKeys:!1,encoder:mc,encodeValuesOnly:!1,format:Qo,formatter:Zo,indices:!1,serializeDate(n){return(_c??(_c=Function.prototype.call.bind(Date.prototype.toISOString)))(n)},skipNulls:!1,strictNullHandling:!1};function Qh(n){return typeof n=="string"||typeof n=="number"||typeof n=="boolean"||typeof n=="symbol"||typeof n=="bigint"}var ri={};function yc(n,s,e,t,r,o,i,a,l,c,d,u,f,m,p,w,y,v){let S=n,P=v,R=0,x=!1;for(;(P=P.get(ri))!==void 0&&!x;){let O=P.get(n);if(R+=1,typeof O<"u"){if(O===R)throw new RangeError("Cyclic object value");x=!0}typeof P.get(ri)>"u"&&(R=0)}if(typeof c=="function"?S=c(s,S):S instanceof Date?S=f?.(S):e==="comma"&&ie(S)&&(S=ni(S,function(O){return O instanceof Date?f?.(O):O})),S===null){if(o)return l&&!w?l(s,ee.encoder,y,"key",m):s;S=""}if(Qh(S)||gc(S)){if(l){let O=w?s:l(s,ee.encoder,y,"key",m);return[p?.(O)+"="+p?.(l(S,ee.encoder,y,"value",m))]}return[p?.(s)+"="+p?.(String(S))]}let C=[];if(typeof S>"u")return C;let I;if(e==="comma"&&ie(S))w&&l&&(S=ni(S,l)),I=[{value:S.length>0?S.join(",")||null:void 0}];else if(ie(c))I=c;else{let O=Object.keys(S);I=d?O.sort(d):O}let M=a?String(s).replace(/\./g,"%2E"):String(s),A=t&&ie(S)&&S.length===1?M+"[]":M;if(r&&ie(S)&&S.length===0)return A+"[]";for(let O=0;O<I.length;++O){let $=I[O],L=typeof $=="object"&&typeof $.value<"u"?$.value:S[$];if(i&&L===null)continue;let z=u&&a?$.replace(/\./g,"%2E"):$,Xe=ie(S)?typeof e=="function"?e(A,z):A:A+(u?"."+z:"["+z+"]");v.set(n,R);let We=new WeakMap;We.set(ri,v),wc(C,yc(L,Xe,e,t,r,o,i,a,e==="comma"&&w&&ie(S)?null:l,c,d,u,f,m,p,w,y,We))}return C}function Zh(n=ee){if(typeof n.allowEmptyArrays<"u"&&typeof n.allowEmptyArrays!="boolean")throw new TypeError("`allowEmptyArrays` option can only be `true` or `false`, when provided");if(typeof n.encodeDotInKeys<"u"&&typeof n.encodeDotInKeys!="boolean")throw new TypeError("`encodeDotInKeys` option can only be `true` or `false`, when provided");if(n.encoder!==null&&typeof n.encoder<"u"&&typeof n.encoder!="function")throw new TypeError("Encoder has to be a function.");let s=n.charset||ee.charset;if(typeof n.charset<"u"&&n.charset!=="utf-8"&&n.charset!=="iso-8859-1")throw new TypeError("The charset option must be either utf-8, iso-8859-1, or undefined");let e=Qo;if(typeof n.format<"u"){if(!ss(ei,n.format))throw new TypeError("Unknown format option provided.");e=n.format}let t=ei[e],r=ee.filter;(typeof n.filter=="function"||ie(n.filter))&&(r=n.filter);let o;if(n.arrayFormat&&n.arrayFormat in bc?o=n.arrayFormat:"indices"in n?o=n.indices?"indices":"repeat":o=ee.arrayFormat,"commaRoundTrip"in n&&typeof n.commaRoundTrip!="boolean")throw new TypeError("`commaRoundTrip` must be a boolean, or absent");let i=typeof n.allowDots>"u"?n.encodeDotInKeys?!0:ee.allowDots:!!n.allowDots;return{addQueryPrefix:typeof n.addQueryPrefix=="boolean"?n.addQueryPrefix:ee.addQueryPrefix,allowDots:i,allowEmptyArrays:typeof n.allowEmptyArrays=="boolean"?!!n.allowEmptyArrays:ee.allowEmptyArrays,arrayFormat:o,charset:s,charsetSentinel:typeof n.charsetSentinel=="boolean"?n.charsetSentinel:ee.charsetSentinel,commaRoundTrip:!!n.commaRoundTrip,delimiter:typeof n.delimiter>"u"?ee.delimiter:n.delimiter,encode:typeof n.encode=="boolean"?n.encode:ee.encode,encodeDotInKeys:typeof n.encodeDotInKeys=="boolean"?n.encodeDotInKeys:ee.encodeDotInKeys,encoder:typeof n.encoder=="function"?n.encoder:ee.encoder,encodeValuesOnly:typeof n.encodeValuesOnly=="boolean"?n.encodeValuesOnly:ee.encodeValuesOnly,filter:r,format:e,formatter:t,serializeDate:typeof n.serializeDate=="function"?n.serializeDate:ee.serializeDate,skipNulls:typeof n.skipNulls=="boolean"?n.skipNulls:ee.skipNulls,sort:typeof n.sort=="function"?n.sort:null,strictNullHandling:typeof n.strictNullHandling=="boolean"?n.strictNullHandling:ee.strictNullHandling}}function Sc(n,s={}){let e=n,t=Zh(s),r,o;typeof t.filter=="function"?(o=t.filter,e=o("",e)):ie(t.filter)&&(o=t.filter,r=o);let i=[];if(typeof e!="object"||e===null)return"";let a=bc[t.arrayFormat],l=a==="comma"&&t.commaRoundTrip;r||(r=Object.keys(e)),t.sort&&r.sort(t.sort);let c=new WeakMap;for(let f=0;f<r.length;++f){let m=r[f];t.skipNulls&&e[m]===null||wc(i,yc(e[m],m,a,l,t.allowEmptyArrays,t.strictNullHandling,t.skipNulls,t.encodeDotInKeys,t.encode?t.encoder:null,t.filter,t.sort,t.allowDots,t.serializeDate,t.format,t.formatter,t.encodeValuesOnly,t.charset,c))}let d=i.join(t.delimiter),u=t.addQueryPrefix===!0?"?":"";return t.charsetSentinel&&(t.charset==="iso-8859-1"?u+="utf8=%26%2310003%3B&":u+="utf8=%E2%9C%93&"),d.length>0?u+d:""}function kc(n){return Sc(n,{arrayFormat:"brackets"})}Y();Y();var Ac="urn:ietf:params:oauth:grant-type:jwt-bearer",Ec="refresh_token",os="/v1/oauth/token",bt="oauth-2025-04-20",xc="oidc-federation-2026-04-01",Tc=120,Bt=30,Ic=5,vc=1<<20;function is(n){if(!n)return;let s;try{s=new URL(n)}catch(t){throw new H(`Invalid token endpoint base URL "${n}": ${t}`)}if(s.protocol==="https:")return;let e=s.hostname.toLowerCase().replace(/^\[|\]$/g,"");if(!(s.protocol==="http:"&&(e==="localhost"||e==="127.0.0.1"||e==="::1")))throw new H(`Refusing to send credential over non-https token endpoint "${n}"`)}async function as(n,s){let e=await lu(n),t;try{t=JSON.parse(e)}catch{throw new H(`Token endpoint returned non-JSON response (status ${n.status})`,n.status,le(e),s)}if(!t.access_token)throw new H(`Token endpoint response missing access_token: ${JSON.stringify(le(t))}`,n.status,le(t),s);if(t.token_type&&t.token_type.toLowerCase()!=="bearer")throw new H(`Token endpoint response: unsupported token_type "${t.token_type}" (want Bearer)`,n.status,le(t),s);return t}var si=2e3,cu=new Set(["error","error_description","error_uri"]);function le(n){if(n==null)return n;if(typeof n=="string"){let s;try{s=JSON.parse(n)}catch{return n.length<=si?n:n.slice(0,si)+`... <${n.length-si} more chars>`}return JSON.stringify(le(s))}if(typeof n=="object"&&!Array.isArray(n)){let s={};for(let[e,t]of Object.entries(n))cu.has(e)&&(s[e]=t);return s}return null}async function cs(n,s=e=>console.warn(`anthropic-sdk: ${e}`)){if(typeof process>"u"||process.platform==="win32")return;let{fs:e}=await Promise.resolve().then(()=>($e(),Oe)),t=n,r;try{t=await e.promises.realpath(n),r=await e.promises.stat(t)}catch{return}let o=r.mode&511;if(o&18)throw new H(`Credentials file at ${t} is group/world-writable (mode 0o${o.toString(8)}); this allows other local users to plant tokens. Run \`chmod 600 ${t}\`.`);if(o&36)throw new H(`Credentials file at ${t} is group/world-readable (mode 0o${o.toString(8)}); run \`chmod 600 ${t}\` before retrying.`);typeof process.getuid=="function"&&r.uid!==process.getuid()&&s(`credentials file at ${t} is owned by uid ${r.uid} (current process uid ${process.getuid()}); verify this is intentional.`)}async function ls(n,s){let{fs:e,path:t}=await Promise.resolve().then(()=>($e(),Oe)),r=t.dirname(n);await e.promises.mkdir(r,{recursive:!0,mode:448});let o=`${n}.${process.pid}.${Math.random().toString(36).slice(2)}.tmp`;try{let i=await e.promises.open(o,"w",384);try{await i.writeFile(JSON.stringify(s,null,2)),await i.sync()}finally{await i.close()}await e.promises.rename(o,n)}catch(i){throw await e.promises.unlink(o).catch(()=>{}),i}try{let i=await e.promises.open(r,"r");try{await i.sync()}finally{await i.close()}}catch{}}async function lu(n){if(!n.body)return"";let s=n.body.getReader(),e=[],t=0;for(;;){let{done:o,value:i}=await s.read();if(o)break;if(t+i.length>vc){let a=vc-t;a>0&&e.push(i.subarray(0,a)),await s.cancel();break}e.push(i),t+=i.length}let r;if(e.length===1)r=e[0];else{r=new Uint8Array(e.reduce((i,a)=>i+a.length,0));let o=0;for(let i of e)r.set(i,o),o+=i.length}return new TextDecoder("utf-8").decode(r)}var H=class extends T{constructor(s,e=null,t=null,r=null){super(s),this.statusCode=e,this.body=t,this.requestId=r}};function Ie(){return Math.floor(Date.now()/1e3)}var hs=class{constructor(s,e){this.cached=null,this.pendingRefresh=null,this.nextForce=!1,this.lastAdvisoryError=0,this.provider=s,this.onAdvisoryRefreshError=e}async getToken(){let s=this.nextForce;this.nextForce=!1;let e=this.cached;if(s||e==null)return(await this.refresh(s)).token;if(e.expiresAt==null)return e.token;let t=e.expiresAt-Ie();return t>Tc?e.token:t>Bt?(this.backgroundRefresh(),e.token):(await this.refresh()).token}invalidate(){this.cached=null,this.nextForce=!0}refresh(s=!1){return this.pendingRefresh&&!s?this.pendingRefresh:this.doRefresh(s)}backgroundRefresh(){this.pendingRefresh||Ie()-this.lastAdvisoryError<Ic||this.doRefresh().catch(s=>{this.lastAdvisoryError=Ie(),this.onAdvisoryRefreshError?.(s)})}doRefresh(s=!1){return this.pendingRefresh=this.provider(s?{forceRefresh:!0}:void 0).then(e=>(this.cached=e,this.pendingRefresh=null,e),e=>{throw this.pendingRefresh=null,e}),this.pendingRefresh}};var B=n=>{if(typeof globalThis.process<"u")return globalThis.process.env?.[n]?.trim()||void 0;if(typeof globalThis.Deno<"u")return globalThis.Deno.env?.get?.(n)?.trim()||void 0};Y();function Pc(n){let s=0;for(let r of n)s+=r.length;let e=new Uint8Array(s),t=0;for(let r of n)e.set(r,t),t+=r.length;return e}var Rc;function us(n){let s;return(Rc??(s=new globalThis.TextEncoder,Rc=s.encode.bind(s)))(n)}var Mc;function or(n){let s;return(Mc??(s=new globalThis.TextDecoder,Mc=s.decode.bind(s)))(n)}var Cc=n=>{if(typeof globalThis.Buffer<"u"){let s=globalThis.Buffer.from(n,"base64");return new Uint8Array(s.buffer,s.byteOffset,s.byteLength)}if(typeof atob<"u"){let s=atob(n),e=new Uint8Array(s.length);for(let t=0;t<s.length;t++)e[t]=s.charCodeAt(t);return e}throw new T("Cannot decode base64 string; Expected `Buffer` or `atob` to be defined")};var ir="warn",fs={off:0,error:200,warn:300,info:400,debug:500},ps=(n,s,e)=>{if(n){if(rc(fs,n))return n;e.warn(`${s} was set to ${JSON.stringify(n)}, expected one of ${JSON.stringify(Object.keys(fs))}`)}};function Ft(){}function ds(n,s,e){return!s||fs[n]>fs[e]?Ft:s[n].bind(s)}var hu={error:Ft,warn:Ft,info:Ft,debug:Ft},Dc=new WeakMap;function ii(n,s){let e=Dc.get(n);if(e&&e[0]===s)return e[1];let t={error:ds("error",n,s),warn:ds("warn",n,s),info:ds("info",n,s),debug:ds("debug",n,s)};return Dc.set(n,[s,t]),t}function F(n){let s=n.logger,e=n.logLevel??"off";return s?ii(s,e):hu}var Oc,oi;function $c(){let n=B("ANTHROPIC_LOG");return(!oi||n!==Oc)&&(Oc=n,oi=ii(console,ps(n,"process.env['ANTHROPIC_LOG']",ii(console,ir))??ir)),oi}function Le(n,s,e){n.debug!==Ft&&n.debug(s,uu(e))}var uu=n=>(n.options&&(n.options={...n.options},delete n.options.headers),n.headers&&(n.headers=Object.fromEntries((n.headers instanceof Headers?[...n.headers]:Object.entries(n.headers)).map(([s,e])=>[s,s.toLowerCase()==="authorization"||s.toLowerCase()==="api-key"||s.toLowerCase()==="x-api-key"||s.toLowerCase()==="cookie"||s.toLowerCase()==="set-cookie"?"***":e]))),"retryOfRequestLogID"in n&&(n.retryOfRequestLogID&&(n.retryOf=n.retryOfRequestLogID),delete n.retryOfRequestLogID),n);var ms=function(){let{crypto:n}=globalThis;if(n?.randomUUID)return ms=n.randomUUID.bind(n),n.randomUUID();let s=new Uint8Array(1),e=n?()=>n.getRandomValues(s)[0]:()=>Math.random()*255&255;return"10000000-1000-4000-8000-100000000000".replace(/[018]/g,t=>(+t^e()&15>>+t/4).toString(16))};var gs="1.0",du=/^[A-Za-z0-9_.-]+$/;function Lc(n){if(!n)throw new Error("profile name is empty");if(n==="."||n==="..")throw new Error(`profile name "${n}" is not allowed`);if(n.includes("/")||n.includes("\\"))throw new Error(`profile name "${n}" must not contain path separators`);if(!du.test(n))throw new Error(`profile name "${n}" contains disallowed characters (allowed: letters, digits, '_', '.', '-')`)}var Nc=async n=>{var s,e;let t=await ai();if(t===null)return null;let r=n??await Fc();if(r===null)return null;Lc(r);let{fs:o,path:i}=await Promise.resolve().then(()=>($e(),Oe)),a=i.join(t,"configs",`${r}.json`),l;try{l=await o.promises.readFile(a,"utf-8")}catch(u){if(u?.code!=="ENOENT")throw new Error(`failed to read config file ${a}: ${u}`);l=null}if(l===null){let u=B("ANTHROPIC_ORGANIZATION_ID"),f=B("ANTHROPIC_IDENTITY_TOKEN_FILE"),m=B("ANTHROPIC_FEDERATION_RULE_ID");return m&&u?{fromFile:!1,config:{organization_id:u,workspace_id:B("ANTHROPIC_WORKSPACE_ID"),base_url:B("ANTHROPIC_BASE_URL"),authentication:{type:"oidc_federation",federation_rule_id:m,service_account_id:B("ANTHROPIC_SERVICE_ACCOUNT_ID"),identity_token:f?{source:"file",path:f}:void 0,scope:B("ANTHROPIC_SCOPE")}}}:null}let c;try{c=JSON.parse(l)}catch(u){throw new Error(`failed to parse config file ${a}: ${u}`)}if(!c.authentication)throw new Error(`config file ${a} is missing "authentication"`);let d=c.authentication.type;if(d!=="oidc_federation"&&d!=="user_oauth")throw new Error(`authentication.type "${d}" is not a known authentication type`);if(c.organization_id??(c.organization_id=B("ANTHROPIC_ORGANIZATION_ID")),c.workspace_id??(c.workspace_id=B("ANTHROPIC_WORKSPACE_ID")),c.base_url??(c.base_url=B("ANTHROPIC_BASE_URL")),(s=c.authentication).scope??(s.scope=B("ANTHROPIC_SCOPE")),c.authentication.type==="oidc_federation"){if(!c.authentication.identity_token){let u=B("ANTHROPIC_IDENTITY_TOKEN_FILE");u&&(c.authentication.identity_token={source:"file",path:u})}c.authentication.federation_rule_id||(c.authentication.federation_rule_id=B("ANTHROPIC_FEDERATION_RULE_ID")??""),(e=c.authentication).service_account_id??(e.service_account_id=B("ANTHROPIC_SERVICE_ACCOUNT_ID"))}return{config:c,fromFile:!0}};var Bc=async(n,s)=>{if(n?.authentication.credentials_path)return n.authentication.credentials_path;let e=await ai();if(!e)return null;let t=s??await Fc();if(!t)return null;Lc(t);let{path:r}=await Promise.resolve().then(()=>($e(),Oe));return r.join(e,"credentials",`${t}.json`)},ai=async()=>{if(!fu())return null;let{path:n}=await Promise.resolve().then(()=>($e(),Oe)),s=B("ANTHROPIC_CONFIG_DIR");if(s)return s;if(rr()["X-Stainless-OS"]==="Windows"){let o=B("APPDATA");if(o)return n.join(o,"Anthropic");let i=B("USERPROFILE");return i?n.join(i,"AppData","Roaming","Anthropic"):null}let t=B("XDG_CONFIG_HOME");if(t)return n.join(t,"anthropic");let r=B("HOME");return r?n.join(r,".config","anthropic"):null},fu=()=>{let n=rr()["X-Stainless-Runtime"];return n==="node"||n==="deno"},Fc=async()=>{let n=await ai();if(!n)return null;let s=B("ANTHROPIC_PROFILE");if(s)return s;let{fs:e,path:t}=await Promise.resolve().then(()=>($e(),Oe)),r=t.join(n,"active_config");try{return(await e.promises.readFile(r,"utf-8")).trim()||"default"}catch(o){if(o?.code!=="ENOENT")throw new Error(`failed to read ${r}: ${o}`);return"default"}};Y();function ci(n){if(!n)throw new T("Identity token file path is empty");return async()=>{let{fs:s}=await Promise.resolve().then(()=>($e(),Oe)),e;try{e=await s.promises.readFile(n,"utf-8")}catch(r){throw new T(`Failed to read identity token file at ${n}: ${r}`)}let t=e.trim();if(!t)throw new T(`Identity token file at ${n} is empty`);return t}}function Hc(n){if(!n)throw new T("Identity token value is empty");return()=>n}function Uc(n){return async()=>{is(n.baseURL);let s=await n.identityTokenProvider();if(s.length>16*1024)throw new H(`Identity token is ${Math.ceil(s.length/1024)} KiB, exceeds the 16 KiB assertion limit`);let e={grant_type:Ac,assertion:s,federation_rule_id:n.federationRuleId,organization_id:n.organizationId};n.serviceAccountId&&(e.service_account_id=n.serviceAccountId),n.workspaceId&&(e.workspace_id=n.workspaceId);let t=`${n.baseURL}${os}`,r;try{r=await n.fetch(t,{method:"POST",headers:{"Content-Type":"application/json","anthropic-beta":`${bt},${xc}`,"User-Agent":n.userAgent||`anthropic-sdk-typescript/${we} oidcFederationProvider`},body:JSON.stringify(e)})}catch(l){throw new H(`Failed to reach token endpoint ${t}: ${l}`)}let o=r.headers.get("Request-Id");if(!r.ok){let l=await r.text().catch(()=>""),c=le(l),d="";throw r.status===401&&(d=` Ensure your federation rule matches your identity token. ${n.workspaceId?"":"If your federation rule is scoped to multiple workspaces, set the ANTHROPIC_WORKSPACE_ID environment variable, the 'workspace_id' config key, or the `workspaceId` option. "}View your authentication events in the Workload identity page of Claude Console for more details.`),new H(`Token exchange failed with status ${r.status}${o?` (request-id ${o})`:""}: ${c}${d}`,r.status,c,o)}let i=await as(r,o),a=Number(i.expires_in);if(!Number.isFinite(a))throw new H(`Token endpoint response missing required fields: ${JSON.stringify(le(i))}`,r.status,le(i),o);return{token:i.access_token,expiresAt:Ie()+a}}}function jc(n){return async s=>{let{fs:e}=await Promise.resolve().then(()=>($e(),Oe));await cs(n.credentialsPath,n.onSafetyWarning);let t;try{t=await e.promises.readFile(n.credentialsPath,"utf-8")}catch(y){throw new H(`Credentials file not found at ${n.credentialsPath}: ${y}`)}let r;try{r=JSON.parse(t)}catch(y){throw new H(`Credentials file at ${n.credentialsPath} is not valid JSON: ${y}`)}let o=r.access_token;if(!o)throw new H(`Credentials file at ${n.credentialsPath} must include 'access_token'`);let i=r.expires_at;if(!s?.forceRefresh&&(i==null||Ie()<i-Bt))return{token:o,expiresAt:i??null};let a=r.refresh_token;if(!n.clientId||!a)throw new H(`Access token at ${n.credentialsPath} has expired and no refresh is available (client_id ${n.clientId?"set":"empty"}, refresh_token ${a?"set":"empty"})`);is(n.baseURL);let l={grant_type:Ec,refresh_token:a,client_id:n.clientId},c=`${n.baseURL}${os}`,d;try{d=await n.fetch(c,{method:"POST",headers:{"Content-Type":"application/json","anthropic-beta":bt,"User-Agent":n.userAgent||`anthropic-sdk-typescript/${we} userOAuthProvider`},body:JSON.stringify(l)})}catch(y){throw new H(`User OAuth refresh failed to reach token endpoint: ${y}`)}let u=d.headers.get("Request-Id");if(!d.ok){let y=await d.text().catch(()=>"");throw new H(`User OAuth refresh failed (HTTP ${d.status}): ${le(y)}`,d.status,le(y),u)}let f=await as(d,u),m=Number(f.expires_in);if(!Number.isFinite(m))throw new H(`User OAuth refresh response missing or invalid expires_in: ${JSON.stringify(le(f))}`,d.status,le(f),u);let p=Ie()+m,w=f.refresh_token||a;return await ls(n.credentialsPath,{...r,version:gs,type:"oauth_token",access_token:f.access_token,expires_at:p,refresh_token:w}),{token:f.access_token,expiresAt:p}}}function li(n,s){let e=n.authentication.credentials_path??null,t=(n.base_url||s.baseURL).replace(/\/+$/,""),r=pu(n,e,t,s),o={};return n.workspace_id&&n.authentication.type==="user_oauth"&&(o["anthropic-workspace-id"]=n.workspace_id),{provider:r,extraHeaders:o,baseURL:n.base_url||void 0}}async function Wc(n,s){let e=await Nc(s);if(!e)return null;let{config:t,fromFile:r}=e,o=t.authentication.credentials_path||!r?t:{...t,authentication:{...t.authentication,credentials_path:await Bc(t,s)??void 0}};return li(o,n)}function pu(n,s,e,t){switch(n.authentication.type){case"oidc_federation":{let r=n.authentication,o=mu(r);if(!o)throw new H("oidc_federation config requires an identity token (set authentication.identity_token, ANTHROPIC_IDENTITY_TOKEN_FILE, or ANTHROPIC_IDENTITY_TOKEN)");if(!r.federation_rule_id)throw new H("oidc_federation config requires 'federation_rule_id'. Set it in authentication.federation_rule_id in your profile, or via ANTHROPIC_FEDERATION_RULE_ID (profile takes precedence).");if(!n.organization_id)throw new H("oidc_federation config requires organization_id (set ANTHROPIC_ORGANIZATION_ID or config.organization_id)");let i=Uc({identityTokenProvider:o,federationRuleId:r.federation_rule_id,organizationId:n.organization_id,serviceAccountId:r.service_account_id,workspaceId:n.workspace_id,baseURL:e,fetch:t.fetch,userAgent:t.userAgent});return s?gu(i,s,t.onCacheWriteError,t.onSafetyWarning):i}case"user_oauth":{if(!s)throw new H("user_oauth config requires authentication.credentials_path (or load via a profile so it defaults to <config_dir>/credentials/<profile>.json)");return jc({credentialsPath:s,clientId:n.authentication.client_id,baseURL:e,fetch:t.fetch,userAgent:t.userAgent,onSafetyWarning:t.onSafetyWarning})}default:{let r=n.authentication.type;throw new H(`authentication.type "${r}" is not a known authentication type`)}}}function mu(n){if(n.identity_token){let t=n.identity_token.source;if(t!=="file")throw new H(`identity_token.source "${t}" is not supported by this SDK version (only "file")`);if(!n.identity_token.path)throw new H('identity_token.source "file" requires a non-empty path');return ci(n.identity_token.path)}let s=B("ANTHROPIC_IDENTITY_TOKEN_FILE");if(s)return ci(s);let e=B("ANTHROPIC_IDENTITY_TOKEN");return e?Hc(e):null}function gu(n,s,e,t){return async r=>{let{fs:o}=await Promise.resolve().then(()=>($e(),Oe));await cs(s,t);let i;try{let l=await o.promises.readFile(s,"utf-8");i=JSON.parse(l);let c=i?.access_token;if(c&&!r?.forceRefresh){let d=i?.expires_at;if(d==null||Ie()<d-Bt)return{token:c,expiresAt:d??null}}}catch(l){l?.code!=="ENOENT"&&!(l instanceof SyntaxError)&&e?.(l)}let a=await n(r);try{await ls(s,{...i??{},version:gs,type:"oauth_token",access_token:a.token,expires_at:a.expiresAt})}catch(l){e?.(l)}return a}}gt();Y();var pe,me,ar=(()=>{class n{constructor(){pe.set(this,void 0),me.set(this,void 0),k(this,pe,new Uint8Array,"f"),k(this,me,null,"f")}decode(e){if(e==null)return[];let t=e instanceof ArrayBuffer?new Uint8Array(e):typeof e=="string"?us(e):e;k(this,pe,Pc([h(this,pe,"f"),t]),"f");let r=[],o;for(;(o=_u(h(this,pe,"f"),h(this,me,"f")))!=null;){if(o.carriage&&h(this,me,"f")==null){k(this,me,o.index,"f");continue}if(h(this,me,"f")!=null&&(o.index!==h(this,me,"f")+1||o.carriage)){r.push(or(h(this,pe,"f").subarray(0,h(this,me,"f")-1))),k(this,pe,h(this,pe,"f").subarray(h(this,me,"f")),"f"),k(this,me,null,"f");continue}let i=h(this,me,"f")!==null?o.preceding-1:o.preceding,a=or(h(this,pe,"f").subarray(0,i));r.push(a),k(this,pe,h(this,pe,"f").subarray(o.index),"f"),k(this,me,null,"f")}return r}flush(){return h(this,pe,"f").length?this.decode(`
+`):[]}}return pe=new WeakMap,me=new WeakMap,n.NEWLINE_CHARS=new Set([`
+`,"\r"]),n.NEWLINE_REGEXP=/\r\n|[\n\r]/g,n})();function _u(n,s){for(let r=s??0;r<n.length;r++){if(n[r]===10)return{preceding:r,index:r+1,carriage:!1};if(n[r]===13)return{preceding:r,index:r+1,carriage:!0}}return null}gt();Y();var cr,Ne=(()=>{class n{constructor(e,t,r){this.iterator=e,cr.set(this,void 0),this.controller=t,k(this,cr,r,"f")}static rawEvents(e,t=new AbortController){return qc(e,t)}static fromSSEResponse(e,t,r){let o=!1,i=r?F(r):console;async function*a(){if(o)throw new T("Cannot iterate over a consumed stream, use `.tee()` to split the stream.");o=!0;let l=!1;try{for await(let c of qc(e,t)){if(c.event==="completion")try{yield JSON.parse(c.data)}catch(d){throw i.error("Could not parse message into JSON:",c.data),i.error("From chunk:",c.raw),d}if(c.event==="message_start"||c.event==="message_delta"||c.event==="message_stop"||c.event==="content_block_start"||c.event==="content_block_delta"||c.event==="content_block_stop"||c.event==="message"||c.event==="user.message"||c.event==="user.interrupt"||c.event==="user.tool_confirmation"||c.event==="user.custom_tool_result"||c.event==="user.tool_result"||c.event==="agent.message"||c.event==="agent.thinking"||c.event==="agent.tool_use"||c.event==="agent.tool_result"||c.event==="agent.mcp_tool_use"||c.event==="agent.mcp_tool_result"||c.event==="agent.custom_tool_use"||c.event==="agent.thread_context_compacted"||c.event==="session.status_running"||c.event==="session.status_idle"||c.event==="session.status_rescheduled"||c.event==="session.status_terminated"||c.event==="session.error"||c.event==="session.deleted"||c.event==="session.updated"||c.event==="span.model_request_start"||c.event==="span.model_request_end"||c.event==="span.outcome_evaluation_start"||c.event==="span.outcome_evaluation_ongoing"||c.event==="span.outcome_evaluation_end"||c.event==="user.define_outcome"||c.event==="agent.thread_message_received"||c.event==="agent.thread_message_sent"||c.event==="agent.session_thread_message_received"||c.event==="agent.session_thread_message_sent"||c.event==="session.thread_created"||c.event==="session.thread_status_created"||c.event==="session.thread_status_running"||c.event==="session.thread_status_idle"||c.event==="session.thread_status_rescheduled"||c.event==="session.thread_status_terminated"||c.event==="event_start"||c.event==="event_delta"||c.event==="system.message")try{yield JSON.parse(c.data)}catch(d){throw i.error("Could not parse message into JSON:",c.data),i.error("From chunk:",c.raw),d}if(c.event!=="ping"&&c.event==="error"){let d=ts(c.data)??c.data,u=d?.error?.type;throw new X(void 0,d,void 0,e.headers,u)}}l=!0}catch(c){if(xe(c))return;throw c}finally{l||t.abort(),Ce(t)}}return new n(a,t,r)}static fromReadableStream(e,t,r){let o=!1;async function*i(){let l=new ar,c=sr(e);for await(let d of c)for(let u of l.decode(d))yield u;for(let d of l.flush())yield d}async function*a(){if(o)throw new T("Cannot iterate over a consumed stream, use `.tee()` to split the stream.");o=!0;let l=!1;try{for await(let c of i())l||c&&(yield JSON.parse(c));l=!0}catch(c){if(xe(c))return;throw c}finally{l||t.abort(),Ce(t)}}return new n(a,t,r)}[(cr=new WeakMap,Symbol.asyncIterator)](){return this.iterator()}tee(){let e=[],t=[],r=this.iterator(),o=i=>({next:()=>{if(i.length===0){let a=r.next();e.push(a),t.push(a)}return i.shift()}});return[new n(()=>o(e),this.controller,h(this,cr,"f")),new n(()=>o(t),this.controller,h(this,cr,"f"))]}toReadableStream(){let e=this,t;return Jo({async start(){t=e[Symbol.asyncIterator]()},async pull(r){try{let{value:o,done:i}=await t.next();if(i)return r.close();let a=us(JSON.stringify(o)+`
+`);r.enqueue(a)}catch(o){r.error(o)}},async cancel(){await t.return?.()}})}}return n})();async function*qc(n,s){if(!n.body)throw s.abort(),typeof globalThis.navigator<"u"&&globalThis.navigator.product==="ReactNative"?new T("The default react-native fetch implementation does not support streaming. Please use expo/fetch: https://docs.expo.dev/versions/latest/sdk/expo/#expofetch-api"):new T("Attempted to iterate over a response with no body");let e=new hi,t=new ar,r=sr(n.body);for await(let o of r)for(let i of t.decode(o)){let a=e.decode(i);a&&(yield a)}for(let o of t.flush()){let i=e.decode(o);i&&(yield i)}}var hi=class{constructor(){this.event=null,this.data=[],this.chunks=[]}decode(s){if(s.endsWith("\r")&&(s=s.substring(0,s.length-1)),!s){if(!this.event&&!this.data.length)return null;let o={event:this.event,data:this.data.join(`
+`),raw:this.chunks};return this.event=null,this.data=[],this.chunks=[],o}if(this.chunks.push(s),s.startsWith(":"))return null;let[e,t,r]=bu(s,":");return r.startsWith(" ")&&(r=r.substring(1)),e==="event"?this.event=r:e==="data"&&this.data.push(r),null}};function bu(n,s){let e=n.indexOf(s);return e!==-1?[n.substring(0,e),s,n.substring(e+s.length)]:[n,"",""]}async function _s(n,s){let{response:e,requestLogID:t,retryOfRequestLogID:r,startTime:o}=s,i=await(async()=>{if(s.options.stream)return F(n).debug("response",e.status,e.url,e.headers,e.body),Ne.fromSSEResponse(e,s.controller,n);if(e.status===204)return null;if(s.options.__binaryResponse)return e;let l=e.headers.get("content-type")?.split(";")[0]?.trim();if(l?.includes("application/json")||l?.endsWith("+json")){if(e.headers.get("content-length")==="0")return;let f=await e.json();return lr(f,e)}return await e.text()})().finally(()=>{!s.options.stream&&!s.options.__binaryResponse&&Ce(s.controller)});return Le(F(n),`[${t}] response parsed`,{retryOfRequestLogID:r,url:e.url,status:e.status,body:i,durationMs:Date.now()-o}),i}function lr(n,s){return!n||typeof n!="object"||Array.isArray(n)?n:Object.defineProperties(n,{_request_id:{value:s.headers.get("request-id"),enumerable:!1},_workspace_id:{value:s.headers.get("anthropic-workspace-id"),enumerable:!1}})}Y();var Yc=new WeakSet;function ui(n){return typeof n=="object"&&n!==null&&Yc.has(n)}function Vc(n){let s=new Set;for(;typeof n=="object"&&n!==null&&!s.has(n);){if(s.add(n),ui(n)||xe(n)||n instanceof ze||n instanceof Zr)return!0;n=n.cause}return!1}function di(n,s,e,t){return async(r,o={})=>{if(s.length===0)return n.call(void 0,r,o);let i=o.headers instanceof Headers?o.headers:new Headers(o.headers),a=await yu(n,s,e,t)({...o,headers:i,url:typeof r=="string"?r:r instanceof URL?r.href:r.url});if(a.bodyUsed||a.body?.locked)throw new T("middleware consumed the response body; use response.clone() to inspect it, or return new Response(body, response) to consume and replace it");return a}}function wu(n,s){let e=new WeakMap;return{options:n,logger:s?F(s):$c(),parse(t){if(n?.stream&&t.ok)return zc(t,n,s);let r=e.get(t);return r||(r=zc(t,n,s),e.set(t,r)),r}}}async function zc(n,s,e){if(n.bodyUsed||n.body?.locked)throw new T("cannot ctx.parse() a response whose body was already consumed; call ctx.parse() instead of reading the body, or read via response.clone()");if(s?.stream&&n.ok)return Ne.fromSSEResponse(n.clone(),new AbortController,e);if(n.status===204)return null;if(s?.__binaryResponse)return n;let r=n.headers.get("content-type")?.split(";")[0]?.trim();return r?.includes("application/json")||r?.endsWith("+json")?n.headers.get("content-length")==="0"?void 0:lr(await n.clone().json(),n):await n.clone().text()}function yu(n,s,e,t){let r=async({url:i,...a})=>{try{return await n.call(void 0,i,a)}catch(l){let c=mt(l);throw Yc.add(c),c}},o=wu(e,t);for(let i=s.length-1;i>=0;i--){let a=s[i],l=r;r=async c=>a(c,l,o)}return r}Y();var hr,bs=(()=>{class n extends Promise{constructor(e,t,r=_s){super(o=>{o(null)}),this.responsePromise=t,this.parseResponse=r,hr.set(this,void 0),k(this,hr,e,"f")}_thenUnwrap(e){return new n(h(this,hr,"f"),this.responsePromise,async(t,r)=>lr(e(await this.parseResponse(t,r),r),r.response))}asResponse(){return this.responsePromise.then(e=>e.response)}async withResponse(){let[e,t]=await Promise.all([this.parse(),this.asResponse()]);return{data:e,response:t,request_id:t.headers.get("request-id"),workspace_id:t.headers.get("anthropic-workspace-id")}}parse(){return this.parsedPromise||(this.parsedPromise=this.responsePromise.then(e=>this.parseResponse(h(this,hr,"f"),e))),this.parsedPromise}then(e,t){return this.parse().then(e,t)}catch(e){return this.parse().catch(e)}finally(e){return this.parse().finally(e)}}return hr=new WeakMap,n})();var ws,fi=(()=>{class n{constructor(e,t,r,o){ws.set(this,void 0),k(this,ws,e,"f"),this.options=o,this.response=t,this.body=r}hasNextPage(){return this.getPaginatedItems().length?this.nextPageRequestOptions()!=null:!1}async getNextPage(){let e=this.nextPageRequestOptions();if(!e)throw new T("No next page expected; please check `.hasNextPage()` before calling `.getNextPage()`.");return await h(this,ws,"f").requestAPIList(this.constructor,e)}async*iterPages(){let e=this;for(yield e;e.hasNextPage();)e=await e.getNextPage(),yield e}async*[(ws=new WeakMap,Symbol.asyncIterator)](){for await(let e of this.iterPages())for(let t of e.getPaginatedItems())yield t}}return n})(),Xc=(()=>{class n extends bs{constructor(e,t,r){super(e,t,async(o,i)=>new r(o,i.response,await _s(o,i),i.options))}async*[Symbol.asyncIterator](){let e=await this;for await(let t of e)yield t}}return n})(),J=class extends fi{constructor(s,e,t,r){super(s,e,t,r),this.data=t.data||[],this.has_more=t.has_more||!1,this.first_id=t.first_id||null,this.last_id=t.last_id||null}getPaginatedItems(){return this.data??[]}hasNextPage(){return this.has_more===!1?!1:super.hasNextPage()}nextPageRequestOptions(){if(this.options.query?.before_id){let e=this.first_id;return e?{...this.options,query:{...nr(this.options.query),before_id:e}}:null}let s=this.last_id;return s?{...this.options,query:{...nr(this.options.query),after_id:s}}:null}};var D=class extends fi{constructor(s,e,t,r){super(s,e,t,r),this.data=t.data||[],this.next_page=t.next_page||null}getPaginatedItems(){return this.data??[]}nextPageRequestOptions(){let s=this.next_page;return s?{...this.options,query:{...nr(this.options.query),page:s}}:null}},ys=class extends fi{constructor(s,e,t,r){super(s,e,t,r),this.data=t.data||[],this.next_page=t.next_page||null,this.prev_page=t.prev_page||null}getPaginatedItems(){return this.data??[]}nextPageRequestOptions(){let s=this.next_page;return s?{...this.options,query:{...nr(this.options.query),page:s}}:null}};var mi=()=>{if(typeof File>"u"){let{process:n}=globalThis,s=typeof n?.versions?.node=="string"&&parseInt(n.versions.node.split("."))<20;throw new Error("`File` is not defined as a global, which is required for file uploads."+(s?" Update to Node 20 LTS or newer, or set `globalThis.File` to `import('node:buffer').File`.":""))}};function wt(n,s,e){return mi(),new File(n,s??"",e)}function ur(n,s){let e=typeof n=="object"&&n!==null&&("name"in n&&n.name&&String(n.name)||"url"in n&&n.url&&String(n.url)||"filename"in n&&n.filename&&String(n.filename)||"path"in n&&n.path&&String(n.path))||"";return s?e.split(/[\\/]/).pop()||void 0:e}var gi=n=>n!=null&&typeof n=="object"&&typeof n[Symbol.asyncIterator]=="function";var ye=async(n,s,e=!0)=>({...n,body:await vu(n.body,s,e)}),Kc=new WeakMap;function ku(n){let s=typeof n=="function"?n:n.fetch,e=Kc.get(s);if(e)return e;let t=(async()=>{try{let r="Response"in s?s.Response:(await s("data:,")).constructor,o=new FormData;return o.toString()!==await new r(o).text()}catch{return!0}})();return Kc.set(s,t),t}var vu=async(n,s,e=!0)=>{if(!await ku(s))throw new TypeError("The provided fetch function does not support file uploads with the current global FormData class.");let t=new FormData;return await Promise.all(Object.entries(n||{}).map(([r,o])=>pi(t,r,o,e))),t};var pi=async(n,s,e,t)=>{if(e!==void 0){if(e==null)throw new TypeError(`Received null for "${s}"; to pass null in FormData, you must use the string 'null'`);if(typeof e=="string"||typeof e=="number"||typeof e=="boolean")n.append(s,String(e));else if(e instanceof Response){let r={},o=e.headers.get("Content-Type");o&&(r={type:o}),n.append(s,wt([await e.blob()],ur(e,t),r))}else if(gi(e))n.append(s,wt([await new Response(rs(e)).blob()],ur(e,t)));else if(e instanceof Blob){let o=typeof File<"u"&&e instanceof File?e.name:ur(e,t);n.append(s,wt([e],o,{type:e.type}))}else if(Array.isArray(e))await Promise.all(e.map(r=>pi(n,s+"[]",r,t)));else{if(typeof e.then=="function")throw new TypeError(`Received a Promise for "${s}"; await it first, e.g. \`await toFile(...)\``);if(e instanceof ArrayBuffer||ArrayBuffer.isView(e))throw new TypeError(`Received ${e.constructor.name} for "${s}"; to upload raw bytes, wrap them with \`await toFile(bytes, 'filename')\``);if(typeof e=="object")await Promise.all(Object.entries(e).map(([r,o])=>pi(n,`${s}[${r}]`,o,t)));else throw new TypeError(`Invalid value given to form, expected a string, number, boolean, object, Array, File or Blob but got ${e} instead`)}}};var Gc=n=>n!=null&&typeof n=="object"&&typeof n.size=="number"&&typeof n.type=="string"&&typeof n.text=="function"&&typeof n.slice=="function"&&typeof n.arrayBuffer=="function",Au=n=>n!=null&&typeof n=="object"&&typeof n.name=="string"&&typeof n.lastModified=="number"&&Gc(n),Eu=n=>n!=null&&typeof n=="object"&&typeof n.url=="string"&&typeof n.blob=="function";async function bi(n,s,e){if(mi(),n=await n,s||(s=n instanceof File?n.name:ur(n,!0)),Au(n))return n instanceof File&&s==null&&e==null?n:wt([await n.arrayBuffer()],s??n.name,{type:n.type,lastModified:n.lastModified,...e});if(Eu(n)){let r=await n.blob();return s||(s=new URL(n.url).pathname.split(/[\\/]/).pop()),wt(await _i(r),s,e)}let t=await _i(n);if(!e?.type){let r=t.find(o=>typeof o=="object"&&"type"in o&&o.type);typeof r=="string"&&(e={...e,type:r})}return wt(t,s,e)}async function _i(n){let s=[];if(typeof n=="string"||ArrayBuffer.isView(n)||n instanceof ArrayBuffer)s.push(n);else if(Gc(n))s.push(n instanceof Blob?n:await n.arrayBuffer());else if(gi(n))for await(let e of n)s.push(...await _i(e));else{let e=n?.constructor?.name;throw new Error(`Unexpected data type: ${typeof n}${e?`; constructor: ${e}`:""}${xu(n)}`)}return s}function xu(n){return typeof n!="object"||n===null?"":`; props: [${Object.getOwnPropertyNames(n).map(e=>`"${e}"`).join(", ")}]`}var E=class{constructor(s){this._client=s}};var Jc=Symbol.for("brand.privateNullableHeaders");function*Iu(n){if(!n)return;if(Jc in n){let{values:t,nulls:r}=n;yield*t.entries();for(let o of r)yield[o,null];return}let s=!1,e;n instanceof Headers?e=n.entries():Xo(n)?e=n:(s=!0,e=Object.entries(n??{}));for(let t of e){let r=t[0];if(typeof r!="string")throw new TypeError("expected header name to be a string");let o=Xo(t[1])?t[1]:[t[1]],i=!1;for(let a of o)a!==void 0&&(s&&!i&&(i=!0,yield[r,Ss]),yield[r,a])}}var Ss=Symbol("clear"),Ru=new Set(["x-stainless-helper"]),Mu=(n,s)=>{let e=n?n.split(",").map(t=>t.trim()).filter(Boolean):[];for(let t of s.split(",").map(r=>r.trim()))t&&!e.includes(t)&&e.push(t);return e.join(", ")},_=n=>{let s=new Headers,e=new Set;for(let t of n){let r=new Set;for(let[o,i]of Iu(t)){let a=o.toLowerCase();if(Ru.has(a)){if(i===Ss)continue;i===null?(s.delete(o),e.add(a)):(s.set(o,Mu(s.get(o),i)),e.delete(a));continue}(i===Ss||!r.has(a))&&(s.delete(o),r.add(a),i===Ss)||(i===null?(s.delete(o),e.add(a)):(s.append(o,i),e.delete(a)))}}return{[Jc]:!0,values:s,nulls:e}};Y();function Zc(n){return n.replace(/[^A-Za-z0-9\-._~!$&'()*+,;=:@]+/g,encodeURIComponent)}var Qc=Object.freeze(Object.create(null)),Pu=(n=Zc)=>function(e,...t){if(e.length===1)return e[0];let r=!1,o=[],i=e.reduce((d,u,f)=>{/[?#]/.test(u)&&(r=!0);let m=t[f],p=(r?encodeURIComponent:n)(""+m);return f!==t.length&&(m==null||typeof m=="object"&&m.toString===Object.getPrototypeOf(Object.getPrototypeOf(m.hasOwnProperty??Qc)??Qc)?.toString)&&(p=m+"",o.push({start:d.length+u.length,length:p.length,error:`Value of type ${Object.prototype.toString.call(m).slice(8,-1)} is not a valid path parameter`})),d+u+(f===t.length?"":p)},""),a=i.split(/[?#]/,1)[0],l=/(?<=^|\/)(?:\.|%2e){1,2}(?=\/|$)/gi,c;for(;(c=l.exec(a))!==null;)o.push({start:c.index,length:c[0].length,error:`Value "${c[0]}" can't be safely passed as a path parameter`});if(o.sort((d,u)=>d.start-u.start),o.length>0){let d=0,u=o.reduce((f,m)=>{let p=" ".repeat(m.start-d),w="^".repeat(m.length);return d=m.start+m.length,f+p+w},"");throw new T(`Path parameters result in path with invalid segments:
+${o.map(f=>f.error).join(`
+`)}
+${i}
+${u}`)}return i},b=Pu(Zc);var Ht=class extends E{retrieve(s,e={},t){let{betas:r,workspace_id:o}=e??{};return this._client.get(b`/v1/deployment_runs/${s}?beta=true`,{...t,headers:_([{"anthropic-beta":[...r??[],"managed-agents-2026-04-01"].toString(),...o!=null?{"anthropic-workspace-id":o}:void 0},t?.headers])})}list(s={},e){let{betas:t,workspace_id:r,...o}=s??{};return this._client.getAPIList("/v1/deployment_runs?beta=true",D,{query:o,...e,headers:_([{"anthropic-beta":[...t??[],"managed-agents-2026-04-01"].toString(),...r!=null?{"anthropic-workspace-id":r}:void 0},e?.headers])})}};var Ut=class extends E{create(s,e){let{betas:t,workspace_id:r,...o}=s;return this._client.post("/v1/deployments?beta=true",{body:o,...e,headers:_([{"anthropic-beta":[...t??[],"managed-agents-2026-04-01"].toString(),...r!=null?{"anthropic-workspace-id":r}:void 0},e?.headers])})}retrieve(s,e={},t){let{betas:r,workspace_id:o}=e??{};return this._client.get(b`/v1/deployments/${s}?beta=true`,{...t,headers:_([{"anthropic-beta":[...r??[],"managed-agents-2026-04-01"].toString(),...o!=null?{"anthropic-workspace-id":o}:void 0},t?.headers])})}update(s,e,t){let{betas:r,workspace_id:o,...i}=e;return this._client.post(b`/v1/deployments/${s}?beta=true`,{body:i,...t,headers:_([{"anthropic-beta":[...r??[],"managed-agents-2026-04-01"].toString(),...o!=null?{"anthropic-workspace-id":o}:void 0},t?.headers])})}list(s={},e){let{betas:t,workspace_id:r,...o}=s??{};return this._client.getAPIList("/v1/deployments?beta=true",D,{query:o,...e,headers:_([{"anthropic-beta":[...t??[],"managed-agents-2026-04-01"].toString(),...r!=null?{"anthropic-workspace-id":r}:void 0},e?.headers])})}archive(s,e={},t){let{betas:r,workspace_id:o}=e??{};return this._client.post(b`/v1/deployments/${s}/archive?beta=true`,{...t,headers:_([{"anthropic-beta":[...r??[],"managed-agents-2026-04-01"].toString(),...o!=null?{"anthropic-workspace-id":o}:void 0},t?.headers])})}pause(s,e={},t){let{betas:r,workspace_id:o}=e??{};return this._client.post(b`/v1/deployments/${s}/pause?beta=true`,{...t,headers:_([{"anthropic-beta":[...r??[],"managed-agents-2026-04-01"].toString(),...o!=null?{"anthropic-workspace-id":o}:void 0},t?.headers])})}run(s,e={},t){let{betas:r,workspace_id:o}=e??{};return this._client.post(b`/v1/deployments/${s}/run?beta=true`,{...t,headers:_([{"anthropic-beta":[...r??[],"managed-agents-2026-04-01"].toString(),...o!=null?{"anthropic-workspace-id":o}:void 0},t?.headers])})}unpause(s,e={},t){let{betas:r,workspace_id:o}=e??{};return this._client.post(b`/v1/deployments/${s}/unpause?beta=true`,{...t,headers:_([{"anthropic-beta":[...r??[],"managed-agents-2026-04-01"].toString(),...o!=null?{"anthropic-workspace-id":o}:void 0},t?.headers])})}};var jt=class extends E{create(s,e){let{betas:t,workspace_id:r,...o}=s;return this._client.post("/v1/dreams?beta=true",{body:o,...e,headers:_([{"anthropic-beta":[...t??[],"dreaming-2026-04-21"].toString(),...r!=null?{"anthropic-workspace-id":r}:void 0},e?.headers])})}retrieve(s,e={},t){let{betas:r,workspace_id:o}=e??{};return this._client.get(b`/v1/dreams/${s}?beta=true`,{...t,headers:_([{"anthropic-beta":[...r??[],"dreaming-2026-04-21"].toString(),...o!=null?{"anthropic-workspace-id":o}:void 0},t?.headers])})}list(s={},e){let{betas:t,workspace_id:r,...o}=s??{};return this._client.getAPIList("/v1/dreams?beta=true",D,{query:o,...e,headers:_([{"anthropic-beta":[...t??[],"dreaming-2026-04-21"].toString(),...r!=null?{"anthropic-workspace-id":r}:void 0},e?.headers])})}archive(s,e={},t){let{betas:r,workspace_id:o}=e??{};return this._client.post(b`/v1/dreams/${s}/archive?beta=true`,{...t,headers:_([{"anthropic-beta":[...r??[],"dreaming-2026-04-21"].toString(),...o!=null?{"anthropic-workspace-id":o}:void 0},t?.headers])})}cancel(s,e={},t){let{betas:r,workspace_id:o}=e??{};return this._client.post(b`/v1/dreams/${s}/cancel?beta=true`,{...t,headers:_([{"anthropic-beta":[...r??[],"dreaming-2026-04-21"].toString(),...o!=null?{"anthropic-workspace-id":o}:void 0},t?.headers])})}};var yt="x-stainless-helper",qt="x-stainless-helper-method";function ks(n){return{[yt]:n}}var Wt=Symbol("anthropic.sdk.stainlessHelper");function dr(n){return typeof n=="object"&&n!==null&&Wt in n}function wi(n,s){let e=new Set;if(n)for(let t of n)dr(t)&&e.add(t[Wt]);if(s)for(let t of s){dr(t)&&e.add(t[Wt]);let r=t.content;if(Array.isArray(r))for(let o of r){dr(o)&&e.add(o[Wt]);let i=o?.tool?.definition;dr(i)&&e.add(i[Wt])}}return Array.from(e)}function vs(n,s){let e=wi(n,s);return e.length===0?{}:{[yt]:e.join(", ")}}function As(n){return dr(n)?{[yt]:n[Wt]}:{}}var zt=class extends E{list(s={},e){let{betas:t,workspace_id:r,...o}=s??{};return this._client.getAPIList("/v1/files?beta=true",D,{query:o,...e,headers:_([{...t?.toString()!=null?{"anthropic-beta":t?.toString()}:void 0,...r!=null?{"anthropic-workspace-id":r}:void 0},e?.headers])})}delete(s,e={},t){let{betas:r,workspace_id:o}=e??{};return this._client.delete(b`/v1/files/${s}?beta=true`,{...t,headers:_([{...r?.toString()!=null?{"anthropic-beta":r?.toString()}:void 0,...o!=null?{"anthropic-workspace-id":o}:void 0},t?.headers])})}download(s,e={},t){let{betas:r,workspace_id:o}=e??{};return this._client.get(b`/v1/files/${s}/content?beta=true`,{...t,headers:_([{Accept:"application/binary",...r?.toString()!=null?{"anthropic-beta":r?.toString()}:void 0,...o!=null?{"anthropic-workspace-id":o}:void 0},t?.headers]),__binaryResponse:!0})}retrieveMetadata(s,e={},t){let{betas:r,workspace_id:o}=e??{};return this._client.get(b`/v1/files/${s}?beta=true`,{...t,headers:_([{...r?.toString()!=null?{"anthropic-beta":r?.toString()}:void 0,...o!=null?{"anthropic-workspace-id":o}:void 0},t?.headers])})}upload(s,e){let{betas:t,workspace_id:r,...o}=s;return this._client.post("/v1/files?beta=true",ye({body:o,...e,headers:_([{...t?.toString()!=null?{"anthropic-beta":t?.toString()}:void 0,...r!=null?{"anthropic-workspace-id":r}:void 0},As(o.file),e?.headers])},this._client))}};var Yt=class extends E{retrieve(s,e={},t){let{betas:r,workspace_id:o}=e??{};return this._client.get(b`/v1/models/${s}?beta=true`,{...t,headers:_([{...r?.toString()!=null?{"anthropic-beta":r?.toString()}:void 0,...o!=null?{"anthropic-workspace-id":o}:void 0},t?.headers])})}list(s={},e){let{betas:t,workspace_id:r,...o}=s??{};return this._client.getAPIList("/v1/models?beta=true",J,{query:o,...e,headers:_([{...t?.toString()!=null?{"anthropic-beta":t?.toString()}:void 0,...r!=null?{"anthropic-workspace-id":r}:void 0},e?.headers])})}};var Vt=class extends E{create(s,e){let{betas:t,workspace_id:r,...o}=s;return this._client.post("/v1/user_profiles?beta=true",{body:o,...e,headers:_([{"anthropic-beta":[...t??[],"user-profiles-2026-08-18"].toString(),...r!=null?{"anthropic-workspace-id":r}:void 0},e?.headers])})}retrieve(s,e={},t){let{betas:r,workspace_id:o}=e??{};return this._client.get(b`/v1/user_profiles/${s}?beta=true`,{...t,headers:_([{"anthropic-beta":[...r??[],"user-profiles-2026-08-18"].toString(),...o!=null?{"anthropic-workspace-id":o}:void 0},t?.headers])})}update(s,e,t){let{betas:r,workspace_id:o,...i}=e;return this._client.post(b`/v1/user_profiles/${s}?beta=true`,{body:i,...t,headers:_([{"anthropic-beta":[...r??[],"user-profiles-2026-08-18"].toString(),...o!=null?{"anthropic-workspace-id":o}:void 0},t?.headers])})}list(s={},e){let{betas:t,workspace_id:r,...o}=s??{};return this._client.getAPIList("/v1/user_profiles?beta=true",D,{query:o,...e,headers:_([{"anthropic-beta":[...t??[],"user-profiles-2026-08-18"].toString(),...r!=null?{"anthropic-workspace-id":r}:void 0},e?.headers])})}createEnrollmentURL(s,e={},t){let{betas:r,workspace_id:o}=e??{};return this._client.post(b`/v1/user_profiles/${s}/enrollment_url?beta=true`,{...t,headers:_([{"anthropic-beta":[...r??[],"user-profiles-2026-08-18"].toString(),...o!=null?{"anthropic-workspace-id":o}:void 0},t?.headers])})}};var hl=dh(ll(),1),Kt=class extends E{parseUnverified(s){return JSON.parse(s)}unwrap(s,e){let t=e?.headers;if(t==null)throw new Error("Webhook headers are required in order to verify the signature");let r=e.key===void 0?this._client.webhookKey:e.key;if(!r)throw new Error("Webhook key must not be null or empty in order to unwrap");return new hl.Webhook(r).verify(s,t),JSON.parse(s)}};var Gt=class extends E{list(s,e={},t){let{betas:r,workspace_id:o,...i}=e??{};return this._client.getAPIList(b`/v1/agents/${s}/versions?beta=true`,D,{query:i,...t,headers:_([{"anthropic-beta":[...r??[],"managed-agents-2026-04-01"].toString(),...o!=null?{"anthropic-workspace-id":o}:void 0},t?.headers])})}};var Ts=(()=>{class n extends E{constructor(){super(...arguments),this.versions=new Gt(this._client)}create(e,t){let{betas:r,workspace_id:o,...i}=e;return this._client.post("/v1/agents?beta=true",{body:i,...t,headers:_([{"anthropic-beta":[...r??[],"managed-agents-2026-04-01"].toString(),...o!=null?{"anthropic-workspace-id":o}:void 0},t?.headers])})}retrieve(e,t={},r){let{betas:o,workspace_id:i,...a}=t??{};return this._client.get(b`/v1/agents/${e}?beta=true`,{query:a,...r,headers:_([{"anthropic-beta":[...o??[],"managed-agents-2026-04-01"].toString(),...i!=null?{"anthropic-workspace-id":i}:void 0},r?.headers])})}update(e,t,r){let{betas:o,workspace_id:i,...a}=t;return this._client.post(b`/v1/agents/${e}?beta=true`,{body:a,...r,headers:_([{"anthropic-beta":[...o??[],"managed-agents-2026-04-01"].toString(),...i!=null?{"anthropic-workspace-id":i}:void 0},r?.headers])})}list(e={},t){let{betas:r,workspace_id:o,...i}=e??{};return this._client.getAPIList("/v1/agents?beta=true",D,{query:i,...t,headers:_([{"anthropic-beta":[...r??[],"managed-agents-2026-04-01"].toString(),...o!=null?{"anthropic-workspace-id":o}:void 0},t?.headers])})}archive(e,t={},r){let{betas:o,workspace_id:i}=t??{};return this._client.post(b`/v1/agents/${e}/archive?beta=true`,{...r,headers:_([{"anthropic-beta":[...o??[],"managed-agents-2026-04-01"].toString(),...i!=null?{"anthropic-workspace-id":i}:void 0},r?.headers])})}}return n.Versions=Gt,n})();Y();function Ze(n,s){if(!n)return()=>{};if(n.aborted)return s.abort(),()=>{};let e=()=>s.abort();return n.addEventListener("abort",e),()=>n.removeEventListener("abort",e)}Y();function et(n,s){return n instanceof X&&n.status===s}function Ku(n){return n instanceof X&&typeof n.status=="number"&&n.status>=400&&n.status<500}function St(n){return Ku(n)&&!et(n,408)&&!et(n,409)&&!et(n,429)}function Is(n,s,e){return Math.min(s*2**n,e)}function ul(n,s){return n+Math.random()*(s-n)}function Rs(n){return n*(1-Math.random()*.25)}Y();function Ms(n,{authToken:s,helper:e}){if(!s)throw new T(`copyClientForHelper: expected a non-empty authToken but received ${JSON.stringify(s)}`);let t=n,r=t._options.defaultHeaders,o=t._authState?.extraHeaders,i=o?Object.fromEntries(Object.entries(o).filter(([l])=>{let c=l.toLowerCase();return c!=="authorization"&&c!=="x-api-key"})):void 0,a=_([i,r,{[yt]:e}]);return n.withOptions({apiKey:null,authToken:s,baseURL:n.baseURL,credentials:void 0,defaultHeaders:a})}var Jt,Ps,Se,Cs,Ds,Os,pr,mr,Qt,Zt,$s,en,gr,Gu=999,Ju=1e3,Qu=6e4,Zu=3e5,_r=(()=>{class n{constructor(e){Jt.set(this,void 0),Ps.set(this,!1),Se.set(this,void 0),Cs.set(this,void 0),Ds.set(this,void 0),Os.set(this,void 0),pr.set(this,void 0),mr.set(this,void 0),Qt.set(this,void 0),this.client=e.client,this.environmentId=e.environmentId,this.environmentKey=e.environmentKey,this.workerId=e.workerId??nd(),k(this,Jt,Ms(e.client,{authToken:e.environmentKey,helper:"environments-work-poller"}),"f"),k(this,Ds,e.autoStop??!0,"f"),k(this,Os,e.drain??!1,"f"),k(this,pr,e.blockMs===void 0?Gu:e.blockMs,"f"),k(this,mr,e.reclaimOlderThanMs??null,"f"),k(this,Qt,e.requestOptions,"f"),k(this,Se,new AbortController,"f"),k(this,Cs,Ze(e.signal,h(this,Se,"f")),"f")}get signal(){return h(this,Se,"f").signal}abort(){h(this,Se,"f").abort()}async*[(Jt=new WeakMap,Ps=new WeakMap,Se=new WeakMap,Cs=new WeakMap,Ds=new WeakMap,Os=new WeakMap,pr=new WeakMap,mr=new WeakMap,Qt=new WeakMap,Symbol.asyncIterator)](){if(h(this,Ps,"f"))throw new T("Cannot iterate over a consumed WorkPoller");k(this,Ps,!0,"f");let e=F(this.client);e.info("poller starting",{component:"work-poller",environment_id:this.environmentId});let t=new td(e,this.environmentId);try{let r=0;for(;!h(this,Se,"f").signal.aborted;){let o;try{o=await h(this,Jt,"f").beta.environments.work.poll(this.environmentId,{"Anthropic-Worker-ID":this.workerId,...h(this,pr,"f")!==null?{block_ms:h(this,pr,"f")}:{},...h(this,mr,"f")!==null?{reclaim_older_than_ms:h(this,mr,"f")}:{}},{headers:_([h(this,Qt,"f")?.headers]),signal:h(this,Se,"f").signal})}catch(i){if(h(this,Se,"f").signal.aborted)return;if(St(i))throw e.error("poll failed permanently, stopping poller",{error:String(i)}),i;let a=Rs(ed(r));e.warn("poll failed, backing off",{error:String(i),backoff_ms:a}),r++,await Te(a,h(this,Se,"f").signal);continue}if(r=0,o==null){if(h(this,Os,"f"))return;t.onEmptyPoll(),await Te(ul(1e3,3e3),h(this,Se,"f").signal);continue}t.onClaim(),e.info("claimed work",{component:"work-poller",environment_id:this.environmentId,work_id:o.id,work_type:o.data.type});try{await h(this,Jt,"f").beta.environments.work.ack(o.id,{environment_id:o.environment_id},{headers:_([h(this,Qt,"f")?.headers]),signal:h(this,Se,"f").signal})}catch(i){e.error("ack failed",{work_id:o.id,error:String(i)});continue}try{yield o}finally{if(h(this,Ds,"f"))try{await h(this,Jt,"f").beta.environments.work.stop(o.id,{environment_id:o.environment_id},{headers:_([h(this,Qt,"f")?.headers])})}catch(i){et(i,409)||e.warn("stop failed",{work_id:o.id,error:String(i)})}}}}finally{h(this,Cs,"f").call(this)}}}return n})();function ed(n){return Is(n,Ju,Qu)}var td=(()=>{class n{constructor(e,t){Zt.set(this,void 0),$s.set(this,void 0),en.set(this,void 0),gr.set(this,0),k(this,Zt,e,"f"),k(this,$s,t,"f")}onEmptyPoll(){let e=Date.now(),t={component:"work-poller",environment_id:h(this,$s,"f")};h(this,en,"f")===void 0?(k(this,en,k(this,gr,e,"f"),"f"),h(this,Zt,"f").info("idle; polling for work",t)):e-h(this,gr,"f")>=Zu?(k(this,gr,e,"f"),h(this,Zt,"f").info(`still polling; idle for ${Math.round((e-h(this,en,"f"))/1e3)}s`,t)):h(this,Zt,"f").debug("poll returned no work",t)}onClaim(){k(this,en,void 0,"f")}}return Zt=new WeakMap,$s=new WeakMap,en=new WeakMap,gr=new WeakMap,n})();function nd(){let s=globalThis.process?.env?.HOSTNAME;return s?`${s}-${ms()}`:ms()}Y();Y();var tn,tt,nn,dl=(()=>{class n{constructor(){tn.set(this,[]),tt.set(this,[]),nn.set(this,!1)}push(e){if(h(this,nn,"f"))return!1;let t=h(this,tt,"f").shift();return t?t({done:!1,value:e}):h(this,tn,"f").push(e),!0}close(){if(!h(this,nn,"f"))for(k(this,nn,!0,"f");h(this,tt,"f").length>0;)h(this,tt,"f").shift()({done:!0,value:void 0})}next(e){return h(this,tn,"f").length>0?Promise.resolve({done:!1,value:h(this,tn,"f").shift()}):h(this,nn,"f")||e?.aborted?Promise.resolve({done:!0,value:void 0}):new Promise(t=>{let r=i=>{e?.removeEventListener("abort",o),t(i)},o=()=>{let i=h(this,tt,"f").indexOf(r);i>=0&&h(this,tt,"f").splice(i,1),t({done:!0,value:void 0})};h(this,tt,"f").push(r),e?.addEventListener("abort",o,{once:!0})})}tryShift(){return h(this,tn,"f").shift()}}return tn=new WeakMap,tt=new WeakMap,nn=new WeakMap,n})();var rn=(()=>{class n extends Error{constructor(e){let t=typeof e=="string"?e:e.map(r=>r.type==="text"?r.text:`[${r.type}]`).join(" ");super(t),this.name="ToolError",this.content=e}}return n})();function vi(n){return"name"in n?n.name:"mcp_server_name"in n?n.mcp_server_name:n.type}function rd(n){return n instanceof rn?n.content:`Error: ${n instanceof Error?n.message:String(n)}`}async function fl(n,s,e){try{let t=n.parse?n.parse(s):s;return{content:await n.run(t,e),isError:!1}}catch(t){return{content:rd(t),isError:!0}}}var br,Ls,sn,kt,Re,K,Ns,se,Bs,wr,Fs,Z,on,_e,an,nt,cn,Ye,Hs,yr,ke,Us,pl,ml,gl,_l,Ai,bl,js,Ws,Ei,wl,yl;var Sl=500,sd=1e4,od=12e4,id=3e4,ad=1e3,cd=3e4,ld=5*6e4,hd=6e4;function kl(n){return n.type==="session.status_idle"&&n.stop_reason?.type==="end_turn"}var ud=(()=>{class n{constructor(e,t){br.set(this,void 0),Ls.set(this,void 0),sn.set(this,new Set),kt.set(this,!1),Re.set(this,void 0),k(this,br,e,"f"),k(this,Ls,t,"f")}noteEvent(e){e.type!=="user.tool_confirmation"&&(kl(e)?this.arm():this.disarm())}block(e){h(this,sn,"f").add(e),h(this,Re,"f")!==void 0&&(k(this,kt,!0,"f"),clearTimeout(h(this,Re,"f")),k(this,Re,void 0,"f"))}unblock(e){h(this,sn,"f").delete(e),h(this,sn,"f").size===0&&h(this,kt,"f")&&this.arm()}arm(){if(!(h(this,br,"f")<=0)){if(h(this,sn,"f").size>0){k(this,kt,!0,"f");return}k(this,kt,!1,"f"),h(this,Re,"f")!==void 0&&clearTimeout(h(this,Re,"f")),k(this,Re,setTimeout(h(this,Ls,"f"),h(this,br,"f")),"f")}}disarm(){k(this,kt,!1,"f"),h(this,Re,"f")!==void 0&&(clearTimeout(h(this,Re,"f")),k(this,Re,void 0,"f"))}}return br=new WeakMap,Ls=new WeakMap,sn=new WeakMap,kt=new WeakMap,Re=new WeakMap,n})(),Sr=(()=>{class n{constructor(e,t){K.add(this),Ns.set(this,!1),se.set(this,void 0),Bs.set(this,void 0),wr.set(this,void 0),Fs.set(this,void 0),Z.set(this,void 0),on.set(this,new Set),_e.set(this,new Set),an.set(this,new Map),nt.set(this,new Map),cn.set(this,new dl),Ye.set(this,0),Hs.set(this,ld),yr.set(this,null),ke.set(this,void 0),this.client=t.client,this.sessionId=e,this.tools=t.tools,this.maxIdleMs=t.maxIdleMs??hd,k(this,Z,F(t.client),"f"),k(this,Fs,new Map(t.tools.map(r=>[vi(r),r])),"f"),k(this,se,new AbortController,"f"),k(this,Bs,Ze(t.signal,h(this,se,"f")),"f"),k(this,wr,t.requestOptions,"f"),k(this,ke,new ud(this.maxIdleMs,()=>{h(this,Z,"f").info("session idle after end_turn; stopping",{component:"session-tool-runner",session_id:this.sessionId,max_idle_ms:this.maxIdleMs}),h(this,se,"f").abort()}),"f")}get signal(){return h(this,se,"f").signal}abort(){h(this,se,"f").abort()}_setSendRetryWindow(e){k(this,Hs,e,"f")}async*[(Ns=new WeakMap,se=new WeakMap,Bs=new WeakMap,wr=new WeakMap,Fs=new WeakMap,Z=new WeakMap,on=new WeakMap,_e=new WeakMap,an=new WeakMap,nt=new WeakMap,cn=new WeakMap,Ye=new WeakMap,Hs=new WeakMap,yr=new WeakMap,ke=new WeakMap,K=new WeakSet,Symbol.asyncIterator)](){if(h(this,Ns,"f"))throw new T("Cannot iterate over a consumed SessionToolRunner");k(this,Ns,!0,"f"),h(this,Z,"f").info("session tool runner starting",{component:"session-tool-runner",session_id:this.sessionId});let e=h(this,K,"m",pl).call(this).catch(t=>{h(this,se,"f").signal.aborted||h(this,Z,"f").error("stream loop failed",{error:String(t)}),h(this,se,"f").abort()});try{for(;;){let r=await h(this,cn,"f").next(h(this,se,"f").signal);if(r.done)break;yield r.value}await e;let t;for(;(t=h(this,cn,"f").tryShift())!==void 0;)yield t}finally{h(this,se,"f").abort(),h(this,ke,"f").disarm(),await e;try{await h(this,K,"m",yl).call(this)}catch(t){h(this,Z,"f").warn("drain failed",{error:String(t)})}h(this,cn,"f").close();for(let t of this.tools)try{await t.close?.()}catch(r){h(this,Z,"f").warn("tool.close failed",{tool:vi(t),error:String(r)})}h(this,Bs,"f").call(this)}}}return Us=function(){return{...h(this,wr,"f"),headers:_([ks("session-tool-runner"),h(this,wr,"f")?.headers]),signal:h(this,se,"f").signal}},pl=async function(){let e=h(this,se,"f"),t=Sl;for(;!e.signal.aborted;){try{let r=await this.client.beta.sessions.events.stream(this.sessionId,{},h(this,K,"m",Us).call(this));await h(this,K,"m",ml).call(this);for await(let o of r)if(t=Sl,await h(this,K,"m",_l).call(this,o))return}catch(r){if(e.signal.throwIfAborted(),St(r))throw h(this,Z,"f").error("permanent stream failure, shutting down",{error:String(r)}),e.abort(),r;h(this,Z,"f").warn("stream disconnected, reconnecting",{error:String(r),backoff_ms:t})}e.signal.throwIfAborted(),await Te(t,e.signal),t=Math.min(t*2,sd)}},ml=async function(){let e=h(this,se,"f"),t=[],r=!1;try{for await(let a of this.client.beta.sessions.events.list(this.sessionId,{limit:1e3},h(this,K,"m",Us).call(this)))h(this,K,"m",gl).call(this,a,t),r=kl(a)}catch(a){e.signal.throwIfAborted(),h(this,Z,"f").warn("reconcile list failed",{error:String(a)});for(let l of t)h(this,on,"f").delete(l.id);return}let o=t.filter(a=>!h(this,_e,"f").has(a.id));h(this,ke,"f").disarm();for(let a of o)await h(this,K,"m",Ai).call(this,a);for(let a of[...h(this,nt,"f").values()]){let l=h(this,an,"f").get(a.id);l!==void 0&&await h(this,K,"m",js).call(this,a,l)}let i=o.filter(a=>!h(this,_e,"f").has(a.id)&&!h(this,nt,"f").has(a.id));r&&i.length===0?h(this,ke,"f").arm():h(this,ke,"f").disarm()},gl=function(e,t){e.type==="agent.tool_use"||e.type==="agent.custom_tool_use"?(h(this,on,"f").add(e.id),h(this,_e,"f").has(e.id)||t.push(e)):e.type==="user.tool_result"?h(this,_e,"f").add(e.tool_use_id):e.type==="user.custom_tool_result"?h(this,_e,"f").add(e.custom_tool_use_id):e.type==="user.tool_confirmation"&&(h(this,_e,"f").has(e.tool_use_id)||h(this,an,"f").set(e.tool_use_id,e.result))},_l=async function(e){switch(h(this,ke,"f").noteEvent(e),e.type){case"agent.tool_use":case"agent.custom_tool_use":return h(this,on,"f").has(e.id)||(h(this,on,"f").add(e.id),await h(this,K,"m",Ai).call(this,e)),!1;case"user.tool_confirmation":return await h(this,K,"m",bl).call(this,e),!1;case"user.tool_result":return h(this,_e,"f").add(e.tool_use_id),!1;case"user.custom_tool_result":return h(this,_e,"f").add(e.custom_tool_use_id),!1;case"session.status_terminated":case"session.deleted":return h(this,Z,"f").info("session terminated",{component:"session-tool-runner",session_id:this.sessionId}),h(this,se,"f").abort(),!0;default:return!1}},Ai=async function(e){let t=e.evaluated_permission,r=t==="deny"?"deny":h(this,an,"f").get(e.id);if(r===void 0){t===void 0||t==="allow"?await h(this,K,"m",Ei).call(this,e,void 0):h(this,nt,"f").has(e.id)||(h(this,Z,"f").info("tool call awaiting confirmation; holding",{component:"session-tool-runner",session_id:this.sessionId,tool:e.name,tool_use_id:e.id}),h(this,nt,"f").set(e.id,e),h(this,ke,"f").block(e.id));return}await h(this,K,"m",js).call(this,e,r)},bl=async function(e){h(this,an,"f").set(e.tool_use_id,e.result);let t=h(this,nt,"f").get(e.tool_use_id);t!==void 0&&await h(this,K,"m",js).call(this,t,e.result)},js=async function(e,t){let r=h(this,nt,"f").delete(e.id);if(t==="allow"){h(this,Z,"f").info("tool call confirmed",{component:"session-tool-runner",session_id:this.sessionId,tool:e.name,tool_use_id:e.id}),r||h(this,ke,"f").block(e.id);try{await h(this,K,"m",Ei).call(this,e,"allow")}finally{h(this,ke,"f").unblock(e.id)}return}r&&h(this,ke,"f").unblock(e.id),h(this,_e,"f").add(e.id),h(this,Z,"f").info("tool call denied; not executing",{component:"session-tool-runner",session_id:this.sessionId,tool:e.name,tool_use_id:e.id}),h(this,K,"m",Ws).call(this,{event:e,toolUseId:e.id,name:e.name,isError:!1,posted:!1,confirmation:"deny"})},Ws=function(e){h(this,cn,"f").push(e)},Ei=async function(e,t){var r,o;if(!h(this,_e,"f").has(e.id)){h(this,Z,"f").info("executing tool",{component:"session-tool-runner",session_id:this.sessionId,tool:e.name,tool_use_id:e.id}),k(this,Ye,(r=h(this,Ye,"f"),r++,r),"f");try{let i=h(this,Fs,"f").get(e.name);if(!i){h(this,Z,"f").info("tool not owned by this runner; leaving the tool_use_id pending for its owner",{component:"session-tool-runner",session_id:this.sessionId,tool:e.name,tool_use_id:e.id}),h(this,K,"m",Ws).call(this,{event:e,toolUseId:e.id,name:e.name,isError:!1,posted:!1,confirmation:t});return}let a,l,c=new AbortController,d=Ze(h(this,se,"f").signal,c),u=setTimeout(()=>c.abort(),od);try{let p=await fl(i,e.input,{toolUse:e,toolUseBlock:e,signal:c.signal});a=p.content,l=p.isError}finally{clearTimeout(u),d()}let f=dd(e,l,fd(a)),m=await h(this,K,"m",wl).call(this,f,e.id);h(this,K,"m",Ws).call(this,{event:e,result:f,toolUseId:e.id,name:e.name,isError:l,posted:m,confirmation:t})}finally{k(this,Ye,(o=h(this,Ye,"f"),o--,o),"f"),h(this,Ye,"f")===0&&h(this,yr,"f")?.call(this)}}},wl=async function(e,t){let r=h(this,se,"f"),o=Date.now(),i,a=0;for(;;){a++,r.signal.throwIfAborted();try{return await this.client.beta.sessions.events.send(this.sessionId,{events:[e]},h(this,K,"m",Us).call(this)),h(this,_e,"f").add(t),!0}catch(l){if(i=l,St(l))break;let c=h(this,Hs,"f")-(Date.now()-o);if(c<=0)break;let d=Math.min(Rs(Is(a-1,ad,cd)),c);h(this,Z,"f").warn("tool result send failed; retrying",{tool_use_id:t,attempt:a,backoff_ms:d,error:String(l)}),await Te(d,r.signal)}}return h(this,Z,"f").error("failed to send tool result",{tool_use_id:t,attempts:a,error:String(i)}),!1},yl=async function(){h(this,Ye,"f")!==0&&(await Promise.race([new Promise(e=>k(this,yr,e,"f")),Te(id)]),k(this,yr,null,"f"),h(this,Ye,"f")>0&&h(this,Z,"f").warn("drain timeout exceeded"))},n})();function dd(n,s,e){return n.type==="agent.custom_tool_use"?{type:"user.custom_tool_result",custom_tool_use_id:n.id,is_error:s,content:e}:{type:"user.tool_result",tool_use_id:n.id,is_error:s,content:e}}function fd(n){if(typeof n=="string")return[{type:"text",text:n||"(no output)"}];let s=n.map(e=>e.type==="text"?{type:"text",text:e.text||"(no output)"}:e.type==="image"||e.type==="document"?e:e.type==="search_result"?{type:"search_result",source:e.source,title:e.title,content:e.content.map(t=>({type:"text",text:t.text})),citations:{enabled:e.citations?.enabled??!1}}:{type:"text",text:JSON.stringify(e)});return s.length>0?s:[{type:"text",text:"(no output)"}]}xi();var zs,kr,Pi,vr,ln,Tl=3e4,xd=9e4,Td="NO_HEARTBEAT";function Id(n){return n.resources.some(s=>s.type==="memory_store")}function Rd(n){if(!n)return null;let s;try{let t=n.replace(/-/g,"+").replace(/_/g,"/"),r=t.padEnd(Math.ceil(t.length/4)*4,"=");s=JSON.parse(or(Cc(r)))}catch{return null}if(s===null||typeof s!="object"||Array.isArray(s))return null;let e=s.sessions_token;return typeof e=="string"&&e!==""?e:null}var Ci=(()=>{class n{constructor(e){if(zs.add(this),kr.set(this,void 0),e.unrestrictedPaths!==void 0)throw new T("The `unrestrictedPaths` option you passed to EnvironmentWorker (or client.beta.environments.work.worker()) is no longer supported. The worker's file tools (read, write, edit, glob, grep) are now always confined to `workdir` plus the session's memory folders. Remove `unrestrictedPaths` from your options; to let the file tools reach any other directory, add it to `AgentToolContext.allowedRoots` from a `tools` factory.");this.client=e.client,this.environmentId=e.environmentId,this.environmentKey=e.environmentKey,this.tools=e.tools,this.workdir=e.workdir??process.cwd(),this.maxFileBytes=e.maxFileBytes,this.maxIdleMs=e.maxIdleMs,e.memorySyncIntervalMs!=null&&Al(e.memorySyncIntervalMs,"memorySyncIntervalMs"),this.memorySyncIntervalMs=e.memorySyncIntervalMs,this.memorySyncDeletions=e.memorySyncDeletions??"enabled",this.workerId=e.workerId,this.requestOptions=e.requestOptions,k(this,kr,e.signal,"f")}async run(e){let{environmentId:t,environmentKey:r}=this;if(t===void 0||r===void 0)throw new T("EnvironmentWorker.run: environmentId and environmentKey are required to poll for work");let o=e??h(this,kr,"f"),i=new _r({client:this.client,environmentId:t,environmentKey:r,...this.workerId!==void 0?{workerId:this.workerId}:{},...o?{signal:o}:{},...this.requestOptions!==void 0?{requestOptions:this.requestOptions}:{},autoStop:!1});for await(let a of i)try{await h(this,zs,"m",Pi).call(this,a,r,i.signal)}catch(l){if(i.signal?.aborted)throw l;F(this.client).error("work item failed",{work_id:a.id,error:String(l)})}}async handleItem(e){let t=e?.workId??B("ANTHROPIC_WORK_ID"),r=e?.environmentId??B("ANTHROPIC_ENVIRONMENT_ID"),o=e?.sessionId??B("ANTHROPIC_SESSION_ID"),i=(e?.environmentKey??this.environmentKey??B("ANTHROPIC_ENVIRONMENT_KEY"))||void 0,a=e?.workSecret||B("ANTHROPIC_WORK_SECRET")||null;if(!t)throw new T("handleItem: workId is required \u2014 pass it or set ANTHROPIC_WORK_ID");if(!r)throw new T("handleItem: environmentId is required \u2014 pass it or set ANTHROPIC_ENVIRONMENT_ID");if(!o)throw new T("handleItem: sessionId is required \u2014 pass it or set ANTHROPIC_SESSION_ID");if(!i&&!a)throw new T("handleItem: environmentKey is required when there is no work secret \u2014 pass it, construct the worker with it, or set ANTHROPIC_ENVIRONMENT_KEY");let l={id:t,environment_id:r,secret:a,data:{type:"session",id:o}};await h(this,zs,"m",Pi).call(this,l,i,e?.signal??h(this,kr,"f"))}}return kr=new WeakMap,zs=new WeakSet,Pi=async function(e,t,r){let o=F(this.client),i=Rd(e.secret),a=i??t;if(a===void 0)throw new T("handleItem: the work item carried a secret payload but no sessions token could be extracted, and there is no environment key to fall back to; the poller must issue a secret whose payload carries `sessions_token`, or provide the environment key (pass it, construct the worker with it, or set ANTHROPIC_ENVIRONMENT_KEY)");e.secret&&i===null&&o.warn("work item carried a secret payload but no sessions token could be extracted; falling back to the environment key",{work_id:e.id});let l=Ms(this.client,{authToken:a,helper:"environments-worker"}),c=e.data.id,d=new AbortController,u=Ze(r,d),f=new Pd(d),m=await Promise.resolve().then(()=>(xl(),El)),p,w,y=Dd(l,e,f,o,this.requestOptions,R=>{p=R,w?._setSendRetryWindow(R)}).catch(R=>{d.signal.aborted||o.error("heartbeat loop failed",{work_id:e.id,error:String(R)}),d.abort()}),v=async()=>{},S,P=!1;try{if(e.data.type!=="session"){o.debug("skipping non-session work item",{work_id:e.id,type:e.data.type});return}let R=await l.beta.sessions.retrieve(c);if(i===null&&this.memorySyncIntervalMs!==null&&Id(R))throw new m.SessionMemoryError(`cannot mount the session's memories: the work item carried no sessions token (work_id=${e.id}, session_id=${c}); the memory endpoints reject the environment key, so the poller must issue a per-item \`secret\` carrying \`sessions_token\`, or set \`memorySyncIntervalMs: null\` to run without memory`);let x={workdir:this.workdir,client:l,session:R,...this.maxFileBytes!==void 0?{maxFileBytes:this.maxFileBytes}:{}};try{v=await m.setupSkills(x)}catch(I){o.warn("skill setup failed",{session_id:c,work_id:e.id,error:String(I)})}i!==null&&this.memorySyncIntervalMs!==null?(S=new m.SessionMemoryStores(l,{workdir:this.workdir,...this.memorySyncIntervalMs!==void 0?{syncIntervalMs:this.memorySyncIntervalMs}:{},syncDeletions:this.memorySyncDeletions}),await S.download(R),x.allowedRoots=S.roots,x.readOnlyRoots=S.readOnlyRoots):o.debug("memory stores disabled for this item",{work_id:e.id});let C=typeof this.tools=="function"?this.tools(x):this.tools??m.betaAgentToolset20260401(x);w=new Sr(c,{client:l,tools:C,...this.maxIdleMs!==void 0?{maxIdleMs:this.maxIdleMs}:{},...this.requestOptions!==void 0?{requestOptions:this.requestOptions}:{},signal:d.signal}),p!==void 0&&w._setSendRetryWindow(p);for await(let I of w)S&&await S.syncIfDue();P=!d.signal.aborted}finally{try{await v().catch(R=>{o.warn("skill cleanup failed",{session_id:c,work_id:e.id,error:String(R)})})}finally{if(S){let R=m.MEMORY_FLUSH_TIMEOUT_MS;P&&await Il(S.finish(),R)&&o.warn(`final memory sync cut off after ${R}ms; the flush that follows still uploads changed files`,{session_id:c,work_id:e.id});let x=new AbortController;await Il(S.flushWrites(x.signal),R)&&(x.abort(),o.warn(`memory flush cut off after ${R}ms; changed files it had not uploaded yet are not saved`,{session_id:c,work_id:e.id})),await S.dispose().catch(I=>{o.warn("memory store cleanup failed",{session_id:c,work_id:e.id,error:String(I)})})}}f.finish("runner_done"),u(),await y,f.lost?o.info("lease lost; released without stopping it",{session_id:c,work_id:e.id}):await Md(l,e,o,this.requestOptions)}},n})();async function Il(n,s){let e;try{return await Promise.race([n.then(()=>!1,()=>!1),new Promise(t=>{e=setTimeout(()=>t(!0),s)})])}finally{e!==void 0&&clearTimeout(e)}}async function Md(n,s,e,t){try{await n.beta.environments.work.stop(s.id,{environment_id:s.environment_id,force:!0},{...t,headers:_([t?.headers])})}catch(r){et(r,409)||e.error("force-stop on exit failed",{work_id:s.id,error:String(r)})}}var Pd=(()=>{class n{constructor(e){vr.set(this,void 0),ln.set(this,void 0),k(this,vr,e,"f")}get signal(){return h(this,vr,"f").signal}finish(e){k(this,ln,h(this,ln,"f")??e,"f"),h(this,vr,"f").abort()}get lost(){return h(this,ln,"f")==="lease_lost"||h(this,ln,"f")==="assumed_lost"}}return vr=new WeakMap,ln=new WeakMap,n})();function Cd(n){let s=n instanceof X?n.error:void 0;for(let e of["error","details","current_state"]){if(!Go(s))return{};s=s[e]}return Go(s)?s:{}}async function Dd(n,s,e,t,r,o){let i=Tl,a=xd,l=Date.now(),c=Td,d=async()=>{let u=new AbortController,f=Ze(e.signal,u),m=setTimeout(()=>u.abort(),i);try{let p=await n.beta.environments.work.heartbeat(s.id,{environment_id:s.environment_id,expected_last_heartbeat:c},{...r,headers:_([r?.headers]),signal:u.signal});l=Date.now(),c=p.last_heartbeat,p.ttl_seconds>0&&(a=p.ttl_seconds*1e3,i=Math.max(1e3,Math.min(a/2,Tl)),o?.(a)),(p.state==="stopping"||p.state==="stopped")&&(t.info("heartbeat signals shutdown",{work_id:s.id,state:p.state}),e.finish("control_plane_stop")),p.lease_extended||(t.warn("lease not extended, shutting down",{work_id:s.id}),e.finish("control_plane_stop"))}catch(p){if(e.signal.throwIfAborted(),et(p,412)){let w=Cd(p);t.error("lease lost: heartbeat precondition failed",{work_id:s.id,server_state:w.state,server_ttl_seconds:w.ttl_seconds,server_last_heartbeat:w.last_heartbeat}),e.finish("lease_lost");return}if(St(p))throw t.error("permanent heartbeat failure",{work_id:s.id,error:String(p)}),e.finish("heartbeat_rejected"),p;if(Date.now()-l>a){t.error("lease assumed lost: no successful heartbeat in ttl",{work_id:s.id,ttl_ms:a,error:String(p)}),e.finish("assumed_lost");return}t.warn("transient heartbeat failure",{work_id:s.id,error:String(p)})}finally{clearTimeout(m),f()}};for(await d();!e.signal.aborted;)await Te(i,e.signal),e.signal.throwIfAborted(),await d()}var Ys=(()=>{class n extends E{retrieve(e,t,r){let{environment_id:o,betas:i,workspace_id:a}=t;return this._client.get(b`/v1/environments/${o}/work/${e}?beta=true`,{...r,headers:_([{"anthropic-beta":[...i??[],"managed-agents-2026-04-01"].toString(),...a!=null?{"anthropic-workspace-id":a}:void 0},r?.headers])})}update(e,t,r){let{environment_id:o,betas:i,workspace_id:a,...l}=t;return this._client.post(b`/v1/environments/${o}/work/${e}?beta=true`,{body:l,...r,headers:_([{"anthropic-beta":[...i??[],"managed-agents-2026-04-01"].toString(),...a!=null?{"anthropic-workspace-id":a}:void 0},r?.headers])})}list(e,t={},r){let{betas:o,...i}=t??{};return this._client.getAPIList(b`/v1/environments/${e}/work?beta=true`,D,{query:i,...r,headers:_([{"anthropic-beta":[...o??[],"managed-agents-2026-04-01"].toString()},r?.headers])})}ack(e,t,r){let{environment_id:o,betas:i}=t;return this._client.post(b`/v1/environments/${o}/work/${e}/ack?beta=true`,{...r,headers:_([{"anthropic-beta":[...i??[],"managed-agents-2026-04-01"].toString()},r?.headers])})}heartbeat(e,t,r){let{environment_id:o,desired_ttl_seconds:i,expected_last_heartbeat:a,betas:l}=t;return this._client.post(b`/v1/environments/${o}/work/${e}/heartbeat?beta=true`,{query:{desired_ttl_seconds:i,expected_last_heartbeat:a},...r,headers:_([{"anthropic-beta":[...l??[],"managed-agents-2026-04-01"].toString()},r?.headers])})}poll(e,t={},r){let{betas:o,"Anthropic-Worker-ID":i,...a}=t??{};return this._client.get(b`/v1/environments/${e}/work/poll?beta=true`,{query:a,...r,headers:_([{"anthropic-beta":[...o??[],"managed-agents-2026-04-01"].toString(),...i!=null?{"Anthropic-Worker-ID":i}:void 0},r?.headers])})}stats(e,t={},r){let{betas:o,workspace_id:i}=t??{};return this._client.get(b`/v1/environments/${e}/work/stats?beta=true`,{...r,headers:_([{"anthropic-beta":[...o??[],"managed-agents-2026-04-01"].toString(),...i!=null?{"anthropic-workspace-id":i}:void 0},r?.headers])})}stop(e,t,r){let{environment_id:o,betas:i,workspace_id:a,...l}=t;return this._client.post(b`/v1/environments/${o}/work/${e}/stop?beta=true`,{body:l,...r,headers:_([{"anthropic-beta":[...i??[],"managed-agents-2026-04-01"].toString(),...a!=null?{"anthropic-workspace-id":a}:void 0},r?.headers])})}poller(e){return new _r({...e,client:this._client})}worker(e){return new Ci({...e,client:this._client})}}return n.WorkPoller=_r,n.EnvironmentWorker=Ci,n})();var Vs=(()=>{class n extends E{constructor(){super(...arguments),this.work=new Ys(this._client)}create(e,t){let{betas:r,workspace_id:o,...i}=e;return this._client.post("/v1/environments?beta=true",{body:i,...t,headers:_([{"anthropic-beta":[...r??[],"managed-agents-2026-04-01"].toString(),...o!=null?{"anthropic-workspace-id":o}:void 0},t?.headers])})}retrieve(e,t={},r){let{betas:o,workspace_id:i}=t??{};return this._client.get(b`/v1/environments/${e}?beta=true`,{...r,headers:_([{"anthropic-beta":[...o??[],"managed-agents-2026-04-01"].toString(),...i!=null?{"anthropic-workspace-id":i}:void 0},r?.headers])})}update(e,t,r){let{betas:o,workspace_id:i,...a}=t;return this._client.post(b`/v1/environments/${e}?beta=true`,{body:a,...r,headers:_([{"anthropic-beta":[...o??[],"managed-agents-2026-04-01"].toString(),...i!=null?{"anthropic-workspace-id":i}:void 0},r?.headers])})}list(e={},t){let{betas:r,workspace_id:o,...i}=e??{};return this._client.getAPIList("/v1/environments?beta=true",D,{query:i,...t,headers:_([{"anthropic-beta":[...r??[],"managed-agents-2026-04-01"].toString(),...o!=null?{"anthropic-workspace-id":o}:void 0},t?.headers])})}delete(e,t={},r){let{betas:o,workspace_id:i}=t??{};return this._client.delete(b`/v1/environments/${e}?beta=true`,{...r,headers:_([{"anthropic-beta":[...o??[],"managed-agents-2026-04-01"].toString(),...i!=null?{"anthropic-workspace-id":i}:void 0},r?.headers])})}archive(e,t={},r){let{betas:o,workspace_id:i}=t??{};return this._client.post(b`/v1/environments/${e}/archive?beta=true`,{...r,headers:_([{"anthropic-beta":[...o??[],"managed-agents-2026-04-01"].toString(),...i!=null?{"anthropic-workspace-id":i}:void 0},r?.headers])})}}return n.Work=Ys,n})();var hn=class extends E{create(s,e,t){let{view:r,betas:o,workspace_id:i,...a}=e;return this._client.post(b`/v1/memory_stores/${s}/memories?beta=true`,{query:{view:r},body:a,...t,headers:_([{"anthropic-beta":[...o??[],"agent-memory-2026-07-22"].toString(),...i!=null?{"anthropic-workspace-id":i}:void 0},t?.headers])})}retrieve(s,e,t){let{memory_store_id:r,betas:o,workspace_id:i,...a}=e;return this._client.get(b`/v1/memory_stores/${r}/memories/${s}?beta=true`,{query:a,...t,headers:_([{"anthropic-beta":[...o??[],"agent-memory-2026-07-22"].toString(),...i!=null?{"anthropic-workspace-id":i}:void 0},t?.headers])})}update(s,e,t){let{memory_store_id:r,view:o,betas:i,workspace_id:a,...l}=e;return this._client.post(b`/v1/memory_stores/${r}/memories/${s}?beta=true`,{query:{view:o},body:l,...t,headers:_([{"anthropic-beta":[...i??[],"agent-memory-2026-07-22"].toString(),...a!=null?{"anthropic-workspace-id":a}:void 0},t?.headers])})}list(s,e={},t){let{betas:r,workspace_id:o,...i}=e??{};return this._client.getAPIList(b`/v1/memory_stores/${s}/memories?beta=true`,D,{query:i,...t,headers:_([{"anthropic-beta":[...r??[],"agent-memory-2026-07-22"].toString(),...o!=null?{"anthropic-workspace-id":o}:void 0},t?.headers])})}delete(s,e,t){let{memory_store_id:r,expected_content_sha256:o,betas:i,workspace_id:a}=e;return this._client.delete(b`/v1/memory_stores/${r}/memories/${s}?beta=true`,{query:{expected_content_sha256:o},...t,headers:_([{"anthropic-beta":[...i??[],"agent-memory-2026-07-22"].toString(),...a!=null?{"anthropic-workspace-id":a}:void 0},t?.headers])})}};var un=class extends E{retrieve(s,e,t){let{memory_store_id:r,betas:o,workspace_id:i,...a}=e;return this._client.get(b`/v1/memory_stores/${r}/memory_versions/${s}?beta=true`,{query:a,...t,headers:_([{"anthropic-beta":[...o??[],"agent-memory-2026-07-22"].toString(),...i!=null?{"anthropic-workspace-id":i}:void 0},t?.headers])})}list(s,e={},t){let{betas:r,workspace_id:o,...i}=e??{};return this._client.getAPIList(b`/v1/memory_stores/${s}/memory_versions?beta=true`,D,{query:i,...t,headers:_([{"anthropic-beta":[...r??[],"agent-memory-2026-07-22"].toString(),...o!=null?{"anthropic-workspace-id":o}:void 0},t?.headers])})}redact(s,e,t){let{memory_store_id:r,betas:o,workspace_id:i}=e;return this._client.post(b`/v1/memory_stores/${r}/memory_versions/${s}/redact?beta=true`,{...t,headers:_([{"anthropic-beta":[...o??[],"agent-memory-2026-07-22"].toString(),...i!=null?{"anthropic-workspace-id":i}:void 0},t?.headers])})}};var Xs=(()=>{class n extends E{constructor(){super(...arguments),this.memories=new hn(this._client),this.memoryVersions=new un(this._client)}create(e,t){let{betas:r,workspace_id:o,...i}=e;return this._client.post("/v1/memory_stores?beta=true",{body:i,...t,headers:_([{"anthropic-beta":[...r??[],"agent-memory-2026-07-22"].toString(),...o!=null?{"anthropic-workspace-id":o}:void 0},t?.headers])})}retrieve(e,t={},r){let{betas:o,workspace_id:i}=t??{};return this._client.get(b`/v1/memory_stores/${e}?beta=true`,{...r,headers:_([{"anthropic-beta":[...o??[],"agent-memory-2026-07-22"].toString(),...i!=null?{"anthropic-workspace-id":i}:void 0},r?.headers])})}update(e,t,r){let{betas:o,workspace_id:i,...a}=t;return this._client.post(b`/v1/memory_stores/${e}?beta=true`,{body:a,...r,headers:_([{"anthropic-beta":[...o??[],"agent-memory-2026-07-22"].toString(),...i!=null?{"anthropic-workspace-id":i}:void 0},r?.headers])})}list(e={},t){let{betas:r,workspace_id:o,...i}=e??{};return this._client.getAPIList("/v1/memory_stores?beta=true",D,{query:i,...t,headers:_([{"anthropic-beta":[...r??[],"agent-memory-2026-07-22"].toString(),...o!=null?{"anthropic-workspace-id":o}:void 0},t?.headers])})}delete(e,t={},r){let{betas:o,workspace_id:i}=t??{};return this._client.delete(b`/v1/memory_stores/${e}?beta=true`,{...r,headers:_([{"anthropic-beta":[...o??[],"agent-memory-2026-07-22"].toString(),...i!=null?{"anthropic-workspace-id":i}:void 0},r?.headers])})}archive(e,t={},r){let{betas:o,workspace_id:i}=t??{};return this._client.post(b`/v1/memory_stores/${e}/archive?beta=true`,{...r,headers:_([{"anthropic-beta":[...o??[],"agent-memory-2026-07-22"].toString(),...i!=null?{"anthropic-workspace-id":i}:void 0},r?.headers])})}}return n.Memories=hn,n.MemoryVersions=un,n})();Y();var Ks=(()=>{class n{constructor(e,t){this.iterator=e,this.controller=t}async*decoder(){let e=new ar;for await(let t of this.iterator)for(let r of e.decode(t))yield JSON.parse(r);for(let t of e.flush())yield JSON.parse(t)}[Symbol.asyncIterator](){return this.decoder()}static fromResponse(e,t){if(!e.body)throw t.abort(),typeof globalThis.navigator<"u"&&globalThis.navigator.product==="ReactNative"?new T("The default react-native fetch implementation does not support streaming. Please use expo/fetch: https://docs.expo.dev/versions/latest/sdk/expo/#expofetch-api"):new T("Attempted to iterate over a response with no body");return new n(sr(e.body),t)}}return n})();var dn=class extends E{create(s,e){let{betas:t,user_profile_id:r,workspace_id:o,...i}=s;return this._client.post("/v1/messages/batches?beta=true",{body:i,...e,headers:_([{"anthropic-beta":[...t??[],"message-batches-2024-09-24"].toString(),...r!=null?{"anthropic-user-profile-id":r}:void 0,...o!=null?{"anthropic-workspace-id":o}:void 0},e?.headers])})}retrieve(s,e={},t){let{betas:r,workspace_id:o}=e??{};return this._client.get(b`/v1/messages/batches/${s}?beta=true`,{...t,headers:_([{"anthropic-beta":[...r??[],"message-batches-2024-09-24"].toString(),...o!=null?{"anthropic-workspace-id":o}:void 0},t?.headers])})}list(s={},e){let{betas:t,workspace_id:r,...o}=s??{};return this._client.getAPIList("/v1/messages/batches?beta=true",J,{query:o,...e,headers:_([{"anthropic-beta":[...t??[],"message-batches-2024-09-24"].toString(),...r!=null?{"anthropic-workspace-id":r}:void 0},e?.headers])})}delete(s,e={},t){let{betas:r,workspace_id:o}=e??{};return this._client.delete(b`/v1/messages/batches/${s}?beta=true`,{...t,headers:_([{"anthropic-beta":[...r??[],"message-batches-2024-09-24"].toString(),...o!=null?{"anthropic-workspace-id":o}:void 0},t?.headers])})}cancel(s,e={},t){let{betas:r,workspace_id:o}=e??{};return this._client.post(b`/v1/messages/batches/${s}/cancel?beta=true`,{...t,headers:_([{"anthropic-beta":[...r??[],"message-batches-2024-09-24"].toString(),...o!=null?{"anthropic-workspace-id":o}:void 0},t?.headers])})}async results(s,e={},t){let r=await this.retrieve(s,e,t);if(!r.results_url)throw new T(`No batch \`results_url\`; Has it finished processing? ${r.processing_status} - ${r.id}`);let{betas:o,workspace_id:i}=e??{};return this._client.get(r.results_url,{...t,headers:_([{"anthropic-beta":[...o??[],"message-batches-2024-09-24"].toString(),Accept:"application/binary",...i!=null?{"anthropic-workspace-id":i}:void 0},t?.headers]),stream:!0,__binaryResponse:!0})._thenUnwrap((a,l)=>Ks.fromResponse(l.response,l.controller))}};var Gs={"claude-opus-4@20250514":8192,"anthropic.claude-opus-4-1-20250805-v1:0":8192,"claude-opus-4-1@20250805":8192};Y();function Rl(n){return n?.output_format??n?.output_config?.format}function Di(n,s,e){let t=Rl(s);return!s||!("parse"in(t??{}))?{...n,content:n.content.map(r=>{if(r.type==="text"){let o=Object.defineProperty({...r},"parsed_output",{value:null,enumerable:!1});return Object.defineProperty(o,"parsed",{get(){return e.logger.warn("The `parsed` property on `text` blocks is deprecated, please use `parsed_output` instead."),null},enumerable:!1})}return r}),parsed_output:null}:Oi(n,s,e)}function Oi(n,s,e){let t=null,r=n.content.map(o=>{if(o.type==="text"){let i=Hd(s,o.text);t===null&&(t=i);let a=Object.defineProperty({...o},"parsed_output",{value:i,enumerable:!1});return Object.defineProperty(a,"parsed",{get(){return e.logger.warn("The `parsed` property on `text` blocks is deprecated, please use `parsed_output` instead."),i},enumerable:!1})}return o});return{...n,content:r,parsed_output:t}}function Hd(n,s){let e=Rl(n);if(e?.type!=="json_schema")return null;try{return"parse"in e?e.parse(s):JSON.parse(s)}catch(t){throw new T(`Failed to parse structured output: ${t}`)}}gt();var Ud=n=>{let s=0,e=[];for(;s<n.length;){let t=n[s];if(t==="\\"){s++;continue}if(t==="{"){e.push({type:"brace",value:"{"}),s++;continue}if(t==="}"){e.push({type:"brace",value:"}"}),s++;continue}if(t==="["){e.push({type:"paren",value:"["}),s++;continue}if(t==="]"){e.push({type:"paren",value:"]"}),s++;continue}if(t===":"){e.push({type:"separator",value:":"}),s++;continue}if(t===","){e.push({type:"delimiter",value:","}),s++;continue}if(t==='"'){let a=s+1,l=a,c=!1;for(;;){if(l=n.indexOf('"',l),l===-1){c=!0;break}let d=0,u=l-1;for(;u>=a&&n[u]==="\\";)d++,u--;if(d%2===0)break;l++}c?s=n.length:(e.push({type:"string",value:n.slice(a,l)}),s=l+1);continue}if(t&&/\s/.test(t)){s++;continue}let o=/[0-9]/;if(t&&o.test(t)||t==="-"||t==="."){let a="";for(t==="-"&&(a+=t,t=n[++s]);t&&(o.test(t)||t==="."||t==="e"||t==="E"||(t==="-"||t==="+")&&(a[a.length-1]==="e"||a[a.length-1]==="E"));)a+=t,t=n[++s];e.push({type:"number",value:a,unterminated:s===n.length});continue}let i=/[a-z]/i;if(t&&i.test(t)){let a="";for(;t&&i.test(t)&&s!==n.length;)a+=t,t=n[++s];if(a=="true"||a=="false"||a==="null")e.push({type:"name",value:a});else{s++;continue}continue}s++}return e},jd=n=>{let s=[];for(let o of n)(o.type==="brace"||o.type==="paren")&&(o.value==="{"||o.value==="["?s.push(o.value):s.pop());let e=s[s.length-1],t=n.length,r=/^-?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][-+]?[0-9]+)?$/;for(;t>0;){let o=n[t-1];switch(o.type){case"separator":t--;continue;case"number":if(o.unterminated||!r.test(o.value)){t--;continue}break;case"string":let i=n[t-2];if(e==="{"&&(i?.type==="delimiter"||i?.type==="brace"&&i.value==="{")){t--;continue}break;case"delimiter":t--;break}break}return n.slice(0,t)},Wd=n=>{let s=[];return n.map(e=>{e.type==="brace"&&(e.value==="{"?s.push("}"):s.splice(s.lastIndexOf("}"),1)),e.type==="paren"&&(e.value==="["?s.push("]"):s.splice(s.lastIndexOf("]"),1))}),s.length>0&&s.reverse().map(e=>{e==="}"?n.push({type:"brace",value:"}"}):e==="]"&&n.push({type:"paren",value:"]"})}),n},qd=n=>{let s="";return n.map(e=>{switch(e.type){case"string":s+='"'+e.value+'"';break;default:s+=e.value;break}}),s},Ml=n=>JSON.parse(qd(Wd(jd(Ud(n)))));var rt="__json_buf";function Js(n,s){let e={};for(let o of Object.keys(n))o!=="input"&&(e[o]=n[o]);Object.defineProperty(e,rt,{value:s,enumerable:!1,writable:!0});let t,r=!1;return Object.defineProperty(e,"input",{enumerable:!0,configurable:!0,get(){return r||(t=s?Ml(s):{},r=!0),t}}),e}var he,st,fn,Ar,Qs,Er,xr,Zs,Tr,Be,Ir,eo,to,vt,no,ro,so,Rr,$i,Pl,Mr,Li,Ni,Bi,Cl,Fi;function Hi(n){return n.type==="tool_use"||n.type==="server_tool_use"||n.type==="mcp_tool_use"}var oo=(()=>{class n{constructor(e,t){he.add(this),this.messages=[],this.receivedMessages=[],st.set(this,void 0),fn.set(this,null),this.controller=new AbortController,Ar.set(this,void 0),Qs.set(this,()=>{}),Er.set(this,()=>{}),xr.set(this,void 0),Zs.set(this,()=>{}),Tr.set(this,()=>{}),Be.set(this,{}),Ir.set(this,!1),eo.set(this,!1),to.set(this,!1),vt.set(this,!1),no.set(this,void 0),ro.set(this,void 0),so.set(this,void 0),Rr.set(this,void 0),Mr.set(this,r=>{if(k(this,eo,!0,"f"),xe(r)&&(r=new oe),r instanceof oe)return k(this,to,!0,"f"),this._emit("abort",r);if(r instanceof T)return this._emit("error",r);if(r instanceof Error){let o=new T(r.message);return o.cause=r,this._emit("error",o)}return this._emit("error",new T(String(r)))}),k(this,Ar,new Promise((r,o)=>{k(this,Qs,r,"f"),k(this,Er,o,"f")}),"f"),k(this,xr,new Promise((r,o)=>{k(this,Zs,r,"f"),k(this,Tr,o,"f")}),"f"),h(this,Ar,"f").catch(()=>{}),h(this,xr,"f").catch(()=>{}),k(this,fn,e,"f"),k(this,Rr,t?.logger??console,"f")}get response(){return h(this,no,"f")}get request_id(){return h(this,ro,"f")}get workspace_id(){return h(this,so,"f")}async withResponse(){k(this,vt,!0,"f");let e=await h(this,Ar,"f");if(!e)throw new Error("Could not resolve a `Response` object");return{data:this,response:e,request_id:e.headers.get("request-id"),workspace_id:e.headers.get("anthropic-workspace-id")}}static fromReadableStream(e){let t=new n(null);return t._run(()=>t._fromReadableStream(e)),t}static createMessage(e,t,r,{logger:o}={}){let i=new n(t,{logger:o});for(let a of t.messages)i._addMessageParam(a);return k(i,fn,{...t,stream:!0},"f"),i._run(()=>i._createMessage(e,{...t,stream:!0},{...r,headers:{...r?.headers,[qt]:"stream"}})),i}_run(e){e().then(()=>{this._emitFinal(),this._emit("end")},h(this,Mr,"f"))}_addMessageParam(e){this.messages.push(e)}_addMessage(e,t=!0){this.receivedMessages.push(e),t&&this._emit("message",e)}async _createMessage(e,t,r){let o=r?.signal,i;o&&(o.aborted&&this.controller.abort(),i=this.controller.abort.bind(this.controller),o.addEventListener("abort",i));try{h(this,he,"m",Li).call(this);let{response:a,data:l}=await e.create({...t,stream:!0},{...r,signal:this.controller.signal}).withResponse();this._connected(a);for await(let c of l)h(this,he,"m",Ni).call(this,c);if(l.controller.signal?.aborted)throw new oe;h(this,he,"m",Bi).call(this)}finally{o&&i&&o.removeEventListener("abort",i)}}_connected(e){this.ended||(k(this,no,e,"f"),k(this,ro,e?.headers.get("request-id"),"f"),k(this,so,e?.headers.get("anthropic-workspace-id"),"f"),h(this,Qs,"f").call(this,e),this._emit("connect"))}get ended(){return h(this,Ir,"f")}get errored(){return h(this,eo,"f")}get aborted(){return h(this,to,"f")}abort(){this.controller.abort()}on(e,t){return(h(this,Be,"f")[e]||(h(this,Be,"f")[e]=[])).push({listener:t}),this}off(e,t){let r=h(this,Be,"f")[e];if(!r)return this;let o=r.findIndex(i=>i.listener===t);return o>=0&&r.splice(o,1),this}once(e,t){return(h(this,Be,"f")[e]||(h(this,Be,"f")[e]=[])).push({listener:t,once:!0}),this}emitted(e){return new Promise((t,r)=>{k(this,vt,!0,"f"),e!=="error"&&this.once("error",r),this.once(e,t)})}async done(){k(this,vt,!0,"f"),await h(this,xr,"f")}get currentMessage(){return h(this,st,"f")}async finalMessage(){return await this.done(),h(this,he,"m",$i).call(this)}async finalText(){return await this.done(),h(this,he,"m",Pl).call(this)}_emit(e,...t){if(h(this,Ir,"f"))return;e==="end"&&(k(this,Ir,!0,"f"),h(this,Zs,"f").call(this));let r=h(this,Be,"f")[e];if(r&&(h(this,Be,"f")[e]=r.filter(o=>!o.once),r.forEach(({listener:o})=>o(...t))),e==="abort"){let o=t[0];!h(this,vt,"f")&&!r?.length&&Promise.reject(o),h(this,Er,"f").call(this,o),h(this,Tr,"f").call(this,o),this._emit("end");return}if(e==="error"){let o=t[0];!h(this,vt,"f")&&!r?.length&&Promise.reject(o),h(this,Er,"f").call(this,o),h(this,Tr,"f").call(this,o),this._emit("end")}}_emitFinal(){this.receivedMessages.at(-1)&&this._emit("finalMessage",h(this,he,"m",$i).call(this))}async _fromReadableStream(e,t){let r=t?.signal,o;r&&(r.aborted&&this.controller.abort(),o=this.controller.abort.bind(this.controller),r.addEventListener("abort",o));try{h(this,he,"m",Li).call(this),this._connected(null);let i=Ne.fromReadableStream(e,this.controller);for await(let a of i)h(this,he,"m",Ni).call(this,a);if(i.controller.signal?.aborted)throw new oe;h(this,he,"m",Bi).call(this)}finally{r&&o&&r.removeEventListener("abort",o)}}[(st=new WeakMap,fn=new WeakMap,Ar=new WeakMap,Qs=new WeakMap,Er=new WeakMap,xr=new WeakMap,Zs=new WeakMap,Tr=new WeakMap,Be=new WeakMap,Ir=new WeakMap,eo=new WeakMap,to=new WeakMap,vt=new WeakMap,no=new WeakMap,ro=new WeakMap,so=new WeakMap,Rr=new WeakMap,Mr=new WeakMap,he=new WeakSet,$i=function(){if(this.receivedMessages.length===0)throw new T("stream ended without producing a Message with role=assistant");return this.receivedMessages.at(-1)},Pl=function(){if(this.receivedMessages.length===0)throw new T("stream ended without producing a Message with role=assistant");let t=this.receivedMessages.at(-1).content.filter(r=>r.type==="text").map(r=>r.text);if(t.length===0)throw new T("stream ended without producing a content block with type=text");return t.join(" ")},Li=function(){this.ended||k(this,st,void 0,"f")},Ni=function(t){if(this.ended)return;let r=h(this,he,"m",Cl).call(this,t);switch(this._emit("streamEvent",t,r),t.type){case"content_block_delta":{let o=r.content.at(-1);switch(t.delta.type){case"text_delta":{o.type==="text"&&this._emit("text",t.delta.text,o.text||"");break}case"citations_delta":{o.type==="text"&&this._emit("citation",t.delta.citation,o.citations??[]);break}case"input_json_delta":{if(Hi(o)&&h(this,Be,"f").inputJson?.length){let i;try{i=o.input}catch(a){h(this,Mr,"f").call(this,h(this,he,"m",Fi).call(this,o,a));break}this._emit("inputJson",t.delta.partial_json,i)}break}case"thinking_delta":{o.type==="thinking"&&this._emit("thinking",t.delta.thinking,o.thinking);break}case"signature_delta":{o.type==="thinking"&&this._emit("signature",o.signature);break}case"compaction_delta":{o.type==="compaction"&&o.content&&this._emit("compaction",o.content);break}default:t.delta}break}case"message_stop":{this._addMessageParam(r),this._addMessage(Di(r,h(this,fn,"f"),{logger:h(this,Rr,"f")}),!0);break}case"content_block_stop":{this._emit("contentBlock",r.content.at(-1));break}case"message_start":{k(this,st,r,"f");break}case"content_block_start":case"message_delta":break}},Bi=function(){if(this.ended)throw new T("stream has ended, this shouldn't happen");let t=h(this,st,"f");if(!t)throw new T("request ended without sending any chunks");return k(this,st,void 0,"f"),Di(t,h(this,fn,"f"),{logger:h(this,Rr,"f")})},Cl=function(t){let r=h(this,st,"f");if(t.type==="message_start"){if(r)throw new T(`Unexpected event order, got ${t.type} before receiving "message_stop"`);return t.message}if(!r)throw new T(`Unexpected event order, got ${t.type} before "message_start"`);switch(t.type){case"message_stop":return r;case"message_delta":return r.stop_reason=t.delta.stop_reason,r.stop_sequence=t.delta.stop_sequence,r.stop_details=t.delta.stop_details,r.usage.output_tokens=t.usage.output_tokens,t.delta.container!=null&&(r.container=t.delta.container),t.context_management!=null&&(r.context_management=t.context_management),t.input_transformations!=null&&(r.input_transformations=t.input_transformations),t.usage.input_tokens!=null&&(r.usage.input_tokens=t.usage.input_tokens),t.usage.cache_creation_input_tokens!=null&&(r.usage.cache_creation_input_tokens=t.usage.cache_creation_input_tokens),t.usage.cache_read_input_tokens!=null&&(r.usage.cache_read_input_tokens=t.usage.cache_read_input_tokens),t.usage.server_tool_use!=null&&(r.usage.server_tool_use=t.usage.server_tool_use),t.usage.iterations!=null&&(r.usage.iterations=t.usage.iterations),t.usage.fallback_credit!=null&&(r.usage.fallback_credit=t.usage.fallback_credit),t.usage.output_tokens_details!=null&&(r.usage.output_tokens_details=t.usage.output_tokens_details),r;case"content_block_start":return r.content.push(t.content_block),t.content_block.type==="fallback"&&(r.model=t.content_block.to.model),r;case"content_block_delta":{let o=r.content.at(t.index);switch(t.delta.type){case"text_delta":{o?.type==="text"&&(r.content[t.index]={...o,text:(o.text||"")+t.delta.text});break}case"citations_delta":{o?.type==="text"&&(r.content[t.index]={...o,citations:[...o.citations??[],t.delta.citation]});break}case"input_json_delta":{if(o&&Hi(o)){let i=(o[rt]||"")+t.delta.partial_json;r.content[t.index]=Js(o,i)}break}case"thinking_delta":{o?.type==="thinking"&&(r.content[t.index]={...o,thinking:o.thinking+t.delta.thinking});break}case"signature_delta":{o?.type==="thinking"&&(r.content[t.index]={...o,signature:t.delta.signature});break}case"compaction_delta":{if(o?.type==="compaction"){let i={...o,content:t.delta.content};"encrypted_content"in t.delta&&(i.encrypted_content=t.delta.encrypted_content),r.content[t.index]=i}break}default:t.delta}return r}case"content_block_stop":{let o=r.content.at(t.index);if(o&&Hi(o)&&rt in o){let i;try{i=o.input}catch(a){i={},h(this,Mr,"f").call(this,h(this,he,"m",Fi).call(this,o,a))}Object.defineProperty(o,"input",{value:i,enumerable:!0,configurable:!0,writable:!0})}return r}}},Fi=function(t,r){let o=t[rt];return new T(`Unable to parse tool parameter JSON from model. Please retry your request or adjust your prompt. Error: ${r}. JSON: ${o}`)},Symbol.asyncIterator)](){let e=[],t=[],r=!1;return this.on("streamEvent",o=>{let i=t.shift();i?i.resolve(o):e.push(o)}),this.on("end",()=>{r=!0;for(let o of t)o.resolve(void 0);t.length=0}),this.on("abort",o=>{r=!0;for(let i of t)i.reject(o);t.length=0}),this.on("error",o=>{r=!0;for(let i of t)i.reject(o);t.length=0}),{next:async()=>e.length?{value:e.shift(),done:!1}:r?{value:void 0,done:!0}:new Promise((i,a)=>t.push({resolve:i,reject:a})).then(i=>i?{value:i,done:!1}:{value:void 0,done:!0}),return:async()=>(this.abort(),{value:void 0,done:!0})}}toReadableStream(){return new Ne(this[Symbol.asyncIterator].bind(this),this.controller).toReadableStream()}}return n})();Y();var Ve,io,At,pn,ao,Et,mn,co,Dl,lo,ho,Ui=(()=>{class n extends oo{constructor(e,t){super(e),Ve.add(this),io.set(this,void 0),At.set(this,0),pn.set(this,[]),ao.set(this,[]),Et.set(this,void 0),mn.set(this,[]),co.set(this,!1),k(this,io,t,"f")}get toolCalls(){return h(this,ao,"f")}static start(e,t,r,o){let i=new n({...t,stream:!0},o);for(let a of t.messages)i._addMessageParam(a);return i._run(()=>i._createMessage(e,{...t,stream:!0},{...r,headers:{...r?.headers,[qt]:"stream"}})),i}_emit(e,...t){var r;if(e!=="streamEvent"||this.ended){super._emit(e,...t);return}k(this,At,(r=h(this,At,"f"),r++,r),"f");let[o,i]=t,a=o.type==="content_block_stop"?i.content[o.index]:void 0,l=a?.type==="tool_use"?a:void 0;l&&h(this,ao,"f").push(l),super._emit(e,...t),h(this,Ve,"m",Dl).call(this,o,l),h(this,Ve,"m",lo).call(this)}[(io=new WeakMap,At=new WeakMap,pn=new WeakMap,ao=new WeakMap,Et=new WeakMap,mn=new WeakMap,co=new WeakMap,Ve=new WeakSet,Symbol.asyncIterator)](){let e=super[Symbol.asyncIterator](),t={handled:h(this,At,"f")};h(this,pn,"f").push(t);let r=!1;return{next:async()=>{r&&(r=!1,t.handled++,h(this,Ve,"m",lo).call(this));try{let o=await e.next();return r=!o.done,o.done&&h(this,Ve,"m",ho).call(this,t),o}catch(o){throw h(this,Ve,"m",ho).call(this,t),o}},return:async()=>{let o=e.return?.();return h(this,Ve,"m",ho).call(this,t),await o??{value:void 0,done:!0}}}}}return Dl=function(e,t){if(h(this,co,"f"))return;if(e.type==="content_block_start"&&e.content_block.type==="fallback"){k(this,co,!0,"f"),k(this,Et,void 0,"f");return}let r=e.type==="content_block_start"||e.type==="message_delta"&&e.delta.stop_reason==="tool_use";h(this,Et,"f")&&r&&(h(this,mn,"f").push({toolUse:h(this,Et,"f"),event:h(this,At,"f")}),k(this,Et,void 0,"f")),t&&k(this,Et,t,"f")},lo=function(){if(this.errored||this.controller.signal.aborted)return;let e=Math.min(h(this,At,"f"),...h(this,pn,"f").map(t=>t.handled));for(;h(this,mn,"f")[0]&&h(this,mn,"f")[0].event<=e;)h(this,io,"f").call(this,h(this,mn,"f").shift().toolUse)},ho=function(e){let t=h(this,pn,"f").indexOf(e);t>=0&&(h(this,pn,"f").splice(t,1),h(this,Ve,"m",lo).call(this))},n})();function ji(){let n,s;return{promise:new Promise((t,r)=>{n=t,s=r}),resolve:n,reject:s}}var q,gn,xt,W,ue,de,ot,Fe,it,Pr,be,He,_n,bn,Tt,Wi,Ol,qi,zi,Cr,uo,$l,Yi,Vi,Ll,Xi,Gi=(()=>{class n{constructor(e,t,r){q.add(this),this.client=e,gn.set(this,!1),xt.set(this,!1),W.set(this,void 0),ue.set(this,void 0),de.set(this,void 0),ot.set(this,void 0),Fe.set(this,void 0),it.set(this,void 0),Pr.set(this,0),be.set(this,{status:"idle"}),He.set(this,void 0),_n.set(this,null),bn.set(this,new Map),Tt.set(this,[]),Nl(t),zd(t),Bl(t),k(this,W,{params:{...t,messages:JSON.parse(JSON.stringify(t.messages))}},"f");let o=wi(t.tools,t.messages);k(this,ue,{...r,headers:_([ks("BetaToolRunner"),o.length?{[yt]:o.join(", ")}:void 0,r?.headers])},"f"),k(this,it,ji(),"f")}async*[(gn=new WeakMap,xt=new WeakMap,W=new WeakMap,ue=new WeakMap,de=new WeakMap,ot=new WeakMap,Fe=new WeakMap,it=new WeakMap,Pr=new WeakMap,be=new WeakMap,He=new WeakMap,_n=new WeakMap,bn=new WeakMap,Tt=new WeakMap,q=new WeakSet,Symbol.asyncIterator)](){var e;if(h(this,gn,"f"))throw new T("Cannot iterate over a consumed stream");k(this,gn,!0,"f"),k(this,xt,!0,"f"),k(this,Fe,void 0,"f");try{for(;;)try{if(h(this,W,"f").params.max_iterations&&h(this,Pr,"f")>=h(this,W,"f").params.max_iterations)break;if(h(this,q,"m",Ll).call(this),h(this,be,"f").status==="scheduled"&&Hl(h(this,_n,"f"))!=="resume"){yield*h(this,q,"m",zi).call(this,h(this,be,"f").config);continue}k(this,xt,!1,"f"),k(this,Fe,void 0,"f"),k(this,Pr,(e=h(this,Pr,"f"),e++,e),"f"),k(this,de,void 0,"f");let{max_iterations:t,runToolsEagerly:r,...o}=h(this,W,"f").params;if(yield*h(this,q,"m",Wi).call(this,o),h(this,xt,"f"))k(this,_n,null,"f");else{let a=await h(this,de,"f"),l=Hl(a.stop_reason);k(this,_n,a.stop_reason,"f"),h(this,W,"f").params.messages.push({role:a.role,content:a.content});let{container:c}=h(this,W,"f").params;if(a.container&&(c==null?h(this,W,"f").params.container=a.container.id:typeof c=="object"&&c.id==null&&(h(this,W,"f").params.container={...c,id:a.container.id})),l==="stop"){yield*h(this,q,"m",Yi).call(this);break}if(l==="resume")continue}let i=await h(this,q,"m",Vi).call(this,h(this,W,"f").params.messages.at(-1));if(i)h(this,W,"f").params.messages.push(i);else if(!h(this,xt,"f")){yield*h(this,q,"m",Yi).call(this);break}}finally{h(this,ot,"f")?.abort(),k(this,ot,void 0,"f")}if(await h(this,q,"m",qi).call(this),!h(this,de,"f"))throw new T("ToolRunner concluded without a message from the server");h(this,it,"f").resolve(await h(this,de,"f"))}catch(t){throw k(this,gn,!1,"f"),h(this,it,"f").promise.catch(()=>{}),h(this,it,"f").reject(t),k(this,it,ji(),"f"),t}}setMessagesParams(e){let t=typeof e=="function"?e(h(this,W,"f").params):e;if(Nl(t),Bl(t),h(this,be,"f").status!=="idle"&&Ki(t),h(this,be,"f").status==="in_flight"&&t.messages!==h(this,W,"f").params.messages)throw new T("Message params can't be changed while the conversation is being compacted, because the compaction response is about to replace them. Change them after this iteration instead.");h(this,W,"f").params=t,k(this,xt,!0,"f"),k(this,Fe,void 0,"f")}setRequestOptions(e){typeof e=="function"?k(this,ue,e(h(this,ue,"f")),"f"):k(this,ue,{...h(this,ue,"f"),...e},"f")}async generateToolResponse(e=h(this,ue,"f").signal){let t=await h(this,de,"f")??this.params.messages.at(-1);return t?h(this,q,"m",Vi).call(this,t,e):null}deferToolCall(e){let t=typeof e=="string"?e:e.id;h(this,He,"f")&&!h(this,He,"f").has(t)&&h(this,He,"f").set(t,{status:"held"})}get deferredToolCalls(){let e=h(this,ot,"f"),t=h(this,He,"f");return!(e instanceof Ui)||!t?[]:e.toolCalls.filter(r=>t.get(r.id)?.status==="held")}done(){return h(this,it,"f").promise}async runUntilDone(){if(!h(this,gn,"f"))for await(let e of this);return this.done()}get params(){return h(this,W,"f").params}pushMessages(...e){this.setMessagesParams(t=>({...t,messages:[...t.messages,...e]}))}compactBeforeNextTurn(e){h(this,be,"f").status!=="in_flight"&&(Ki(h(this,W,"f").params),k(this,be,{status:"scheduled",config:e??{type:"summarize"}},"f"))}addTools(...e){for(let t of e)"name"in t&&h(this,bn,"f").set(t.name,"run"in t?t:null),h(this,Tt,"f").push({type:"addition",tool:t})}removeTools(...e){for(let t of e){let r=typeof t=="string"?t:t.name;h(this,bn,"f").set(r,null),h(this,Tt,"f").push({type:"removal",name:r})}}then(e,t){return this.runUntilDone().then(e,t)}}return Wi=async function*(e){await h(this,q,"m",qi).call(this),k(this,He,void 0,"f"),e.stream?(k(this,ot,h(this,W,"f").params.runToolsEagerly?h(this,q,"m",Ol).call(this,e):this.client.beta.messages.stream({...e},h(this,ue,"f")),"f"),k(this,de,h(this,ot,"f").finalMessage(),"f"),h(this,de,"f").catch(()=>{}),yield h(this,ot,"f")):(k(this,de,this.client.beta.messages.create({...e,stream:!1},h(this,ue,"f")),"f"),yield h(this,de,"f"))},Ol=function(e){let t=new Map;return k(this,He,t,"f"),Ui.start(this.client.beta.messages,e,h(this,ue,"f"),r=>{if(t.has(r.id))return;let o=Ul(h(this,q,"m",Cr).call(this),h(this,q,"m",uo).call(this),r,h(this,ue,"f"));o.catch(()=>{}),t.set(r.id,{status:"started",result:o})})},qi=async function(){let e=[...h(this,He,"f")?.values()??[]].filter(t=>t.status==="started");await Promise.allSettled(e.map(t=>t.result))},zi=async function*(e){Ki(h(this,W,"f").params);let{max_iterations:t,runToolsEagerly:r,...o}=h(this,W,"f").params,i=Yd(o);k(this,be,{status:"in_flight"},"f"),k(this,Fe,void 0,"f");let a=h(this,de,"f");try{yield*h(this,q,"m",Wi).call(this,{...i,compaction:e});let l=await h(this,de,"f");l.content.some(c=>c.type==="compaction"&&c.content)?(h(this,q,"m",$l).call(this),h(this,W,"f").params.messages=[{role:l.role,content:l.content}]):(F(this.client).warn("Compaction produced no summary; keeping the conversation as it is."),k(this,de,a,"f"))}finally{k(this,be,{status:"idle"},"f")}},Cr=function(){let e=new Map;for(let t of h(this,W,"f").params.tools)"run"in t&&e.set(t.name,t);for(let[t,r]of h(this,bn,"f"))r?e.set(t,r):e.delete(t);return e},uo=function(){let e=new Set(h(this,q,"m",Cr).call(this).keys());for(let t of[...h(this,W,"f").params.messages,h(this,q,"m",Xi).call(this)])if(typeof t.content!="string"){for(let r of t.content)if(t.role==="system")Fl(r,e);else if(t.role==="assistant"&&r.type==="compaction")for(let o of r.tool_changes??[])Fl(o,e)}return e},$l=function(){let e=h(this,q,"m",uo).call(this);for(let t of h(this,q,"m",Cr).call(this).keys())e.has(t)||h(this,bn,"f").set(t,null)},Yi=async function*(){if(h(this,be,"f").status!=="scheduled")return;let e=h(this,W,"f").params.messages.at(-1)?.content;if(Array.isArray(e)&&e.some(t=>t.type==="tool_use")){F(this.client).warn("The pending compaction was skipped because the last turn ended with tool calls that were not run. Call `compactBeforeNextTurn()` again if you continue the conversation."),k(this,be,{status:"idle"},"f");return}yield*h(this,q,"m",zi).call(this,h(this,be,"f").config)},Vi=async function(e,t=h(this,ue,"f").signal){return h(this,Fe,"f")!==void 0?h(this,Fe,"f"):(k(this,Fe,Vd(h(this,q,"m",Cr).call(this),h(this,q,"m",uo).call(this),e,{...h(this,ue,"f"),signal:t},h(this,He,"f")),"f"),h(this,Fe,"f"))},Ll=function(){h(this,_n,"f")==="pause_turn"||h(this,Tt,"f").length===0||(h(this,W,"f").params.messages.push(h(this,q,"m",Xi).call(this)),k(this,Tt,[],"f"))},Xi=function(){let e=[];for(let t of h(this,Tt,"f")){if(t.type==="removal"){e.push({type:"tool_removal",tool:{type:"tool_reference",name:t.name}});continue}let r=t.tool;if("run"in t.tool){let{run:o,parse:i,close:a,...l}=t.tool;r=l}e.push({type:"tool_addition",tool:{type:"tool_definition",definition:r}})}return{role:"system",content:e}},n})();function Nl(n){if("compaction"in n&&n.compaction!=null)throw new T("`compaction` cannot be set on a tool runner: every request in the loop would compact again. Call `runner.compactBeforeNextTurn()` when the conversation should be compacted instead.")}function zd(n){if("compactionControl"in n&&n.compactionControl!=null)throw new T("`compactionControl` has been removed from the tool runner. Use server-side compaction instead: call `runner.compactBeforeNextTurn()` when the conversation should be compacted.")}function Bl(n){if(n.runToolsEagerly&&!n.stream)throw new TypeError("`runToolsEagerly: true` needs `stream: true` in the tool runner's params, because a reply that isn't streamed arrives whole.")}function Ki(n){if(n.context_management?.edits?.some(s=>s.type.startsWith("compact_")))throw new T("`compactBeforeNextTurn()` can't be used while `context_management` has a compaction edit, because the API doesn't accept a compaction block together with one. Remove the edit first.")}function Yd(n){let{context_management:s,stop_sequences:e,output_format:t,...r}=n,o=({format:i,...a})=>a;return(r.tool_choice?.type==="any"||r.tool_choice?.type==="tool")&&delete r.tool_choice,r.output_config&&(r.output_config=o(r.output_config)),Array.isArray(r.fallbacks)&&(r.fallbacks=r.fallbacks.map(i=>i.output_config?{...i,output_config:o(i.output_config)}:i)),r}async function Vd(n,s,e,t,r){if(!e||e.role!=="assistant"||!e.content||typeof e.content=="string")return null;let o=e.content.filter(a=>a.type==="tool_use");return o.length===0?null:{role:"user",content:await Promise.all(o.map(a=>{let l=r?.get(a.id);if(l?.status==="started")return l.result;let c=Ul(n,s,a,t);return r?.set(a.id,{status:"started",result:c}),c}))}}async function Ul(n,s,e,t){let r=s.has(e.name)?n.get(e.name):void 0;if(!r)return Xd(e);try{let o=e.input;"parse"in r&&r.parse&&(o=r.parse(o));let i=await r.run(o,{toolUse:e,toolUseBlock:e,signal:t?.signal});return{type:"tool_result",tool_use_id:e.id,content:i}}catch(o){return{type:"tool_result",tool_use_id:e.id,content:o instanceof rn?o.content:`Error: ${o instanceof Error?o.message:String(o)}`,is_error:!0}}}function Xd(n){return{type:"tool_result",tool_use_id:n.id,content:`Error: Tool '${n.name}' not found`,is_error:!0}}function Fl(n,s){switch(n.type){case"tool_removal":case"tool_addition":Kd(n,s);break}}function Kd(n,s){let e=Gd(n.tool);e!==void 0&&(n.type==="tool_removal"?s.delete(e):s.add(e))}function Gd(n){switch(n.type){case"tool_reference":return n.name;case"tool_definition":return"name"in n.definition?n.definition.name:void 0;default:return}}function Hl(n){if(n===null)return"stop";switch(n){case"tool_use":return"run_tools";case"pause_turn":case"compaction":return"resume";case"end_turn":case"stop_sequence":case"max_tokens":case"model_context_window_exceeded":case"refusal":return"stop";default:return"stop"}}var jl={},Jd=["claude-mythos-preview","claude-opus-4-6"],fo=(()=>{class n extends E{constructor(){super(...arguments),this.batches=new dn(this._client)}create(e,t){let r=Wl(e),{betas:o,user_profile_id:i,workspace_id:a,...l}=r;l.model in jl&&console.warn(`The model '${l.model}' is deprecated and will reach end-of-life on ${jl[l.model]}
+Please migrate to a newer model. Visit https://docs.anthropic.com/en/docs/resources/model-deprecations for more information.`),Jd.includes(l.model)&&l.thinking&&l.thinking.type==="enabled"&&console.warn(`Using Claude with ${l.model} and 'thinking.type=enabled' is deprecated. Use 'thinking.type=adaptive' instead which results in better model performance in our testing: https://platform.claude.com/docs/en/build-with-claude/adaptive-thinking`);let c=t?.timeout??this._client._options.timeout;if(!l.stream&&c==null){let u=Gs[l.model]??void 0;c=this._client.calculateNonstreamingTimeout(l.max_tokens,u)}let d=vs(l.tools,l.messages);return this._client.post("/v1/messages?beta=true",{body:l,timeout:c??6e5,...t,headers:_([{...o?.toString()!=null?{"anthropic-beta":o?.toString()}:void 0,...i!=null?{"anthropic-user-profile-id":i}:void 0,...a!=null?{"anthropic-workspace-id":a}:void 0},d,t?.headers]),stream:r.stream??!1})}parse(e,t){return t={...t,headers:_([{"anthropic-beta":[...e.betas??[],"structured-outputs-2025-12-15"].toString()},t?.headers])},this.create(e,t).then(r=>Oi(r,e,{logger:this._client.logger??console}))}stream(e,t){return oo.createMessage(this,e,t)}countTokens(e,t){let r=Wl(e),{betas:o,user_profile_id:i,workspace_id:a,...l}=r;return this._client.post("/v1/messages/count_tokens?beta=true",{body:l,...t,headers:_([{"anthropic-beta":[...o??[],"token-counting-2024-11-01"].toString(),...i!=null?{"anthropic-user-profile-id":i}:void 0,...a!=null?{"anthropic-workspace-id":a}:void 0},t?.headers])})}toolRunner(e,t){return new Gi(this._client,e,t)}}return n.Batches=dn,n.BetaToolRunner=Gi,n.ToolError=rn,n})();function Wl(n){if(!n.output_format)return n;if(n.output_config?.format)throw new T("Both output_format and output_config.format were provided. Please use only output_config.format (output_format is deprecated).");let{output_format:s,...e}=n;return{...e,output_config:{...n.output_config,format:s}}}var wn=class extends E{retrieve(s,e){return this._client.get(b`/v1/organizations/api_keys/${s}?beta=true`,e)}update(s,e,t){return this._client.post(b`/v1/organizations/api_keys/${s}?beta=true`,{body:e,...t})}list(s={},e){return this._client.getAPIList("/v1/organizations/api_keys?beta=true",J,{query:s,...e})}};var yn=class extends E{retrieve(s){return this._client.get("/v1/organizations/compliance_settings?beta=true",s)}update(s,e){return this._client.post("/v1/organizations/compliance_settings?beta=true",{body:s,...e})}};var Sn=class extends E{create(s,e){return this._client.post("/v1/organizations/external_keys?beta=true",{body:s,...e})}retrieve(s,e){return this._client.get(b`/v1/organizations/external_keys/${s}?beta=true`,e)}update(s,e,t){return this._client.post(b`/v1/organizations/external_keys/${s}?beta=true`,{body:e,...t})}list(s={},e){return this._client.getAPIList("/v1/organizations/external_keys?beta=true",D,{query:s,...e})}delete(s,e){return this._client.delete(b`/v1/organizations/external_keys/${s}?beta=true`,e)}validate(s,e){return this._client.post(b`/v1/organizations/external_keys/${s}/validate?beta=true`,e)}};var kn=class extends E{create(s,e){return this._client.post("/v1/organizations/invites?beta=true",{body:s,...e})}retrieve(s,e){return this._client.get(b`/v1/organizations/invites/${s}?beta=true`,e)}list(s={},e){return this._client.getAPIList("/v1/organizations/invites?beta=true",J,{query:s,...e})}delete(s,e){return this._client.delete(b`/v1/organizations/invites/${s}?beta=true`,e)}};var vn=class extends E{list(s={},e){return this._client.getAPIList("/v1/organizations/rate_limits?beta=true",D,{query:s,...e})}};var An=class extends E{retrieve(s,e){return this._client.get(b`/v1/organizations/users/${s}?beta=true`,e)}update(s,e,t){return this._client.post(b`/v1/organizations/users/${s}?beta=true`,{body:e,...t})}list(s={},e){return this._client.getAPIList("/v1/organizations/users?beta=true",J,{query:s,...e})}remove(s,e){return this._client.delete(b`/v1/organizations/users/${s}?beta=true`,e)}};var En=class extends E{create(s,e){let{betas:t,...r}=s;return this._client.post("/v1/organizations/federation_issuers?beta=true",{body:r,...e,headers:_([{...t?.toString()!=null?{"anthropic-beta":t?.toString()}:void 0},e?.headers])})}retrieve(s,e={},t){let{betas:r}=e??{};return this._client.get(b`/v1/organizations/federation_issuers/${s}?beta=true`,{...t,headers:_([{...r?.toString()!=null?{"anthropic-beta":r?.toString()}:void 0},t?.headers])})}update(s,e,t){let{betas:r,...o}=e;return this._client.post(b`/v1/organizations/federation_issuers/${s}?beta=true`,{body:o,...t,headers:_([{...r?.toString()!=null?{"anthropic-beta":r?.toString()}:void 0},t?.headers])})}list(s={},e){let{betas:t,...r}=s??{};return this._client.getAPIList("/v1/organizations/federation_issuers?beta=true",D,{query:r,...e,headers:_([{...t?.toString()!=null?{"anthropic-beta":t?.toString()}:void 0},e?.headers])})}archive(s,e={},t){let{betas:r}=e??{};return this._client.post(b`/v1/organizations/federation_issuers/${s}/archive?beta=true`,{...t,headers:_([{...r?.toString()!=null?{"anthropic-beta":r?.toString()}:void 0},t?.headers])})}};var xn=class extends E{list(s,e={},t){let{betas:r,...o}=e??{};return this._client.getAPIList(b`/v1/organizations/federation_rules/${s}/workspaces?beta=true`,D,{query:o,...t,headers:_([{...r?.toString()!=null?{"anthropic-beta":r?.toString()}:void 0},t?.headers])})}add(s,e,t){let{betas:r,...o}=e;return this._client.post(b`/v1/organizations/federation_rules/${s}/workspaces?beta=true`,{body:o,...t,headers:_([{...r?.toString()!=null?{"anthropic-beta":r?.toString()}:void 0},t?.headers])})}remove(s,e,t){let{federation_rule_id:r,betas:o}=e;return this._client.delete(b`/v1/organizations/federation_rules/${r}/workspaces/${s}?beta=true`,{...t,headers:_([{...o?.toString()!=null?{"anthropic-beta":o?.toString()}:void 0},t?.headers])})}};var po=(()=>{class n extends E{constructor(){super(...arguments),this.workspaces=new xn(this._client)}create(e,t){let{betas:r,...o}=e;return this._client.post("/v1/organizations/federation_rules?beta=true",{body:o,...t,headers:_([{...r?.toString()!=null?{"anthropic-beta":r?.toString()}:void 0},t?.headers])})}retrieve(e,t={},r){let{betas:o}=t??{};return this._client.get(b`/v1/organizations/federation_rules/${e}?beta=true`,{...r,headers:_([{...o?.toString()!=null?{"anthropic-beta":o?.toString()}:void 0},r?.headers])})}update(e,t,r){let{betas:o,...i}=t;return this._client.post(b`/v1/organizations/federation_rules/${e}?beta=true`,{body:i,...r,headers:_([{...o?.toString()!=null?{"anthropic-beta":o?.toString()}:void 0},r?.headers])})}list(e={},t){let{betas:r,...o}=e??{};return this._client.getAPIList("/v1/organizations/federation_rules?beta=true",D,{query:o,...t,headers:_([{...r?.toString()!=null?{"anthropic-beta":r?.toString()}:void 0},t?.headers])})}archive(e,t={},r){let{betas:o}=t??{};return this._client.post(b`/v1/organizations/federation_rules/${e}/archive?beta=true`,{...r,headers:_([{...o?.toString()!=null?{"anthropic-beta":o?.toString()}:void 0},r?.headers])})}}return n.Workspaces=xn,n})();var mo=(()=>{class n extends E{constructor(){super(...arguments),this.issuers=new En(this._client),this.rules=new po(this._client)}}return n.Issuers=En,n.Rules=po,n})();var Tn=class extends E{list(s,e={},t){let{betas:r,...o}=e??{};return this._client.getAPIList(b`/v1/organizations/service_accounts/${s}/workspaces?beta=true`,D,{query:o,...t,headers:_([{...r?.toString()!=null?{"anthropic-beta":r?.toString()}:void 0},t?.headers])})}add(s,e,t){let{betas:r,...o}=e;return this._client.post(b`/v1/organizations/service_accounts/${s}/workspaces?beta=true`,{body:o,...t,headers:_([{...r?.toString()!=null?{"anthropic-beta":r?.toString()}:void 0},t?.headers])})}remove(s,e,t){let{service_account_id:r,betas:o}=e;return this._client.delete(b`/v1/organizations/service_accounts/${r}/workspaces/${s}?beta=true`,{...t,headers:_([{...o?.toString()!=null?{"anthropic-beta":o?.toString()}:void 0},t?.headers])})}};var go=(()=>{class n extends E{constructor(){super(...arguments),this.workspaces=new Tn(this._client)}create(e,t){let{betas:r,...o}=e;return this._client.post("/v1/organizations/service_accounts?beta=true",{body:o,...t,headers:_([{...r?.toString()!=null?{"anthropic-beta":r?.toString()}:void 0},t?.headers])})}retrieve(e,t={},r){let{betas:o}=t??{};return this._client.get(b`/v1/organizations/service_accounts/${e}?beta=true`,{...r,headers:_([{...o?.toString()!=null?{"anthropic-beta":o?.toString()}:void 0},r?.headers])})}update(e,t,r){let{betas:o,...i}=t;return this._client.post(b`/v1/organizations/service_accounts/${e}?beta=true`,{body:i,...r,headers:_([{...o?.toString()!=null?{"anthropic-beta":o?.toString()}:void 0},r?.headers])})}list(e={},t){let{betas:r,...o}=e??{};return this._client.getAPIList("/v1/organizations/service_accounts?beta=true",D,{query:o,...t,headers:_([{...r?.toString()!=null?{"anthropic-beta":r?.toString()}:void 0},t?.headers])})}archive(e,t={},r){let{betas:o}=t??{};return this._client.post(b`/v1/organizations/service_accounts/${e}/archive?beta=true`,{...r,headers:_([{...o?.toString()!=null?{"anthropic-beta":o?.toString()}:void 0},r?.headers])})}}return n.Workspaces=Tn,n})();var In=class extends E{retrieve(s,e,t){let{workspace_id:r}=e;return this._client.get(b`/v1/organizations/workspaces/${r}/members/${s}?beta=true`,t)}update(s,e,t){let{workspace_id:r,...o}=e;return this._client.post(b`/v1/organizations/workspaces/${r}/members/${s}?beta=true`,{body:o,...t})}list(s,e={},t){return this._client.getAPIList(b`/v1/organizations/workspaces/${s}/members?beta=true`,J,{query:e,...t})}add(s,e,t){return this._client.post(b`/v1/organizations/workspaces/${s}/members?beta=true`,{body:e,...t})}remove(s,e,t){let{workspace_id:r}=e;return this._client.delete(b`/v1/organizations/workspaces/${r}/members/${s}?beta=true`,t)}};var Rn=class extends E{list(s,e={},t){return this._client.getAPIList(b`/v1/organizations/workspaces/${s}/rate_limits?beta=true`,D,{query:e,...t})}};var Mn=class extends E{retrieve(s,e,t){let{workspace_id:r,betas:o}=e;return this._client.get(b`/v1/organizations/workspaces/${r}/service_accounts/${s}?beta=true`,{...t,headers:_([{...o?.toString()!=null?{"anthropic-beta":o?.toString()}:void 0},t?.headers])})}update(s,e,t){let{workspace_id:r,betas:o,...i}=e;return this._client.post(b`/v1/organizations/workspaces/${r}/service_accounts/${s}?beta=true`,{body:i,...t,headers:_([{...o?.toString()!=null?{"anthropic-beta":o?.toString()}:void 0},t?.headers])})}list(s,e={},t){let{betas:r,...o}=e??{};return this._client.getAPIList(b`/v1/organizations/workspaces/${s}/service_accounts?beta=true`,D,{query:o,...t,headers:_([{...r?.toString()!=null?{"anthropic-beta":r?.toString()}:void 0},t?.headers])})}add(s,e,t){let{betas:r,...o}=e;return this._client.post(b`/v1/organizations/workspaces/${s}/service_accounts?beta=true`,{body:o,...t,headers:_([{...r?.toString()!=null?{"anthropic-beta":r?.toString()}:void 0},t?.headers])})}remove(s,e,t){let{workspace_id:r,betas:o}=e;return this._client.delete(b`/v1/organizations/workspaces/${r}/service_accounts/${s}?beta=true`,{...t,headers:_([{...o?.toString()!=null?{"anthropic-beta":o?.toString()}:void 0},t?.headers])})}};var _o=(()=>{class n extends E{constructor(){super(...arguments),this.rateLimits=new Rn(this._client),this.members=new In(this._client),this.serviceAccounts=new Mn(this._client)}create(e,t){let{betas:r,...o}=e;return this._client.post("/v1/organizations/workspaces?beta=true",{body:o,...t,headers:_([{...r?.toString()!=null?{"anthropic-beta":r?.toString()}:void 0},t?.headers])})}retrieve(e,t){return this._client.get(b`/v1/organizations/workspaces/${e}?beta=true`,t)}update(e,t,r){return this._client.post(b`/v1/organizations/workspaces/${e}?beta=true`,{body:t,...r})}list(e={},t){return this._client.getAPIList("/v1/organizations/workspaces?beta=true",J,{query:e,...t})}archive(e,t){return this._client.post(b`/v1/organizations/workspaces/${e}/archive?beta=true`,t)}}return n.RateLimits=Rn,n.Members=In,n.ServiceAccounts=Mn,n})();var bo=(()=>{class n extends E{constructor(){super(...arguments),this.apiKeys=new wn(this._client),this.externalKeys=new Sn(this._client),this.federation=new mo(this._client),this.invites=new kn(this._client),this.serviceAccounts=new go(this._client),this.users=new An(this._client),this.workspaces=new _o(this._client),this.rateLimits=new vn(this._client),this.complianceSettings=new yn(this._client)}retrieve(e){return this._client.get("/v1/organizations/me?beta=true",e)}}return n.APIKeys=wn,n.ExternalKeys=Sn,n.Federation=mo,n.Invites=kn,n.ServiceAccounts=go,n.Users=An,n.Workspaces=_o,n.RateLimits=vn,n.ComplianceSettings=yn,n})();var wo=(()=>{class n extends E{list(e,t={},r){let{betas:o,workspace_id:i,...a}=t??{};return this._client.getAPIList(b`/v1/sessions/${e}/events?beta=true`,D,{query:a,...r,headers:_([{"anthropic-beta":[...o??[],"managed-agents-2026-04-01"].toString(),...i!=null?{"anthropic-workspace-id":i}:void 0},r?.headers])})}send(e,t,r){let{betas:o,workspace_id:i,...a}=t;return this._client.post(b`/v1/sessions/${e}/events?beta=true`,{body:a,...r,headers:_([{"anthropic-beta":[...o??[],"managed-agents-2026-04-01"].toString(),...i!=null?{"anthropic-workspace-id":i}:void 0},r?.headers])})}stream(e,t={},r){let{betas:o,workspace_id:i,...a}=t??{};return this._client.get(b`/v1/sessions/${e}/events/stream?beta=true`,{query:a,...r,headers:_([{"anthropic-beta":[...o??[],"managed-agents-2026-04-01"].toString(),...i!=null?{"anthropic-workspace-id":i}:void 0},r?.headers]),stream:!0})}toolRunner(e,t){return new Sr(e,{...t,client:this._client})}}return n.SessionToolRunner=Sr,n})();var Pn=class extends E{retrieve(s,e,t){let{session_id:r,betas:o,workspace_id:i}=e;return this._client.get(b`/v1/sessions/${r}/resources/${s}?beta=true`,{...t,headers:_([{"anthropic-beta":[...o??[],"managed-agents-2026-04-01"].toString(),...i!=null?{"anthropic-workspace-id":i}:void 0},t?.headers])})}update(s,e,t){let{session_id:r,betas:o,workspace_id:i,...a}=e;return this._client.post(b`/v1/sessions/${r}/resources/${s}?beta=true`,{body:a,...t,headers:_([{"anthropic-beta":[...o??[],"managed-agents-2026-04-01"].toString(),...i!=null?{"anthropic-workspace-id":i}:void 0},t?.headers])})}list(s,e={},t){let{betas:r,workspace_id:o,...i}=e??{};return this._client.getAPIList(b`/v1/sessions/${s}/resources?beta=true`,D,{query:i,...t,headers:_([{"anthropic-beta":[...r??[],"managed-agents-2026-04-01"].toString(),...o!=null?{"anthropic-workspace-id":o}:void 0},t?.headers])})}delete(s,e,t){let{session_id:r,betas:o,workspace_id:i}=e;return this._client.delete(b`/v1/sessions/${r}/resources/${s}?beta=true`,{...t,headers:_([{"anthropic-beta":[...o??[],"managed-agents-2026-04-01"].toString(),...i!=null?{"anthropic-workspace-id":i}:void 0},t?.headers])})}add(s,e,t){let{betas:r,workspace_id:o,...i}=e;return this._client.post(b`/v1/sessions/${s}/resources?beta=true`,{body:i,...t,headers:_([{"anthropic-beta":[...r??[],"managed-agents-2026-04-01"].toString(),...o!=null?{"anthropic-workspace-id":o}:void 0},t?.headers])})}};var Cn=class extends E{list(s,e,t){let{session_id:r,betas:o,workspace_id:i,...a}=e;return this._client.getAPIList(b`/v1/sessions/${r}/threads/${s}/events?beta=true`,D,{query:a,...t,headers:_([{"anthropic-beta":[...o??[],"managed-agents-2026-04-01"].toString(),...i!=null?{"anthropic-workspace-id":i}:void 0},t?.headers])})}stream(s,e,t){let{session_id:r,betas:o,workspace_id:i,...a}=e;return this._client.get(b`/v1/sessions/${r}/threads/${s}/stream?beta=true`,{query:a,...t,headers:_([{"anthropic-beta":[...o??[],"managed-agents-2026-04-01"].toString(),...i!=null?{"anthropic-workspace-id":i}:void 0},t?.headers]),stream:!0})}};var yo=(()=>{class n extends E{constructor(){super(...arguments),this.events=new Cn(this._client)}retrieve(e,t,r){let{session_id:o,betas:i,workspace_id:a}=t;return this._client.get(b`/v1/sessions/${o}/threads/${e}?beta=true`,{...r,headers:_([{"anthropic-beta":[...i??[],"managed-agents-2026-04-01"].toString(),...a!=null?{"anthropic-workspace-id":a}:void 0},r?.headers])})}list(e,t={},r){let{betas:o,workspace_id:i,...a}=t??{};return this._client.getAPIList(b`/v1/sessions/${e}/threads?beta=true`,D,{query:a,...r,headers:_([{"anthropic-beta":[...o??[],"managed-agents-2026-04-01"].toString(),...i!=null?{"anthropic-workspace-id":i}:void 0},r?.headers])})}archive(e,t,r){let{session_id:o,betas:i,workspace_id:a}=t;return this._client.post(b`/v1/sessions/${o}/threads/${e}/archive?beta=true`,{...r,headers:_([{"anthropic-beta":[...i??[],"managed-agents-2026-04-01"].toString(),...a!=null?{"anthropic-workspace-id":a}:void 0},r?.headers])})}}return n.Events=Cn,n})();var So=(()=>{class n extends E{constructor(){super(...arguments),this.events=new wo(this._client),this.resources=new Pn(this._client),this.threads=new yo(this._client)}create(e,t){let{betas:r,workspace_id:o,...i}=e;return this._client.post("/v1/sessions?beta=true",{body:i,...t,headers:_([{"anthropic-beta":[...r??[],"managed-agents-2026-04-01"].toString(),...o!=null?{"anthropic-workspace-id":o}:void 0},t?.headers])})}retrieve(e,t={},r){let{betas:o,workspace_id:i}=t??{};return this._client.get(b`/v1/sessions/${e}?beta=true`,{...r,headers:_([{"anthropic-beta":[...o??[],"managed-agents-2026-04-01"].toString(),...i!=null?{"anthropic-workspace-id":i}:void 0},r?.headers])})}update(e,t,r){let{betas:o,workspace_id:i,...a}=t;return this._client.post(b`/v1/sessions/${e}?beta=true`,{body:a,...r,headers:_([{"anthropic-beta":[...o??[],"managed-agents-2026-04-01"].toString(),...i!=null?{"anthropic-workspace-id":i}:void 0},r?.headers])})}list(e={},t){let{betas:r,workspace_id:o,...i}=e??{};return this._client.getAPIList("/v1/sessions?beta=true",ys,{query:i,...t,headers:_([{"anthropic-beta":[...r??[],"managed-agents-2026-04-01"].toString(),...o!=null?{"anthropic-workspace-id":o}:void 0},t?.headers])})}delete(e,t={},r){let{betas:o,workspace_id:i}=t??{};return this._client.delete(b`/v1/sessions/${e}?beta=true`,{...r,headers:_([{"anthropic-beta":[...o??[],"managed-agents-2026-04-01"].toString(),...i!=null?{"anthropic-workspace-id":i}:void 0},r?.headers])})}archive(e,t={},r){let{betas:o,workspace_id:i}=t??{};return this._client.post(b`/v1/sessions/${e}/archive?beta=true`,{...r,headers:_([{"anthropic-beta":[...o??[],"managed-agents-2026-04-01"].toString(),...i!=null?{"anthropic-workspace-id":i}:void 0},r?.headers])})}}return n.Events=wo,n.Resources=Pn,n.Threads=yo,n})();var Dn=class extends E{create(s,e,t){let{betas:r,workspace_id:o,...i}=e;return this._client.post(b`/v1/skills/${s}/versions?beta=true`,ye({body:i,...t,headers:_([{...r?.toString()!=null?{"anthropic-beta":r?.toString()}:void 0,...o!=null?{"anthropic-workspace-id":o}:void 0},t?.headers])},this._client,!1))}retrieve(s,e,t){let{skill_id:r,betas:o,workspace_id:i}=e;return this._client.get(b`/v1/skills/${r}/versions/${s}?beta=true`,{...t,headers:_([{...o?.toString()!=null?{"anthropic-beta":o?.toString()}:void 0,...i!=null?{"anthropic-workspace-id":i}:void 0},t?.headers])})}list(s,e={},t){let{betas:r,workspace_id:o,...i}=e??{};return this._client.getAPIList(b`/v1/skills/${s}/versions?beta=true`,D,{query:i,...t,headers:_([{...r?.toString()!=null?{"anthropic-beta":r?.toString()}:void 0,...o!=null?{"anthropic-workspace-id":o}:void 0},t?.headers])})}delete(s,e,t){let{skill_id:r,betas:o,workspace_id:i}=e;return this._client.delete(b`/v1/skills/${r}/versions/${s}?beta=true`,{...t,headers:_([{...o?.toString()!=null?{"anthropic-beta":o?.toString()}:void 0,...i!=null?{"anthropic-workspace-id":i}:void 0},t?.headers])})}download(s,e,t){let{skill_id:r,betas:o,workspace_id:i}=e;return this._client.get(b`/v1/skills/${r}/versions/${s}/content?beta=true`,{...t,headers:_([{Accept:"application/binary",...o?.toString()!=null?{"anthropic-beta":o?.toString()}:void 0,...i!=null?{"anthropic-workspace-id":i}:void 0},t?.headers]),__binaryResponse:!0})}};var ko=(()=>{class n extends E{constructor(){super(...arguments),this.versions=new Dn(this._client)}create(e,t){let{betas:r,workspace_id:o,...i}=e;return this._client.post("/v1/skills?beta=true",ye({body:i,...t,headers:_([{...r?.toString()!=null?{"anthropic-beta":r?.toString()}:void 0,...o!=null?{"anthropic-workspace-id":o}:void 0},t?.headers])},this._client,!1))}retrieve(e,t={},r){let{betas:o,workspace_id:i}=t??{};return this._client.get(b`/v1/skills/${e}?beta=true`,{...r,headers:_([{...o?.toString()!=null?{"anthropic-beta":o?.toString()}:void 0,...i!=null?{"anthropic-workspace-id":i}:void 0},r?.headers])})}list(e={},t){let{betas:r,workspace_id:o,...i}=e??{};return this._client.getAPIList("/v1/skills?beta=true",D,{query:i,...t,headers:_([{...r?.toString()!=null?{"anthropic-beta":r?.toString()}:void 0,...o!=null?{"anthropic-workspace-id":o}:void 0},t?.headers])})}delete(e,t={},r){let{betas:o,workspace_id:i}=t??{};return this._client.delete(b`/v1/skills/${e}?beta=true`,{...r,headers:_([{...o?.toString()!=null?{"anthropic-beta":o?.toString()}:void 0,...i!=null?{"anthropic-workspace-id":i}:void 0},r?.headers])})}}return n.Versions=Dn,n})();var On=class extends E{create(s,e,t){let{betas:r,workspace_id:o,...i}=e;return this._client.post(b`/v1/tunnels/${s}/certificates?beta=true`,{body:i,...t,headers:_([{"anthropic-beta":[...r??[],"mcp-tunnels-2026-06-22"].toString(),...o!=null?{"anthropic-workspace-id":o}:void 0},t?.headers])})}retrieve(s,e,t){let{tunnel_id:r,betas:o,workspace_id:i}=e;return this._client.get(b`/v1/tunnels/${r}/certificates/${s}?beta=true`,{...t,headers:_([{"anthropic-beta":[...o??[],"mcp-tunnels-2026-06-22"].toString(),...i!=null?{"anthropic-workspace-id":i}:void 0},t?.headers])})}list(s,e={},t){let{betas:r,workspace_id:o,...i}=e??{};return this._client.getAPIList(b`/v1/tunnels/${s}/certificates?beta=true`,D,{query:i,...t,headers:_([{"anthropic-beta":[...r??[],"mcp-tunnels-2026-06-22"].toString(),...o!=null?{"anthropic-workspace-id":o}:void 0},t?.headers])})}archive(s,e,t){let{tunnel_id:r,betas:o,workspace_id:i}=e;return this._client.post(b`/v1/tunnels/${r}/certificates/${s}/archive?beta=true`,{...t,headers:_([{"anthropic-beta":[...o??[],"mcp-tunnels-2026-06-22"].toString(),...i!=null?{"anthropic-workspace-id":i}:void 0},t?.headers])})}};var vo=(()=>{class n extends E{constructor(){super(...arguments),this.certificates=new On(this._client)}create(e,t){let{betas:r,workspace_id:o,...i}=e;return this._client.post("/v1/tunnels?beta=true",{body:i,...t,headers:_([{"anthropic-beta":[...r??[],"mcp-tunnels-2026-06-22"].toString(),...o!=null?{"anthropic-workspace-id":o}:void 0},t?.headers])})}retrieve(e,t={},r){let{betas:o,workspace_id:i}=t??{};return this._client.get(b`/v1/tunnels/${e}?beta=true`,{...r,headers:_([{"anthropic-beta":[...o??[],"mcp-tunnels-2026-06-22"].toString(),...i!=null?{"anthropic-workspace-id":i}:void 0},r?.headers])})}list(e={},t){let{betas:r,workspace_id:o,...i}=e??{};return this._client.getAPIList("/v1/tunnels?beta=true",D,{query:i,...t,headers:_([{"anthropic-beta":[...r??[],"mcp-tunnels-2026-06-22"].toString(),...o!=null?{"anthropic-workspace-id":o}:void 0},t?.headers])})}archive(e,t={},r){let{betas:o,workspace_id:i}=t??{};return this._client.post(b`/v1/tunnels/${e}/archive?beta=true`,{...r,headers:_([{"anthropic-beta":[...o??[],"mcp-tunnels-2026-06-22"].toString(),...i!=null?{"anthropic-workspace-id":i}:void 0},r?.headers])})}revealToken(e,t={},r){let{betas:o,workspace_id:i}=t??{};return this._client.post(b`/v1/tunnels/${e}/reveal_token?beta=true`,{...r,headers:_([{"anthropic-beta":[...o??[],"mcp-tunnels-2026-06-22"].toString(),...i!=null?{"anthropic-workspace-id":i}:void 0},r?.headers])})}rotateToken(e,t,r){let{betas:o,workspace_id:i,...a}=t;return this._client.post(b`/v1/tunnels/${e}/rotate_token?beta=true`,{body:a,...r,headers:_([{"anthropic-beta":[...o??[],"mcp-tunnels-2026-06-22"].toString(),...i!=null?{"anthropic-workspace-id":i}:void 0},r?.headers])})}}return n.Certificates=On,n})();var $n=class extends E{create(s,e,t){let{betas:r,workspace_id:o,...i}=e;return this._client.post(b`/v1/vaults/${s}/credentials?beta=true`,{body:i,...t,headers:_([{"anthropic-beta":[...r??[],"managed-agents-2026-04-01"].toString(),...o!=null?{"anthropic-workspace-id":o}:void 0},t?.headers])})}retrieve(s,e,t){let{vault_id:r,betas:o,workspace_id:i}=e;return this._client.get(b`/v1/vaults/${r}/credentials/${s}?beta=true`,{...t,headers:_([{"anthropic-beta":[...o??[],"managed-agents-2026-04-01"].toString(),...i!=null?{"anthropic-workspace-id":i}:void 0},t?.headers])})}update(s,e,t){let{vault_id:r,betas:o,workspace_id:i,...a}=e;return this._client.post(b`/v1/vaults/${r}/credentials/${s}?beta=true`,{body:a,...t,headers:_([{"anthropic-beta":[...o??[],"managed-agents-2026-04-01"].toString(),...i!=null?{"anthropic-workspace-id":i}:void 0},t?.headers])})}list(s,e={},t){let{betas:r,workspace_id:o,...i}=e??{};return this._client.getAPIList(b`/v1/vaults/${s}/credentials?beta=true`,D,{query:i,...t,headers:_([{"anthropic-beta":[...r??[],"managed-agents-2026-04-01"].toString(),...o!=null?{"anthropic-workspace-id":o}:void 0},t?.headers])})}delete(s,e,t){let{vault_id:r,betas:o,workspace_id:i}=e;return this._client.delete(b`/v1/vaults/${r}/credentials/${s}?beta=true`,{...t,headers:_([{"anthropic-beta":[...o??[],"managed-agents-2026-04-01"].toString(),...i!=null?{"anthropic-workspace-id":i}:void 0},t?.headers])})}archive(s,e,t){let{vault_id:r,betas:o,workspace_id:i}=e;return this._client.post(b`/v1/vaults/${r}/credentials/${s}/archive?beta=true`,{...t,headers:_([{"anthropic-beta":[...o??[],"managed-agents-2026-04-01"].toString(),...i!=null?{"anthropic-workspace-id":i}:void 0},t?.headers])})}mcpOAuthValidate(s,e,t){let{vault_id:r,betas:o,workspace_id:i}=e;return this._client.post(b`/v1/vaults/${r}/credentials/${s}/mcp_oauth_validate?beta=true`,{...t,headers:_([{"anthropic-beta":[...o??[],"managed-agents-2026-04-01"].toString(),...i!=null?{"anthropic-workspace-id":i}:void 0},t?.headers])})}};var Ao=(()=>{class n extends E{constructor(){super(...arguments),this.credentials=new $n(this._client)}create(e,t){let{betas:r,workspace_id:o,...i}=e;return this._client.post("/v1/vaults?beta=true",{body:i,...t,headers:_([{"anthropic-beta":[...r??[],"managed-agents-2026-04-01"].toString(),...o!=null?{"anthropic-workspace-id":o}:void 0},t?.headers])})}retrieve(e,t={},r){let{betas:o,workspace_id:i}=t??{};return this._client.get(b`/v1/vaults/${e}?beta=true`,{...r,headers:_([{"anthropic-beta":[...o??[],"managed-agents-2026-04-01"].toString(),...i!=null?{"anthropic-workspace-id":i}:void 0},r?.headers])})}update(e,t,r){let{betas:o,workspace_id:i,...a}=t;return this._client.post(b`/v1/vaults/${e}?beta=true`,{body:a,...r,headers:_([{"anthropic-beta":[...o??[],"managed-agents-2026-04-01"].toString(),...i!=null?{"anthropic-workspace-id":i}:void 0},r?.headers])})}list(e={},t){let{betas:r,workspace_id:o,...i}=e??{};return this._client.getAPIList("/v1/vaults?beta=true",D,{query:i,...t,headers:_([{"anthropic-beta":[...r??[],"managed-agents-2026-04-01"].toString(),...o!=null?{"anthropic-workspace-id":o}:void 0},t?.headers])})}delete(e,t={},r){let{betas:o,workspace_id:i}=t??{};return this._client.delete(b`/v1/vaults/${e}?beta=true`,{...r,headers:_([{"anthropic-beta":[...o??[],"managed-agents-2026-04-01"].toString(),...i!=null?{"anthropic-workspace-id":i}:void 0},r?.headers])})}archive(e,t={},r){let{betas:o,workspace_id:i}=t??{};return this._client.post(b`/v1/vaults/${e}/archive?beta=true`,{...r,headers:_([{"anthropic-beta":[...o??[],"managed-agents-2026-04-01"].toString(),...i!=null?{"anthropic-workspace-id":i}:void 0},r?.headers])})}}return n.Credentials=$n,n})();var Dr=(()=>{class n extends E{constructor(){super(...arguments),this.models=new Yt(this._client),this.messages=new fo(this._client),this.agents=new Ts(this._client),this.environments=new Vs(this._client),this.sessions=new So(this._client),this.deployments=new Ut(this._client),this.deploymentRuns=new Ht(this._client),this.vaults=new Ao(this._client),this.memoryStores=new Xs(this._client),this.files=new zt(this._client),this.skills=new ko(this._client),this.webhooks=new Kt(this._client),this.userProfiles=new Vt(this._client),this.dreams=new jt(this._client),this.tunnels=new vo(this._client),this.organization=new bo(this._client)}}return n.Models=Yt,n.Messages=fo,n.Agents=Ts,n.Environments=Vs,n.Sessions=So,n.Deployments=Ut,n.DeploymentRuns=Ht,n.Vaults=Ao,n.MemoryStores=Xs,n.Files=zt,n.Skills=ko,n.Webhooks=Kt,n.UserProfiles=Vt,n.Dreams=jt,n.Tunnels=vo,n.Organization=bo,n})();var It=class extends E{create(s,e){let{betas:t,workspace_id:r,...o}=s;return this._client.post("/v1/complete",{body:o,timeout:this._client._options.timeout??6e5,...e,headers:_([{...t?.toString()!=null?{"anthropic-beta":t?.toString()}:void 0,...r!=null?{"anthropic-workspace-id":r}:void 0},e?.headers]),stream:s.stream??!1})}};var Rt=class extends E{list(s={},e){let{workspace_id:t,...r}=s??{};return this._client.getAPIList("/v1/files",D,{query:r,...e,headers:_([{...t!=null?{"anthropic-workspace-id":t}:void 0},e?.headers])})}delete(s,e={},t){let{workspace_id:r}=e??{};return this._client.delete(b`/v1/files/${s}`,{...t,headers:_([{...r!=null?{"anthropic-workspace-id":r}:void 0},t?.headers])})}download(s,e={},t){let{workspace_id:r}=e??{};return this._client.get(b`/v1/files/${s}/content`,{...t,headers:_([{Accept:"application/binary",...r!=null?{"anthropic-workspace-id":r}:void 0},t?.headers]),__binaryResponse:!0})}retrieveMetadata(s,e={},t){let{workspace_id:r}=e??{};return this._client.get(b`/v1/files/${s}`,{...t,headers:_([{...r!=null?{"anthropic-workspace-id":r}:void 0},t?.headers])})}upload(s,e){let{workspace_id:t,...r}=s;return this._client.post("/v1/files",ye({body:r,...e,headers:_([{...t!=null?{"anthropic-workspace-id":t}:void 0},As(r.file),e?.headers])},this._client))}};gt();Y();function ql(n){return n?.output_config?.format}function Ji(n,s,e){let t=ql(s);return!s||!("parse"in(t??{}))?{...n,content:n.content.map(r=>r.type==="text"?Object.defineProperty({...r},"parsed_output",{value:null,enumerable:!1}):r),parsed_output:null}:Qi(n,s,e)}function Qi(n,s,e){let t=null,r=n.content.map(o=>{if(o.type==="text"){let i=If(s,o.text);return t===null&&(t=i),Object.defineProperty({...o},"parsed_output",{value:i,enumerable:!1})}return o});return{...n,content:r,parsed_output:t}}function If(n,s){let e=ql(n);if(e?.type!=="json_schema")return null;try{return"parse"in e?e.parse(s):JSON.parse(s)}catch(t){throw new T(`Failed to parse structured output: ${t}`)}}var ve,at,Ln,Or,Eo,$r,Lr,xo,Nr,Ue,Br,To,Io,Mt,Ro,Mo,Po,Fr,Zi,zl,ea,ta,na,ra,Yl;function sa(n){return n.type==="tool_use"||n.type==="server_tool_use"}var Vl=(()=>{class n{constructor(e,t){ve.add(this),this.messages=[],this.receivedMessages=[],at.set(this,void 0),Ln.set(this,null),this.controller=new AbortController,Or.set(this,void 0),Eo.set(this,()=>{}),$r.set(this,()=>{}),Lr.set(this,void 0),xo.set(this,()=>{}),Nr.set(this,()=>{}),Ue.set(this,{}),Br.set(this,!1),To.set(this,!1),Io.set(this,!1),Mt.set(this,!1),Ro.set(this,void 0),Mo.set(this,void 0),Po.set(this,void 0),Fr.set(this,void 0),ea.set(this,r=>{if(k(this,To,!0,"f"),xe(r)&&(r=new oe),r instanceof oe)return k(this,Io,!0,"f"),this._emit("abort",r);if(r instanceof T)return this._emit("error",r);if(r instanceof Error){let o=new T(r.message);return o.cause=r,this._emit("error",o)}return this._emit("error",new T(String(r)))}),k(this,Or,new Promise((r,o)=>{k(this,Eo,r,"f"),k(this,$r,o,"f")}),"f"),k(this,Lr,new Promise((r,o)=>{k(this,xo,r,"f"),k(this,Nr,o,"f")}),"f"),h(this,Or,"f").catch(()=>{}),h(this,Lr,"f").catch(()=>{}),k(this,Ln,e,"f"),k(this,Fr,t?.logger??console,"f")}get response(){return h(this,Ro,"f")}get request_id(){return h(this,Mo,"f")}get workspace_id(){return h(this,Po,"f")}async withResponse(){k(this,Mt,!0,"f");let e=await h(this,Or,"f");if(!e)throw new Error("Could not resolve a `Response` object");return{data:this,response:e,request_id:e.headers.get("request-id"),workspace_id:e.headers.get("anthropic-workspace-id")}}static fromReadableStream(e){let t=new n(null);return t._run(()=>t._fromReadableStream(e)),t}static createMessage(e,t,r,{logger:o}={}){let i=new n(t,{logger:o});for(let a of t.messages)i._addMessageParam(a);return k(i,Ln,{...t,stream:!0},"f"),i._run(()=>i._createMessage(e,{...t,stream:!0},{...r,headers:{...r?.headers,[qt]:"stream"}})),i}_run(e){e().then(()=>{this._emitFinal(),this._emit("end")},h(this,ea,"f"))}_addMessageParam(e){this.messages.push(e)}_addMessage(e,t=!0){this.receivedMessages.push(e),t&&this._emit("message",e)}async _createMessage(e,t,r){let o=r?.signal,i;o&&(o.aborted&&this.controller.abort(),i=this.controller.abort.bind(this.controller),o.addEventListener("abort",i));try{h(this,ve,"m",ta).call(this);let{response:a,data:l}=await e.create({...t,stream:!0},{...r,signal:this.controller.signal}).withResponse();this._connected(a);for await(let c of l)h(this,ve,"m",na).call(this,c);if(l.controller.signal?.aborted)throw new oe;h(this,ve,"m",ra).call(this)}finally{o&&i&&o.removeEventListener("abort",i)}}_connected(e){this.ended||(k(this,Ro,e,"f"),k(this,Mo,e?.headers.get("request-id"),"f"),k(this,Po,e?.headers.get("anthropic-workspace-id"),"f"),h(this,Eo,"f").call(this,e),this._emit("connect"))}get ended(){return h(this,Br,"f")}get errored(){return h(this,To,"f")}get aborted(){return h(this,Io,"f")}abort(){this.controller.abort()}on(e,t){return(h(this,Ue,"f")[e]||(h(this,Ue,"f")[e]=[])).push({listener:t}),this}off(e,t){let r=h(this,Ue,"f")[e];if(!r)return this;let o=r.findIndex(i=>i.listener===t);return o>=0&&r.splice(o,1),this}once(e,t){return(h(this,Ue,"f")[e]||(h(this,Ue,"f")[e]=[])).push({listener:t,once:!0}),this}emitted(e){return new Promise((t,r)=>{k(this,Mt,!0,"f"),e!=="error"&&this.once("error",r),this.once(e,t)})}async done(){k(this,Mt,!0,"f"),await h(this,Lr,"f")}get currentMessage(){return h(this,at,"f")}async finalMessage(){return await this.done(),h(this,ve,"m",Zi).call(this)}async finalText(){return await this.done(),h(this,ve,"m",zl).call(this)}_emit(e,...t){if(h(this,Br,"f"))return;e==="end"&&(k(this,Br,!0,"f"),h(this,xo,"f").call(this));let r=h(this,Ue,"f")[e];if(r&&(h(this,Ue,"f")[e]=r.filter(o=>!o.once),r.forEach(({listener:o})=>o(...t))),e==="abort"){let o=t[0];!h(this,Mt,"f")&&!r?.length&&Promise.reject(o),h(this,$r,"f").call(this,o),h(this,Nr,"f").call(this,o),this._emit("end");return}if(e==="error"){let o=t[0];!h(this,Mt,"f")&&!r?.length&&Promise.reject(o),h(this,$r,"f").call(this,o),h(this,Nr,"f").call(this,o),this._emit("end")}}_emitFinal(){this.receivedMessages.at(-1)&&this._emit("finalMessage",h(this,ve,"m",Zi).call(this))}async _fromReadableStream(e,t){let r=t?.signal,o;r&&(r.aborted&&this.controller.abort(),o=this.controller.abort.bind(this.controller),r.addEventListener("abort",o));try{h(this,ve,"m",ta).call(this),this._connected(null);let i=Ne.fromReadableStream(e,this.controller);for await(let a of i)h(this,ve,"m",na).call(this,a);if(i.controller.signal?.aborted)throw new oe;h(this,ve,"m",ra).call(this)}finally{r&&o&&r.removeEventListener("abort",o)}}[(at=new WeakMap,Ln=new WeakMap,Or=new WeakMap,Eo=new WeakMap,$r=new WeakMap,Lr=new WeakMap,xo=new WeakMap,Nr=new WeakMap,Ue=new WeakMap,Br=new WeakMap,To=new WeakMap,Io=new WeakMap,Mt=new WeakMap,Ro=new WeakMap,Mo=new WeakMap,Po=new WeakMap,Fr=new WeakMap,ea=new WeakMap,ve=new WeakSet,Zi=function(){if(this.receivedMessages.length===0)throw new T("stream ended without producing a Message with role=assistant");return this.receivedMessages.at(-1)},zl=function(){if(this.receivedMessages.length===0)throw new T("stream ended without producing a Message with role=assistant");let t=this.receivedMessages.at(-1).content.filter(r=>r.type==="text").map(r=>r.text);if(t.length===0)throw new T("stream ended without producing a content block with type=text");return t.join(" ")},ta=function(){this.ended||k(this,at,void 0,"f")},na=function(t){if(this.ended)return;let r=h(this,ve,"m",Yl).call(this,t);switch(this._emit("streamEvent",t,r),t.type){case"content_block_delta":{let o=r.content.at(-1);switch(t.delta.type){case"text_delta":{o.type==="text"&&this._emit("text",t.delta.text,o.text||"");break}case"citations_delta":{o.type==="text"&&this._emit("citation",t.delta.citation,o.citations??[]);break}case"input_json_delta":{sa(o)&&h(this,Ue,"f").inputJson?.length&&this._emit("inputJson",t.delta.partial_json,o.input);break}case"thinking_delta":{o.type==="thinking"&&this._emit("thinking",t.delta.thinking,o.thinking);break}case"signature_delta":{o.type==="thinking"&&this._emit("signature",o.signature);break}default:t.delta}break}case"message_stop":{this._addMessageParam(r),this._addMessage(Ji(r,h(this,Ln,"f"),{logger:h(this,Fr,"f")}),!0);break}case"content_block_stop":{this._emit("contentBlock",r.content.at(-1));break}case"message_start":{k(this,at,r,"f");break}case"content_block_start":case"message_delta":break}},ra=function(){if(this.ended)throw new T("stream has ended, this shouldn't happen");let t=h(this,at,"f");if(!t)throw new T("request ended without sending any chunks");return k(this,at,void 0,"f"),Ji(t,h(this,Ln,"f"),{logger:h(this,Fr,"f")})},Yl=function(t){let r=h(this,at,"f");if(t.type==="message_start"){if(r)throw new T(`Unexpected event order, got ${t.type} before receiving "message_stop"`);return t.message}if(!r)throw new T(`Unexpected event order, got ${t.type} before "message_start"`);switch(t.type){case"message_stop":return r;case"message_delta":return r.stop_reason=t.delta.stop_reason,r.stop_sequence=t.delta.stop_sequence,r.stop_details=t.delta.stop_details,r.usage.output_tokens=t.usage.output_tokens,t.delta.container!=null&&(r.container=t.delta.container),t.usage.input_tokens!=null&&(r.usage.input_tokens=t.usage.input_tokens),t.usage.cache_creation_input_tokens!=null&&(r.usage.cache_creation_input_tokens=t.usage.cache_creation_input_tokens),t.usage.cache_read_input_tokens!=null&&(r.usage.cache_read_input_tokens=t.usage.cache_read_input_tokens),t.usage.server_tool_use!=null&&(r.usage.server_tool_use=t.usage.server_tool_use),t.usage.output_tokens_details!=null&&(r.usage.output_tokens_details=t.usage.output_tokens_details),r;case"content_block_start":return r.content.push({...t.content_block}),r;case"content_block_delta":{let o=r.content.at(t.index);switch(t.delta.type){case"text_delta":{o?.type==="text"&&(r.content[t.index]={...o,text:(o.text||"")+t.delta.text});break}case"citations_delta":{o?.type==="text"&&(r.content[t.index]={...o,citations:[...o.citations??[],t.delta.citation]});break}case"input_json_delta":{if(o&&sa(o)){let i=(o[rt]||"")+t.delta.partial_json;r.content[t.index]=Js(o,i)}break}case"thinking_delta":{o?.type==="thinking"&&(r.content[t.index]={...o,thinking:o.thinking+t.delta.thinking});break}case"signature_delta":{o?.type==="thinking"&&(r.content[t.index]={...o,signature:t.delta.signature});break}default:t.delta}return r}case"content_block_stop":{let o=r.content.at(t.index);return o&&sa(o)&&rt in o&&Object.defineProperty(o,"input",{value:o.input,enumerable:!0,configurable:!0,writable:!0}),r}}},Symbol.asyncIterator)](){let e=[],t=[],r=!1;return this.on("streamEvent",o=>{let i=t.shift();i?i.resolve(o):e.push(o)}),this.on("end",()=>{r=!0;for(let o of t)o.resolve(void 0);t.length=0}),this.on("abort",o=>{r=!0;for(let i of t)i.reject(o);t.length=0}),this.on("error",o=>{r=!0;for(let i of t)i.reject(o);t.length=0}),{next:async()=>e.length?{value:e.shift(),done:!1}:r?{value:void 0,done:!0}:new Promise((i,a)=>t.push({resolve:i,reject:a})).then(i=>i?{value:i,done:!1}:{value:void 0,done:!0}),return:async()=>(this.abort(),{value:void 0,done:!0})}}toReadableStream(){return new Ne(this[Symbol.asyncIterator].bind(this),this.controller).toReadableStream()}}return n})();var Nn=class extends E{create(s,e){let{user_profile_id:t,workspace_id:r,...o}=s;return this._client.post("/v1/messages/batches",{body:o,...e,headers:_([{...t!=null?{"anthropic-user-profile-id":t}:void 0,...r!=null?{"anthropic-workspace-id":r}:void 0},e?.headers])})}retrieve(s,e={},t){let{workspace_id:r}=e??{};return this._client.get(b`/v1/messages/batches/${s}`,{...t,headers:_([{...r!=null?{"anthropic-workspace-id":r}:void 0},t?.headers])})}list(s={},e){let{workspace_id:t,...r}=s??{};return this._client.getAPIList("/v1/messages/batches",J,{query:r,...e,headers:_([{...t!=null?{"anthropic-workspace-id":t}:void 0},e?.headers])})}delete(s,e={},t){let{workspace_id:r}=e??{};return this._client.delete(b`/v1/messages/batches/${s}`,{...t,headers:_([{...r!=null?{"anthropic-workspace-id":r}:void 0},t?.headers])})}cancel(s,e={},t){let{workspace_id:r}=e??{};return this._client.post(b`/v1/messages/batches/${s}/cancel`,{...t,headers:_([{...r!=null?{"anthropic-workspace-id":r}:void 0},t?.headers])})}async results(s,e={},t){let r=await this.retrieve(s,e,t);if(!r.results_url)throw new T(`No batch \`results_url\`; Has it finished processing? ${r.processing_status} - ${r.id}`);let{workspace_id:o}=e??{};return this._client.get(r.results_url,{...t,headers:_([{Accept:"application/binary",...o!=null?{"anthropic-workspace-id":o}:void 0},t?.headers]),stream:!0,__binaryResponse:!0})._thenUnwrap((i,a)=>Ks.fromResponse(a.response,a.controller))}};var Hr=(()=>{class n extends E{constructor(){super(...arguments),this.batches=new Nn(this._client)}create(e,t){let{user_profile_id:r,workspace_id:o,...i}=e;i.model in Xl&&console.warn(`The model '${i.model}' is deprecated and will reach end-of-life on ${Xl[i.model]}
+Please migrate to a newer model. Visit https://docs.anthropic.com/en/docs/resources/model-deprecations for more information.`),Mf.includes(i.model)&&i.thinking&&i.thinking.type==="enabled"&&console.warn(`Using Claude with ${i.model} and 'thinking.type=enabled' is deprecated. Use 'thinking.type=adaptive' instead which results in better model performance in our testing: https://platform.claude.com/docs/en/build-with-claude/adaptive-thinking`);let a=t?.timeout??this._client._options.timeout;if(!i.stream&&a==null){let c=Gs[i.model]??void 0;a=this._client.calculateNonstreamingTimeout(i.max_tokens,c)}let l=vs(i.tools,i.messages);return this._client.post("/v1/messages",{body:i,timeout:a??6e5,...t,headers:_([{...r!=null?{"anthropic-user-profile-id":r}:void 0,...o!=null?{"anthropic-workspace-id":o}:void 0},l,t?.headers]),stream:e.stream??!1})}parse(e,t){return this.create(e,t).then(r=>Qi(r,e,{logger:this._client.logger??console}))}stream(e,t){return Vl.createMessage(this,e,t,{logger:this._client.logger??console})}countTokens(e,t){let{user_profile_id:r,workspace_id:o,...i}=e;return this._client.post("/v1/messages/count_tokens",{body:i,...t,headers:_([{...r!=null?{"anthropic-user-profile-id":r}:void 0,...o!=null?{"anthropic-workspace-id":o}:void 0},t?.headers])})}}return n.Batches=Nn,n})(),Xl={},Mf=["claude-mythos-preview","claude-opus-4-6"];var Pt=class extends E{retrieve(s,e={},t){let{betas:r,workspace_id:o}=e??{};return this._client.get(b`/v1/models/${s}`,{...t,headers:_([{...r?.toString()!=null?{"anthropic-beta":r?.toString()}:void 0,...o!=null?{"anthropic-workspace-id":o}:void 0},t?.headers])})}list(s={},e){let{betas:t,workspace_id:r,...o}=s??{};return this._client.getAPIList("/v1/models",J,{query:o,...e,headers:_([{...t?.toString()!=null?{"anthropic-beta":t?.toString()}:void 0,...r!=null?{"anthropic-workspace-id":r}:void 0},e?.headers])})}};var Bn=class extends E{create(s,e,t){let{workspace_id:r,...o}=e;return this._client.post(b`/v1/skills/${s}/versions`,ye({body:o,...t,headers:_([{...r!=null?{"anthropic-workspace-id":r}:void 0},t?.headers])},this._client,!1))}retrieve(s,e,t){let{skill_id:r,workspace_id:o}=e;return this._client.get(b`/v1/skills/${r}/versions/${s}`,{...t,headers:_([{...o!=null?{"anthropic-workspace-id":o}:void 0},t?.headers])})}list(s,e={},t){let{workspace_id:r,...o}=e??{};return this._client.getAPIList(b`/v1/skills/${s}/versions`,D,{query:o,...t,headers:_([{...r!=null?{"anthropic-workspace-id":r}:void 0},t?.headers])})}delete(s,e,t){let{skill_id:r,workspace_id:o}=e;return this._client.delete(b`/v1/skills/${r}/versions/${s}`,{...t,headers:_([{...o!=null?{"anthropic-workspace-id":o}:void 0},t?.headers])})}};var Ur=(()=>{class n extends E{constructor(){super(...arguments),this.versions=new Bn(this._client)}create(e,t){let{workspace_id:r,...o}=e;return this._client.post("/v1/skills",ye({body:o,...t,headers:_([{...r!=null?{"anthropic-workspace-id":r}:void 0},t?.headers])},this._client,!1))}retrieve(e,t={},r){let{workspace_id:o}=t??{};return this._client.get(b`/v1/skills/${e}`,{...r,headers:_([{...o!=null?{"anthropic-workspace-id":o}:void 0},r?.headers])})}list(e={},t){let{workspace_id:r,...o}=e??{};return this._client.getAPIList("/v1/skills",D,{query:o,...t,headers:_([{...r!=null?{"anthropic-workspace-id":r}:void 0},t?.headers])})}delete(e,t={},r){let{workspace_id:o}=t??{};return this._client.delete(b`/v1/skills/${e}`,{...r,headers:_([{...o!=null?{"anthropic-workspace-id":o}:void 0},r?.headers])})}}return n.Versions=Bn,n})();var oa,ia,Co,Kl,Df="\\n\\nHuman:",Of="\\n\\nAssistant:",$f=(()=>{class n{get credentials(){return this._authState.provider}constructor({baseURL:e=B("ANTHROPIC_BASE_URL"),apiKey:t,authToken:r,webhookKey:o=B("ANTHROPIC_WEBHOOK_SIGNING_KEY")??null,...i}={}){if(oa.add(this),this._requestAuthFlags=new WeakMap,Co.set(this,void 0),t===void 0&&(t=i.profile!=null?null:B("ANTHROPIC_API_KEY")??null),r===void 0&&(r=i.profile!=null?null:B("ANTHROPIC_AUTH_TOKEN")??null),i.profile!=null&&(i.credentials!=null||i.config!=null))throw new TypeError("Pass at most one of `profile`, `credentials`, or `config`.");let a={apiKey:t,authToken:r,webhookKey:o,...i,baseURL:e||"https://api.anthropic.com"};if(!a.dangerouslyAllowBrowser&&ac())throw new T(`It looks like you're running in a browser-like environment.
+
+This is disabled by default, as it risks exposing your secret API credentials to attackers.
+If you understand the risks and have appropriate mitigations in place,
+you can set the \`dangerouslyAllowBrowser\` option to \`true\`, e.g.,
+
+new Anthropic({ apiKey, dangerouslyAllowBrowser: true });
+`);this.baseURL=a.baseURL,this._baseURLIsExplicit=i.__baseURLIsExplicit??!!e,this.timeout=a.timeout??ia.DEFAULT_TIMEOUT,this.logger=a.logger??console,this.logLevel=ir,this.logLevel=ps(a.logLevel,"ClientOptions.logLevel",F(this))??ps(B("ANTHROPIC_LOG"),"process.env['ANTHROPIC_LOG']",F(this))??ir,this.fetchOptions=a.fetchOptions,this.maxRetries=es("maxRetries",a.maxRetries??2),this.fetch=a.fetch??uc(),k(this,Co,fc,"f"),this.middleware=[...a.middleware??[]];let l=B("ANTHROPIC_CUSTOM_HEADERS");if(l){let d={};for(let u of l.split(`
+`)){let f=u.indexOf(":");f>=0&&(d[u.substring(0,f).trim()]=u.substring(f+1).trim())}a.defaultHeaders={...d,...a.defaultHeaders}}let c=i.__auth;if(delete a.__auth,delete a.__baseURLIsExplicit,this._options=a,this.apiKey=typeof t=="string"?t:null,this.authToken=r,this.webhookKey=o,c)this._authState=c,!this._baseURLIsExplicit&&c.baseURL&&(this.baseURL=c.baseURL);else if(this._authState={provider:null,tokenCache:null,resolution:null,error:null,extraHeaders:{}},this.apiKey==null&&this.authToken==null){let d=a.credentials??null;if(d)this._authState.provider=d,this._authState.tokenCache=this._makeTokenCache(d);else if(a.config!=null){let u=li(a.config,this._credentialResolverOptions());this._authState.provider=u.provider,this._authState.tokenCache=this._makeTokenCache(u.provider),this._authState.extraHeaders=u.extraHeaders,this._applyCredentialBaseURL(u.baseURL)}else a.profile!=null?this._authState.resolution=this._resolveDefaultCredentials(a.profile):this._shouldResolveDefaultCredentials()&&(this._authState.resolution=this._resolveDefaultCredentials())}}_shouldResolveDefaultCredentials(){return!0}_applyCredentialBaseURL(e){if(!e)return;let t=e.replace(/\/+$/,"");this._authState.baseURL=t,this._baseURLIsExplicit||(this.baseURL=t)}_credentialResolverOptions(){return{baseURL:this.baseURL,fetch:this._credentialsFetch(),userAgent:this.getUserAgent(),onCacheWriteError:e=>{F(this).debug("credential cache write failed (best-effort)",e)},onSafetyWarning:e=>{F(this).warn(e)}}}_credentialsFetch(){return di(this.fetch,this.middleware,void 0,this)}_makeTokenCache(e){return new hs(e,t=>{F(this).debug("advisory token refresh failed; serving cached token",t)})}withOptions(e){let t="credentials"in e||"config"in e||"profile"in e,r="apiKey"in e||"authToken"in e||t,o={...this._options,...this._baseURLIsExplicit?{baseURL:this.baseURL}:{},maxRetries:this.maxRetries,timeout:this.timeout,logger:this.logger,logLevel:this.logLevel,fetch:this.fetch,fetchOptions:this.fetchOptions,middleware:this.middleware,apiKey:this.apiKey,authToken:this.authToken,webhookKey:this.webhookKey,credentials:this.credentials,...t?{credentials:void 0,config:void 0,profile:void 0}:{},...e,__auth:r?void 0:this._authState,__baseURLIsExplicit:"baseURL"in e?!0:this._baseURLIsExplicit};return new this.constructor(o)}async _resolveDefaultCredentials(e){try{let t=await Wc(this._credentialResolverOptions(),e);if(t)this._authState.provider=t.provider,this._authState.tokenCache=this._makeTokenCache(t.provider),this._authState.extraHeaders=t.extraHeaders,this._applyCredentialBaseURL(t.baseURL);else if(e!=null)throw new T(`Profile "${e}" could not be resolved (no <config_dir>/configs/${e}.json found).`)}catch(t){this._authState.error=t}finally{this._authState.resolution=null}}defaultQuery(){return this._options.defaultQuery}validateHeaders({values:e,nulls:t}){if(!(e.get("x-api-key")||e.get("authorization"))){if(this._authState.error)throw this._authState.error;if(!(this._authState.tokenCache||this._authState.resolution)&&!(this.apiKey&&e.get("x-api-key"))&&!t.has("x-api-key")&&!(this.authToken&&e.get("authorization"))&&!t.has("authorization"))throw new Error('Could not resolve authentication method. Expected one of apiKey, authToken, credentials, config, or profile to be set. Or for one of the "X-Api-Key" or "Authorization" headers to be explicitly omitted')}}_authFlags(e){let t=this._requestAuthFlags.get(e);return t||(t={usedTokenCache:!1,didRefreshFor401:!1},this._requestAuthFlags.set(e,t)),t}async authHeaders(e){if(this._authState.resolution&&await this._authState.resolution,!this._authState.error){if(this._authState.tokenCache&&this.apiKey==null){let t=await this._authState.tokenCache.getToken();return this._authFlags(e).usedTokenCache=!0,_([{Authorization:`Bearer ${t}`}])}return _([await this.apiKeyAuth(e),await this.bearerAuth(e)])}}async apiKeyAuth(e){if(this.apiKey!=null)return _([{"X-Api-Key":this.apiKey}])}async bearerAuth(e){if(this.authToken!=null)return _([{Authorization:`Bearer ${this.authToken}`}])}stringifyQuery(e){return kc(e)}getUserAgent(){return`Anthropic/JS ${we}`}makeStatusError(e,t,r,o){return X.generate(e,t,r,o)}buildURL(e,t,r){let o=!h(this,oa,"m",Kl).call(this)&&r||this.baseURL,i=nc(e)?new URL(e):new URL(o+(o.endsWith("/")&&e.startsWith("/")?e.slice(1):e)),a=this.defaultQuery(),l=Object.fromEntries(i.searchParams);return(!Ko(a)||!Ko(l))&&(t={...l,...a,...t}),typeof t=="object"&&t&&!Array.isArray(t)&&(i.search=this.stringifyQuery(t)),i.toString()}_calculateNonstreamingTimeout(e){if(3600*e/128e3>600)throw new T("Streaming is required for operations that may take longer than 10 minutes. See https://github.com/anthropics/anthropic-sdk-typescript#streaming-responses for more details");return 600*1e3}async prepareOptions(e){}async prepareRequest(e,{url:t,options:r}){if(this._authState.tokenCache&&this.apiKey==null){let o=e.headers instanceof Headers?e.headers:new Headers(e.headers);for(let[a,l]of Object.entries(this._authState.extraHeaders))o.has(a)||o.set(a,l);let i=o.get("anthropic-beta")?.split(",").map(a=>a.trim());i?.includes(bt)||o.set("anthropic-beta",[...i??[],bt].join(",")),e.headers=o}}backendMiddleware(){return[]}get(e,t){return this.methodRequest("get",e,t)}post(e,t){return this.methodRequest("post",e,t)}patch(e,t){return this.methodRequest("patch",e,t)}put(e,t){return this.methodRequest("put",e,t)}delete(e,t){return this.methodRequest("delete",e,t)}methodRequest(e,t,r){return this.request(Promise.resolve(r).then(o=>({method:e,path:t,...o})))}request(e,t=null){return new bs(this,this.makeRequest(e,t,void 0))}async makeRequest(e,t,r){let o=await e,i=es("maxRetries",o.maxRetries??this.maxRetries);this.isStreamBody(o.body)&&(i=0),t==null&&(t=i,this._requestAuthFlags.delete(o)),await this.prepareOptions(o);let{req:a,url:l,timeout:c}=await this.buildRequest(o,{retryCount:i-t}),d="log_"+(Math.random()*(1<<24)|0).toString(16).padStart(6,"0"),u=r===void 0?"":`, retryOf: ${r}`,f=Date.now();if(o.signal?.aborted)throw new oe;let m=new AbortController,p=await this.fetchWithTimeout(l,a,c,m,o,{requestLogID:d,retryOfRequestLogID:r}).catch(mt),w=Date.now();if(p instanceof globalThis.Error){Ce(m);let S=`retrying, ${t} attempts remaining`;if(o.signal?.aborted)throw new oe;let P=xe(p)||/timed? ?out/i.test(String(p)+("cause"in p?String(p.cause):"")),R=this.middleware.length>0||!!o.middleware?.length||this.backendMiddleware().length>0;if(R&&!P&&!Vc(p))throw F(this).info(`[${d}] middleware error (not retryable)`),Le(F(this),`[${d}] middleware error (not retryable)`,{retryOfRequestLogID:r,url:l,durationMs:w-f,message:p.message}),p;if(t)return F(this).info(`[${d}] connection ${P?"timed out":"failed"} - ${S}`),Le(F(this),`[${d}] connection ${P?"timed out":"failed"} (${S})`,{retryOfRequestLogID:r,url:l,durationMs:w-f,message:p.message}),this.retryRequest(o,t,r??d);throw F(this).info(`[${d}] connection ${P?"timed out":"failed"} - error; no more retries left`),Le(F(this),`[${d}] connection ${P?"timed out":"failed"} (error; no more retries left)`,{retryOfRequestLogID:r,url:l,durationMs:w-f,message:p.message}),P?new Vn:R&&!ui(p)?p:new ze({cause:p})}let y=[...p.headers.entries()].filter(([S])=>S==="request-id"||S==="anthropic-workspace-id").map(([S,P])=>", "+S+": "+JSON.stringify(P)).join(""),v=`[${d}${u}${y}] ${a.method} ${l} ${p.ok?"succeeded":"failed"} with status ${p.status} in ${w-f}ms`;if(!p.ok){let S=await this.shouldRetry(p,o);if(t&&S){let M=`retrying, ${t} attempts remaining`;return await dc(p.body),Ce(m),F(this).info(`${v} - ${M}`),Le(F(this),`[${d}] response error (${M})`,{retryOfRequestLogID:r,url:p.url,status:p.status,headers:p.headers,durationMs:w-f}),this.retryRequest(o,t,r??d,p.headers)}let P=S?"error; no more retries left":"error; not retryable";F(this).info(`${v} - ${P}`);let R=await p.text().catch(M=>mt(M).message),x=ts(R),C=x?void 0:R;throw Le(F(this),`[${d}] response error (${P})`,{retryOfRequestLogID:r,url:p.url,status:p.status,headers:p.headers,message:C,durationMs:Date.now()-f}),Ce(m),this.makeStatusError(p.status,x,C,p.headers)}return F(this).info(v),Le(F(this),`[${d}] response start`,{retryOfRequestLogID:r,url:p.url,status:p.status,headers:p.headers,durationMs:w-f}),hc(p.body??p,m),{response:p,options:o,controller:m,requestLogID:d,retryOfRequestLogID:r,startTime:f}}getAPIList(e,t,r){return this.requestAPIList(t,r&&"then"in r?r.then(o=>({method:"get",path:e,...o})):{method:"get",path:e,...r})}requestAPIList(e,t){let r=this.makeRequest(t,null,void 0);return new Xc(this,r,e)}async fetchWithTimeout(e,t,r,o,i,a){let{signal:l,method:c,...d}=t||{},u=this._makeAbort(o);l&&(l.addEventListener("abort",u,{once:!0}),lc(o,l,u));let f=globalThis.ReadableStream&&d.body instanceof globalThis.ReadableStream||typeof d.body=="object"&&d.body!==null&&Symbol.asyncIterator in d.body,m={signal:o.signal,...f?{duplex:"half"}:{},method:"GET",...d};c&&(m.method=c.toUpperCase());let p=this.fetch,w=async(R,x)=>{let C=setTimeout(u,r);try{return await p.call(void 0,R,x)}finally{clearTimeout(C)}},y=i===void 0?w:(async(R,x={})=>{let C=typeof R=="string"?R:R instanceof URL?R.href:R.url;return x.headers=x.headers instanceof Headers?x.headers:new Headers(x.headers),await this.prepareRequest(x,{url:C,options:i}),a&&Le(F(this),`[${a.requestLogID}] sending request`,{retryOfRequestLogID:a.retryOfRequestLogID,method:x.method,url:C,options:i,headers:x.headers}),w(R,x)}),v=i?.middleware,S=this.backendMiddleware(),P=v?.length||S.length?[...this.middleware,...v??[],...S]:this.middleware;return await di(y,P,i,this)(e,m)}async shouldRetry(e,t){let r=this._authFlags(t);if(e.status===401&&this._authState.tokenCache&&r.usedTokenCache&&!r.didRefreshFor401)return r.didRefreshFor401=!0,this._authState.tokenCache.invalidate(),!0;let o=e.headers.get("x-should-retry");return o==="true"?!0:o==="false"?!1:e.status===408||e.status===409||e.status===429||e.status>=500}async retryRequest(e,t,r,o){let i,a=o?.get("retry-after-ms");if(a){let c=parseFloat(a);Number.isNaN(c)||(i=c)}let l=o?.get("retry-after");if(l&&!i){let c=parseFloat(l);Number.isNaN(c)?i=Date.parse(l)-Date.now():i=c*1e3}if(i===void 0||!(i>0&&i<=2**31-1)){let c=e.maxRetries??this.maxRetries;i=this.calculateDefaultRetryTimeoutMillis(t,c)}return await Te(i,e.signal??void 0),this.makeRequest(e,t-1,r)}calculateDefaultRetryTimeoutMillis(e,t){let i=t-e,a=Math.min(.5*Math.pow(2,i),8),l=1-Math.random()*.25;return a*l*1e3}calculateNonstreamingTimeout(e,t){if(36e5*e/128e3>6e5||t!=null&&e>t)throw new T("Streaming is required for operations that may take longer than 10 minutes. See https://github.com/anthropics/anthropic-sdk-typescript#long-requests for more details");return 6e5}async buildRequest(e,{retryCount:t=0}={}){let r={...e},{method:o,path:i,query:a,defaultBaseURL:l}=r;this._authState.resolution&&await this._authState.resolution,!this._baseURLIsExplicit&&this._authState.baseURL&&this.baseURL!==this._authState.baseURL&&(this.baseURL=this._authState.baseURL);let c=this.buildURL(i,a,l);"timeout"in r&&es("timeout",r.timeout),r.timeout=r.timeout??this.timeout;let{bodyHeaders:d,body:u}=this.buildBody({options:r}),f=await this.buildHeaders({options:e,method:o,bodyHeaders:d,retryCount:t,timeout:r.timeout});return{req:{method:o,headers:f,...r.signal&&{signal:r.signal},...globalThis.ReadableStream&&u instanceof globalThis.ReadableStream&&{duplex:"half"},...u&&{body:u},...this.fetchOptions??{},...r.fetchOptions??{}},url:c,timeout:r.timeout}}async buildHeaders({options:e,method:t,bodyHeaders:r,retryCount:o,timeout:i}){let a=_([{Accept:"application/json","User-Agent":this.getUserAgent(),"X-Stainless-Retry-Count":String(o),"X-Stainless-Timeout":String(Math.trunc(i/1e3)),...rr(),...this._options.dangerouslyAllowBrowser?{"anthropic-dangerous-direct-browser-access":"true"}:void 0,"anthropic-version":"2023-06-01"},await this.authHeaders(e),this._options.defaultHeaders,r,e.headers]);return this.validateHeaders(a),a.values}_makeAbort(e){return()=>e.abort()}buildBody({options:{body:e,headers:t}}){if(!e)return{bodyHeaders:void 0,body:void 0};let r=_([t]);return ArrayBuffer.isView(e)||e instanceof ArrayBuffer||e instanceof DataView||typeof e=="string"&&r.values.has("content-type")||globalThis.Blob&&e instanceof globalThis.Blob||e instanceof FormData||e instanceof URLSearchParams||globalThis.ReadableStream&&e instanceof globalThis.ReadableStream?{bodyHeaders:void 0,body:e}:this.isStreamBody(e)?{bodyHeaders:void 0,body:rs(e)}:typeof e=="object"&&r.values.get("content-type")==="application/x-www-form-urlencoded"?{bodyHeaders:{"content-type":"application/x-www-form-urlencoded"},body:this.stringifyQuery(e)}:h(this,Co,"f").call(this,{body:e,headers:r})}isStreamBody(e){return globalThis.ReadableStream&&e instanceof globalThis.ReadableStream?!0:typeof e=="object"&&e!==null&&(Symbol.asyncIterator in e||Symbol.iterator in e&&"next"in e&&typeof e.next=="function")}}return ia=n,Co=new WeakMap,oa=new WeakSet,Kl=function(){return this.baseURL!=="https://api.anthropic.com"},n.Anthropic=ia,n.DEFAULT_TIMEOUT=6e5,n.AnthropicError=T,n.APIError=X,n.APIConnectionError=ze,n.APIConnectionTimeoutError=Vn,n.APIUserAbortError=oe,n.NotFoundError=Jn,n.ConflictError=Qn,n.RateLimitError=er,n.BadRequestError=Xn,n.AuthenticationError=Kn,n.InternalServerError=tr,n.PermissionDeniedError=Gn,n.UnprocessableEntityError=Zn,n.toFile=bi,n.HUMAN_PROMPT=Df,n.AI_PROMPT=Of,n})(),je=(()=>{class n extends $f{constructor(){super(...arguments),this.completions=new It(this),this.messages=new Hr(this),this.models=new Pt(this),this.files=new Rt(this),this.skills=new Ur(this),this.beta=new Dr(this)}}return n.Completions=It,n.Messages=Hr,n.Models=Pt,n.Files=Rt,n.Skills=Ur,n.Beta=Dr,n})();var ha=["base","sink_base","drawer_base","corner_base","blind_corner_base","wall","corner_wall","tall","pantry","oven_tall","vanity","open_shelf","appliance_opening","filler","end_panel","other"],ua=["valance","corbel","bracket","arched_door_top","decorative_end_panel","applied_molding","cutout_pattern","other"],ne={type:"string"},aa={type:"number"},ca={type:"integer"},la={type:"boolean"},Do=n=>({type:"object",properties:n,required:Object.keys(n),additionalProperties:!1}),Lf=Do({summary:ne,scale_basis:ne,style:Do({door_style:ne,construction:{type:"string",enum:["face_frame","frameless","unknown"]},door_overlay:{type:"string",enum:["full_overlay","partial_overlay","inset","unknown"]},toe_kick:ne,crown:ne,light_rail:ne,fillers:ne,end_panels:ne,countertop:ne,hardware:ne,finish:ne,other:ne}),cabinets:{type:"array",items:Do({position:ca,row:{type:"string",enum:["base","wall","tall"]},type:{type:"string",enum:ha},width_in:aa,height_in:aa,depth_in:aa,width_measured:la,height_measured:la,depth_measured:la,doors:ca,drawers:ca,layout:ne,hinge:ne,notes:ne,confidence:{type:"string",enum:["low","medium","high"]}})},decorative_parts:{type:"array",items:Do({kind:{type:"string",enum:ua},description:ne,location:ne})},warnings:{type:"array",items:ne}}),Nf=n=>`You are helping a cabinet maker copy a run of cabinets from a photo so they can enter it in Mozaik (cabinet design software) and cut it on a CNC.
+
+Identify every cabinet box in the photo, left to right. Put base and tall cabinets in order along the floor, and wall cabinets in order along the wall (give every box a "position" counting left to right across the whole run, wall boxes numbered after the base/tall boxes they sit over is fine as long as left-to-right order holds within each row).
+
+For each box estimate width, height and depth in inches. Scale:
+${n?`- The user measured: ${n}. Scale everything from that. Mark that dimension as measured (true); everything else is estimated (false).`:'- No measurement was given. Use standard sizes to set scale: base cabinet box height 34 1/2" (36" to the countertop), base depth 24", wall depth 12", tall depth 24".'}
+- Standard cabinet widths come in 3" steps (9, 12, 15, 18, 21, 24, 27, 30, 33, 36...). Give your best estimate; the app rounds it.
+- Mark a dimension "measured": true only if it comes straight from the user's measurement.
+
+For each box give: door count, drawer count, a short layout description (for example "1 drawer over 2 doors", "4 drawers", "2 doors, 1 adjustable shelf visible"), hinge side for single doors if visible, and anything unusual in notes. Include fillers, end panels and appliance openings as their own entries when they take up width in the run.
+
+Style: door style (shaker, slab, raised panel, recessed panel, beadboard, glass, etc.), face frame or frameless, overlay, toe kick, crown, light rail, fillers, end panels, countertop, hardware, finish, and anything else worth knowing.
+
+Decorative parts: list valances, corbels, brackets, arched or cathedral door tops, decorative end panels, appliqu\xE9s or cutout patterns. These will be traced separately into DXF files.
+
+In scale_basis say what you scaled from. In warnings, list anything hidden, cut off, or too uncertain to estimate. Be honest about uncertainty: use low confidence where the photo doesn't show enough.`;async function Gl({apiKey:n,model:s,imageBase64:e,mediaType:t="image/jpeg",known:r}){if(!n)throw new Error("Add your Claude API key in Settings first.");let o=new je({apiKey:n,dangerouslyAllowBrowser:!0,timeout:300*1e3,maxRetries:2}),i={model:s,max_tokens:16e3,output_config:{effort:"high",format:{type:"json_schema",schema:Lf}},messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:t,data:e}},{type:"text",text:Nf(r)}]}]},a;try{a=await o.beta.messages.create({...i,betas:["server-side-fallback-2026-07-01"],fallbacks:"default"})}catch(c){if(c instanceof je.BadRequestError&&/fallback|beta/i.test(c.message||""))a=await o.messages.create(i);else throw Bf(c)}if(a.stop_reason==="refusal")throw new Error("Claude declined to analyze this photo. Try a different photo.");if(a.stop_reason==="max_tokens")throw new Error("The answer was cut off. Try a photo with fewer cabinets.");let l=a.content.filter(c=>c.type==="text").map(c=>c.text).join("");try{return JSON.parse(l)}catch{throw new Error("Claude\u2019s answer could not be read. Try again.")}}function Bf(n){return n instanceof je.AuthenticationError?new Error("The API key was rejected. Check it in Settings."):n instanceof je.PermissionDeniedError?new Error("This API key is not allowed to use that model. Pick another model in Settings."):n instanceof je.NotFoundError?new Error("Model not found. Pick another model in Settings."):n instanceof je.RateLimitError?new Error("Too many requests right now. Wait a minute and try again."):n instanceof je.APIConnectionError?new Error("Could not reach Claude. Check your internet connection."):n instanceof je.APIError?new Error(`Claude API error ${n.status||""}: ${n.message}`):n}var eh={base:"Base",sink_base:"Sink base",drawer_base:"Drawer base",corner_base:"Corner base",blind_corner_base:"Blind corner base",wall:"Wall",corner_wall:"Corner wall",tall:"Tall",pantry:"Pantry",oven_tall:"Oven tall",vanity:"Vanity",open_shelf:"Open shelf",appliance_opening:"Appliance opening",filler:"Filler",end_panel:"End panel",other:"Other"},fa={valance:"Valance",corbel:"Corbel",bracket:"Bracket",arched_door_top:"Arched / cathedral door top",decorative_end_panel:"Decorative end panel",applied_molding:"Applied molding",cutout_pattern:"Cutout pattern",other:"Other"},Ff=[["none","Nothing measured: use standard sizes"],["run","Overall width of the run"],["box","Width of one cabinet (#)"],["baseh","Base cabinet box height (no top)"],["counter","Floor to top of countertop"],["wallh","Wall cabinet height"],["other","Something else (describe)"]],Jl={wallH:[12,15,18,24,30,36,39,42],tallH:[84,90,93,96]},da=(n,s)=>s.reduce((e,t)=>Math.abs(t-n)<Math.abs(e-n)?t:e,s[0]),Ql=["base","sink_base","drawer_base","corner_base","blind_corner_base"],Zl=["tall","pantry","oven_tall"],pa=["wall","corner_wall"];function Hf(n){let s=(n.cabinets||[]).slice().sort((e,t)=>e.position-t.position).map(e=>{let t={w:!e.width_measured,h:!e.height_measured,d:!e.depth_measured},r=e.width_in,o=e.height_in,i=e.depth_in,a=e.type,l=!["filler","end_panel","appliance_opening"].includes(a);return t.w&&r>0&&(r=l?Math.max(9,Math.round(r/3)*3):Math.round(r*4)/4),t.h&&o>0&&(Ql.includes(a)?o=34.5:a==="vanity"?o=da(o,[31.5,34.5]):pa.includes(a)?o=da(o,Jl.wallH):Zl.includes(a)?o=da(o,Jl.tallH):o=Math.round(o*4)/4),t.d&&i>0&&(Ql.includes(a)||Zl.includes(a)?i=24:pa.includes(a)?i=i>18?24:12:a==="vanity"?i=21:i=Math.round(i*4)/4),{id:Ge(),row:e.row,type:a,w:r,h:o,d:i,est:t,raw:{w:e.width_in,h:e.height_in,d:e.depth_in},doors:e.doors,drawers:e.drawers,layout:e.layout||"",hinge:e.hinge||"",notes:e.notes||"",confidence:e.confidence}});return{summary:n.summary||"",scale_basis:n.scale_basis||"",style:{...n.style},cabinets:s,decor:(n.decorative_parts||[]).map(e=>({id:Ge(),kind:e.kind,description:e.description,location:e.location})),warnings:n.warnings||[]}}function th(n,s,e,{onOpenJob:t}){let r={view:n,job:s,settings:e,onOpenJob:t},o=s.result?s.step==="sheet"?"sheet":"edit":"photo";Oo(r,o)}function te(n){clearTimeout(n.saveT),n.saveT=setTimeout(()=>ht(n.job).catch(s=>G("Could not save: "+s.message)),300)}function Oo(n,s){n.job.step=s,te(n),n.view.innerHTML="";let e=g("nav",{class:"steps no-print"});[["photo","Photo"],["edit","Boxes"],["sheet","Build sheet"]].forEach(([t,r])=>{let o=g("button",{class:t===s?"current":""},r);o.disabled=t!=="photo"&&!n.job.result,o.onclick=()=>Oo(n,t),e.appendChild(o)}),n.view.appendChild(e),{photo:Uf,edit:Wf,sheet:qf}[s](n)}function Uf(n){let{job:s,settings:e}=n;s.known||(s.known={what:"none",value:"",box:"",text:""});let t=g("div",{class:"page"}),r=g("input",{type:"file",accept:"image/*",capture:"environment",hidden:!0}),o=g("input",{type:"file",accept:"image/*",hidden:!0}),i=g("button",{class:"primary"},"\u{1F4F7} Take photo"),a=g("button",{},"\u{1F5BC} Choose photo"),l=g("img",{class:"preview-img",style:"display:none;margin-top:10px"});i.onclick=()=>r.click(),a.onclick=()=>o.click();let c=async()=>{if(!s.photo)return;let x=URL.createObjectURL(s.photo);l.src=x,l.style.display=""},d=async x=>{let C=x.files&&x.files[0];if(!C)return;let I=await Nt(C,2400);s.photo=await zn(I),s.thumb=zf(I),te(n),c(),R()};r.onchange=()=>d(r),o.onchange=()=>d(o);let u=g("select",{},...Ff.map(([x,C])=>g("option",{value:x},C)));u.value=s.known.what;let f=g("input",{placeholder:"inches, e.g. 34 1/2",value:s.known.value}),m=g("input",{type:"number",min:1,placeholder:"Cabinet # from the left",value:s.known.box}),p=g("input",{placeholder:"What did you measure?",value:s.known.text}),w=g("div",{},g("label",{},"Measurement"),f),y=g("div",{},g("label",{},"Which cabinet (counting from the left)"),m),v=g("div",{},g("label",{},"Describe it"),p),S=g("button",{class:"go"},"\u{1F916} Identify cabinets with Claude"),P=g("div"),R=()=>{s.known={what:u.value,value:f.value,box:m.value,text:p.value},w.style.display=u.value==="none"?"none":"",y.style.display=u.value==="box"?"":"none",v.style.display=u.value==="other"?"":"none";let x=ft(f.value),C=u.value==="none"||x>0&&(u.value!=="box"||+m.value>0)&&(u.value!=="other"||p.value.trim());S.disabled=!s.photo||!C,te(n)};u.onchange=f.oninput=m.oninput=p.oninput=R,S.onclick=async()=>{if(!e.apiKey){G("Add your Claude API key in Settings first (\u2699 top right).",4e3);return}S.disabled=!0,P.innerHTML="",P.append(g("div",{class:"spinner"}),g("p",{class:"muted",style:"text-align:center"},"Claude is looking at the photo. This can take up to a minute\u2026"));try{let C=(await Nt(s.photo,1568)).toDataURL("image/jpeg",.85).split(",")[1],I=await Gl({apiKey:e.apiKey,model:e.model,imageBase64:C,known:jf(s.known)});s.result=Hf(I),s.rawResult=I,(!s.name||s.name.startsWith("Cabinet run"))&&(s.name=`Cabinet run ${pt(Date.now())}`),te(n),Oo(n,"edit")}catch(x){P.innerHTML="",P.append(g("div",{class:"bad-box"},x.message||String(x))),S.disabled=!1}},t.append(g("h2",{},"Photo of the cabinets"),g("p",{},"Get the whole run in the shot, as straight-on as you can. One cabinet is fine too."),g("div",{class:"stack"},i,a),r,o,l,g("h3",{},"Did you measure anything?"),g("p",{class:"small muted"},'One real measurement makes every size better. Otherwise standard sizes set the scale: base 34 1/2" tall (36" to the counter), 24" deep; wall 12" deep.'),u,w,y,v,g("div",{class:"note"},Je),S,P,e.apiKey?"":g("p",{class:"small"},"Needs a Claude API key (Settings \u2699). The photo is sent from this phone straight to Anthropic\u2019s API.")),n.view.appendChild(t),c(),R()}function jf(n){let s=ft(n.value);if(n.what==="none"||!(s>0))return"";let e=ce(s,16);return{run:`the overall width of the whole run is ${e}`,box:`cabinet #${n.box} from the left is ${e} wide`,baseh:`the base cabinet box height (without countertop) is ${e}`,counter:`floor to the top of the countertop is ${e}`,wallh:`the wall cabinets are ${e} tall`,other:`${n.text}: ${e}`}[n.what]}function Wf(n){let{job:s,settings:e}=n,t=s.result,r=e.denom,o=g("div",{class:"page"}),i=g("div"),a=y=>y>0?ce(y,r,""):"",l=()=>{i.innerHTML="",t.cabinets.forEach((y,v)=>{let S=g("select",{},...ha.map(A=>g("option",{value:A},eh[A]||A)));S.value=y.type,S.onchange=()=>{y.type=S.value,te(n)};let P=(A,O)=>{let $=g("input",{value:a(y[A]),inputmode:"text","aria-label":O}),L=g("input",{type:"checkbox"});return L.checked=y.est[A],$.onchange=()=>{let z=ft($.value);z>0?(y[A]=z,y.est[A]=!1,L.checked=!1,$.value=a(z),te(n)):(G("Use inches like 23 1/4"),$.value=a(y[A]))},L.onchange=()=>{y.est[A]=L.checked,te(n)},g("div",{},g("label",{},O),$,g("label",{class:"check"},L,"estimate"))},R=(A,O)=>{let $=g("input",{type:"number",min:0,value:y[A]??0});return $.onchange=()=>{y[A]=Math.max(0,parseInt($.value||"0",10)),te(n)},g("div",{},g("label",{},O),$)},x=(A,O,$=!1)=>{let L=g($?"textarea":"input",{value:y[A]||""});return $&&(L.value=y[A]||""),L.onchange=()=>{y[A]=L.value,te(n)},g("div",{},g("label",{},O),L)},C=g("button",{"aria-label":"Move left"},"\u2191"),I=g("button",{"aria-label":"Move right"},"\u2193"),M=g("button",{class:"danger","aria-label":"Delete"},"\u2715");C.disabled=v===0,I.disabled=v===t.cabinets.length-1,C.onclick=()=>{[t.cabinets[v-1],t.cabinets[v]]=[t.cabinets[v],t.cabinets[v-1]],te(n),l()},I.onclick=()=>{[t.cabinets[v+1],t.cabinets[v]]=[t.cabinets[v],t.cabinets[v+1]],te(n),l()},M.onclick=()=>{confirm(`Delete cabinet #${v+1}?`)&&(t.cabinets.splice(v,1),te(n),l())},i.appendChild(g("div",{class:"cab"},g("div",{class:"cab-head"},g("span",{class:"num"},`#${v+1}`),S,C,I,M),y.confidence?g("p",{class:"small muted"},`Claude\u2019s confidence: ${y.confidence}`+(y.raw?` \xB7 raw estimate ${a(y.raw.w)} \xD7 ${a(y.raw.h)} \xD7 ${a(y.raw.d)}`:"")):"",g("div",{class:"dim3"},P("w","Width"),P("h","Height"),P("d","Depth")),g("div",{class:"grid2"},R("doors","Doors"),R("drawers","Drawers")),x("layout","Door / drawer layout"),x("hinge","Hinge side"),x("notes","Notes",!0)))})};l();let c=g("button",{},"+ Add cabinet");c.onclick=()=>{t.cabinets.push({id:Ge(),row:"base",type:"base",w:24,h:34.5,d:24,est:{w:!0,h:!0,d:!0},doors:1,drawers:1,layout:"",hinge:"",notes:""}),te(n),l()};let u=g("div",{},...[["door_style","Door style"],["construction","Face frame / frameless"],["door_overlay","Overlay"],["toe_kick","Toe kick"],["crown","Crown"],["light_rail","Light rail"],["fillers","Fillers"],["end_panels","End panels"],["countertop","Countertop"],["hardware","Hardware"],["finish","Finish"],["other","Anything unusual"]].map(([y,v])=>{let S=g("input",{value:(t.style[y]||"").replace(/_/g," ")});return S.onchange=()=>{t.style[y]=S.value,te(n)},g("div",{},g("label",{},v),S)})),f=g("div"),m=()=>{f.innerHTML="",t.decor.forEach((v,S)=>{let P=g("select",{},...ua.map(I=>g("option",{value:I},fa[I])));P.value=v.kind,P.onchange=()=>{v.kind=P.value,te(n)};let R=g("input",{value:v.description||""});R.onchange=()=>{v.description=R.value,te(n)};let x=g("button",{class:"primary"},"\u270F\uFE0F Trace in Shape \u2192 DXF");x.onclick=async()=>{let I={id:Ge(),kind:"shape",name:`${s.name} \u2013 ${fa[v.kind]}`,created:Date.now(),photo:s.photo,thumb:s.thumb,step:"corners"};await ht(I),n.onOpenJob(I.id)};let C=g("button",{class:"danger"},"\u2715");C.onclick=()=>{t.decor.splice(S,1),te(n),m()},f.appendChild(g("div",{class:"cab"},g("div",{class:"cab-head"},P,C),g("label",{},"Description / where"),R,g("p",{class:"small muted"},v.location||""),x))});let y=g("button",{},"+ Add decorative part");y.onclick=()=>{t.decor.push({id:Ge(),kind:"valance",description:"",location:""}),te(n),m()},f.appendChild(y)};m();let p=g("input",{value:s.name||""});p.onchange=()=>{s.name=p.value,te(n)};let w=g("button",{class:"go"},"\u{1F4C4} Make build sheet \u2192");w.onclick=()=>Oo(n,"sheet"),o.append(g("label",{},"Job name"),p,t.summary?g("p",{},t.summary):"",t.scale_basis?g("p",{class:"small muted"},"Scale: "+t.scale_basis):"",t.warnings.length?g("div",{class:"note"},g("b",{},"Claude\u2019s warnings: "),t.warnings.join(" \xB7 ")):"",g("div",{class:"note"},'Widths are rounded to 3" steps and heights/depths to standard sizes unless you entered them. Anything marked \u201Cestimate\u201D came from the photo. Edit any field; it saves as you go.'),g("h2",{},`Cabinets, left to right (${t.cabinets.length})`),i,c,g("h2",{},"Style"),u,g("h2",{},"Decorative parts (Mode 1)"),f,g("div",{style:"margin-top:16px"},w)),n.view.appendChild(o)}function qf(n){let{job:s,settings:e}=n,t=s.result,r=e.denom,o=(u,f)=>u>0?g("span",{class:f?"est-mark":""},(f?"\u2248 ":"")+ce(u,r)):"\u2014",i=g("div",{class:"page sheet"}),a=g("button",{class:"primary no-print"},"\u{1F5A8} Print / save as PDF");a.onclick=()=>window.print();let l=t.cabinets.filter(u=>u.row!=="wall"&&!pa.includes(u.type)).reduce((u,f)=>u+(f.w||0),0),c=t.style||{},d=[["Door style",c.door_style],["Construction",c.construction],["Overlay",c.door_overlay],["Toe kick",c.toe_kick],["Crown",c.crown],["Light rail",c.light_rail],["Fillers",c.fillers],["End panels",c.end_panels],["Countertop",c.countertop],["Hardware",c.hardware],["Finish",c.finish],["Other",c.other]].filter(([,u])=>u&&String(u).trim()&&u!=="unknown");i.append(g("div",{class:"row no-print",style:"margin-bottom:10px"},a),g("h2",{},s.name||"Cabinet build sheet"),g("p",{},`Date: ${pt(s.created||Date.now())}`+(t.scale_basis?` \xB7 Scale: ${t.scale_basis}`:"")),g("div",{class:"note"},"\u2248 marks a size estimated from the photo (rounded to standard sizes). "+Je),g("h3",{},"Cabinets, left to right"),g("table",{},g("thead",{},g("tr",{},...["#","Type","W","H","D","Doors / drawers","Layout & notes"].map(u=>g("th",{},u)))),g("tbody",{},...t.cabinets.map((u,f)=>g("tr",{},g("td",{},String(f+1)),g("td",{},eh[u.type]||u.type),g("td",{},o(u.w,u.est.w)),g("td",{},o(u.h,u.est.h)),g("td",{},o(u.d,u.est.d)),g("td",{},`${u.doors||0} door${u.doors===1?"":"s"}, ${u.drawers||0} drawer${u.drawers===1?"":"s"}`),g("td",{},[u.layout,u.hinge?`Hinge: ${u.hinge}`:"",u.notes].filter(Boolean).join(" \xB7 ")))))),g("p",{},`Base/tall run width (sum of boxes): ${ce(l,r)}`),d.length?g("h3",{},"Style"):"",d.length?g("table",{},g("tbody",{},...d.map(([u,f])=>g("tr",{},g("th",{},u),g("td",{},String(f).replace(/_/g," ")))))):"",t.decor.length?g("h3",{},"Decorative parts \u2192 trace these in Shape \u2192 DXF (Mode 1)"):"",t.decor.length?g("ul",{},...t.decor.map(u=>g("li",{},`${fa[u.kind]||u.kind}: ${u.description||""}${u.location?` (${u.location})`:""}`))):"",t.warnings.length?g("h3",{},"Check on site"):"",t.warnings.length?g("ul",{},...t.warnings.map(u=>g("li",{},u))):""),n.view.appendChild(i)}function zf(n){let s=document.createElement("canvas"),e=160/Math.max(n.width,n.height);return s.width=Math.round(n.width*e),s.height=Math.round(n.height*e),s.getContext("2d").drawImage(n,0,0,s.width,s.height),s.toDataURL("image/jpeg",.7)}var Wr=document.getElementById("view"),Yf=document.getElementById("title"),jr=va(),Fn=null;function $o(n){Yf.textContent=n,document.title=n==="Shop Copier"?n:`${n} \xB7 Shop Copier`}function ma(){Fn&&Fn.destroy&&Fn.destroy(),Fn=null,Wr.innerHTML=""}async function qr(){ma(),$o("Shop Copier"),location.hash="";let n=g("div",{class:"page"}),s=g("button",{class:"primary"},"Shape \u2192 DXF",g("span",{},"Arched tops, valances, corbels, brackets, end panels")),e=g("button",{class:"primary"},"Cabinet build sheet",g("span",{},"Photo of a run \u2192 box list for Mozaik"));s.onclick=()=>nh("shape"),e.onclick=()=>nh("cabinets"),n.append(g("div",{class:"big-choice"},s,e)),n.append(g("h2",{},"Saved jobs"));let t=g("div",{class:"cards"});n.append(t),Wr.appendChild(n);let r=[];try{r=await Sa()}catch(o){t.append(g("div",{class:"bad-box"},"This browser won\u2019t let the app save jobs (private mode?). "+o.message))}r.length||t.append(g("p",{class:"muted"},"No jobs yet. Jobs save on this phone automatically."));for(let o of r){let i=g("button",{},"Open"),a=g("button",{class:"danger","aria-label":"Delete job"},"\u{1F5D1}");i.onclick=()=>Lo(o.id),a.onclick=async()=>{confirm(`Delete \u201C${o.name}\u201D? This can\u2019t be undone.`)&&(await ya(o.id),qr())},t.append(g("div",{class:"card"},o.thumb?g("img",{src:o.thumb,alt:""}):g("img",{alt:""}),g("div",{class:"grow"},g("div",{class:"name"},o.name||"Untitled"),g("div",{class:"small muted"},`${o.kind==="shape"?"Shape \u2192 DXF":"Build sheet"} \xB7 ${pt(o.updated||o.created)}`)),i,a))}}async function nh(n){let s=prompt("Job name",n==="shape"?`Shape ${pt(Date.now())}`:`Cabinet run ${pt(Date.now())}`);if(s===null)return;let e={id:Ge(),kind:n,name:s.trim()||"Untitled",created:Date.now()};await ht(e),Lo(e.id)}async function Lo(n){ma();let s=await wa(n);if(!s){G("Job not found"),qr();return}location.hash="job="+n,$o(s.name),s.kind==="shape"?Fn=await ec(Wr,s,jr,{onTitle:$o}):Fn=th(Wr,s,jr,{onOpenJob:Lo})}function rh(){ma(),$o("Settings"),location.hash="settings";let n=jr,s=g("div",{class:"page"}),e=g("input",{type:"password",value:n.apiKey,autocomplete:"off",placeholder:"sk-ant-\u2026"}),t=g("button",{},"Show");t.onclick=()=>{e.type=e.type==="password"?"text":"password",t.textContent=e.type==="password"?"Show":"Hide"};let r=g("select",{},g("option",{value:"claude-opus-5-5"},"Claude Opus 5.5 (most accurate)"),g("option",{value:"claude-sonnet-5-5"},"Claude Sonnet 5.5 (faster, cheaper)"));r.value=n.model;let o=g("select",{},g("option",{value:"R2000"},"DXF 2000 (stores inches)"),g("option",{value:"R12"},"DXF R12"));o.value=n.dxfVersion;let i=g("input",{value:n.layerOuter}),a=g("input",{value:n.layerHole}),l=g("select",{},g("option",{value:8},'1/8"'),g("option",{value:16},'1/16"'),g("option",{value:32},'1/32"'));l.value=String(n.denom);let c=g("button",{class:"go"},"Save settings");c.onclick=()=>{jr={...n,apiKey:e.value.trim(),model:r.value,dxfVersion:o.value,layerOuter:(i.value.trim()||"OUTLINE").replace(/[^A-Za-z0-9_\-$]/g,"_"),layerHole:(a.value.trim()||"CUTOUT").replace(/[^A-Za-z0-9_\-$]/g,"_"),denom:+l.value},Aa(jr),G("Saved on this device"),qr()},s.append(g("h2",{},"Claude (for cabinet build sheets)"),g("label",{},"Anthropic API key"),g("div",{class:"row"},e,t),g("p",{class:"small muted"},"Stored only on this device, in this browser. Photos go straight from this phone to Anthropic\u2019s API. Get a key at console.anthropic.com."),g("label",{},"Model"),r,g("h2",{},"DXF export"),g("label",{},"Default format"),o,g("label",{},"Layer for the outline"),i,g("label",{},"Layer for cutouts"),a,g("label",{},"Round fractions to"),l,g("div",{style:"margin-top:16px"},c),g("div",{class:"note"},Je)),Wr.appendChild(s)}document.getElementById("btn-home").onclick=qr;document.getElementById("btn-settings").onclick=rh;function Vf(){let n=location.hash.slice(1);n.startsWith("job=")?Lo(n.slice(4)):n==="settings"?rh():qr()}Vf();"serviceWorker"in navigator&&location.protocol==="https:"&&navigator.serviceWorker.register("sw.js").catch(()=>{});
