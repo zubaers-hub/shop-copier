@@ -1,0 +1,5 @@
+node_modules/
+dist/
+__pycache__/
+tests/out-seed-*/
+tests/e2e-out/job-contours.json

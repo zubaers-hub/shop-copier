@@ -1,0 +1,191 @@
+[
+  {
+    "file": "arched-door-top-R12.dxf",
+    "version": "AC1009",
+    "audit_errors": 0,
+    "units": "not stored (R12)",
+    "entity_types": [
+      "ARC",
+      "LINE"
+    ],
+    "lines": 3,
+    "arcs": 2,
+    "contours": 1,
+    "all_closed": true,
+    "min_xy": [
+      0.0,
+      0.0
+    ],
+    "size": [
+      14.9974,
+      26.9897
+    ],
+    "expected_size": [
+      15,
+      27
+    ],
+    "ok": true
+  },
+  {
+    "file": "arched-door-top-R2000.dxf",
+    "version": "AC1015",
+    "audit_errors": 0,
+    "units": "inches",
+    "entity_types": [
+      "ARC",
+      "LINE"
+    ],
+    "lines": 3,
+    "arcs": 2,
+    "contours": 1,
+    "all_closed": true,
+    "min_xy": [
+      0.0,
+      0.0
+    ],
+    "size": [
+      14.9974,
+      26.9897
+    ],
+    "expected_size": [
+      15,
+      27
+    ],
+    "ok": true
+  },
+  {
+    "file": "arched-door-top-no-mirror-R2000.dxf",
+    "version": "AC1015",
+    "audit_errors": 0,
+    "units": "inches",
+    "entity_types": [
+      "ARC",
+      "LINE"
+    ],
+    "lines": 3,
+    "arcs": 1,
+    "contours": 1,
+    "all_closed": true,
+    "min_xy": [
+      0.0,
+      0.0
+    ],
+    "size": [
+      14.9966,
+      26.9963
+    ],
+    "expected_size": [
+      15,
+      27
+    ],
+    "ok": true
+  },
+  {
+    "file": "cathedral-door-top-R2000.dxf",
+    "version": "AC1015",
+    "audit_errors": 0,
+    "units": "inches",
+    "entity_types": [
+      "ARC",
+      "LINE"
+    ],
+    "lines": 3,
+    "arcs": 2,
+    "contours": 1,
+    "all_closed": true,
+    "min_xy": [
+      0.0,
+      0.0
+    ],
+    "size": [
+      15.9927,
+      30.0125
+    ],
+    "expected_size": [
+      16,
+      30
+    ],
+    "ok": true
+  },
+  {
+    "file": "corbel-R12.dxf",
+    "version": "AC1009",
+    "audit_errors": 0,
+    "units": "not stored (R12)",
+    "entity_types": [
+      "ARC",
+      "LINE"
+    ],
+    "lines": 4,
+    "arcs": 8,
+    "contours": 2,
+    "all_closed": true,
+    "min_xy": [
+      -0.0,
+      0.0
+    ],
+    "size": [
+      5.9748,
+      9.9938
+    ],
+    "expected_size": [
+      6,
+      10
+    ],
+    "ok": true
+  },
+  {
+    "file": "corbel-R2000.dxf",
+    "version": "AC1015",
+    "audit_errors": 0,
+    "units": "inches",
+    "entity_types": [
+      "ARC",
+      "LINE"
+    ],
+    "lines": 4,
+    "arcs": 8,
+    "contours": 2,
+    "all_closed": true,
+    "min_xy": [
+      -0.0,
+      0.0
+    ],
+    "size": [
+      5.9748,
+      9.9938
+    ],
+    "expected_size": [
+      6,
+      10
+    ],
+    "ok": true
+  },
+  {
+    "file": "corbel-hand-traced-R2000.dxf",
+    "version": "AC1015",
+    "audit_errors": 0,
+    "units": "inches",
+    "entity_types": [
+      "ARC",
+      "LINE"
+    ],
+    "lines": 6,
+    "arcs": 4,
+    "contours": 1,
+    "all_closed": true,
+    "min_xy": [
+      0.0,
+      0.0
+    ],
+    "size": [
+      6.0,
+      10.0
+    ],
+    "expected_size": [
+      6,
+      10
+    ],
+    "ok": true
+  }
+]

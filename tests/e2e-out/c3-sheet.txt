@@ -1,0 +1,30 @@
+🖨 Print / save as PDF
+Smith kitchen
+
+Date: Oct 15, 2026 · Scale: Overall run width of 78" given by the user.
+
+≈ marks a size estimated from the photo (rounded to standard sizes). Sizes from a photo are estimates. Lens distortion, camera angle and parts that aren’t flat all add error. Entering one real measured edge (tape measure) makes everything else much more accurate.
+Cabinets, left to right
+#	Type	W	H	D	Doors / drawers	Layout & notes
+1	Drawer base	≈ 18"	≈ 34 1/2"	≈ 24"	0 doors, 4 drawers	4 drawers
+2	Sink base	≈ 36"	≈ 34 1/2"	≈ 24"	2 doors, 0 drawers	2 doors · Hinge: left/right pair · false front hidden by counter?
+3	Base	22 1/2"	≈ 34 1/2"	≈ 24"	2 doors, 1 drawer	1 drawer over 2 doors
+
+Base/tall run width (sum of boxes): 76 1/2"
+
+Style
+Door style	Shaker
+Construction	face frame
+Overlay	partial overlay
+Toe kick	4" recessed
+Crown	none visible
+Light rail	none
+Fillers	none visible
+End panels	none
+Countertop	laminate, 1 1/2" edge
+Hardware	none visible
+Finish	white paint
+Decorative parts → trace these in Shape → DXF (Mode 1)
+Valance: Arched valance, about 30" wide (above the sink)
+Check on site
+Depth cannot be seen; standard 24" assumed.

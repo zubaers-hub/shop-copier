@@ -1,0 +1,287 @@
+[
+  {
+    "name": "fractions: \"14 3/4\" -> 14.75",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "fractions: 14-3/4\" -> 14.75",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "fractions: 1' 2 1/2 -> 14.5",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "fractions: 3/8 -> 0.375",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "fractions: 34.5 -> 34 1/2\"",
+    "ok": true,
+    "detail": "34 1/2\""
+  },
+  {
+    "name": "fractions: 14.7 -> 14 11/16\"",
+    "ok": true,
+    "detail": "14 11/16\""
+  },
+  {
+    "name": "homography: corners map to a true rectangle and invert cleanly",
+    "ok": true,
+    "detail": "TL=95,160"
+  },
+  {
+    "name": "arched door: cleaned outline is a closed loop",
+    "ok": true,
+    "detail": "5 segments: arc, line, line, line, arc"
+  },
+  {
+    "name": "arched door R2000: re-opened, only LINE and ARC entities",
+    "ok": true,
+    "detail": "kinds=ARC,LINE, 3 lines, 2 arcs"
+  },
+  {
+    "name": "arched door R2000: every contour closed",
+    "ok": true,
+    "detail": "1/1 closed, expected 1"
+  },
+  {
+    "name": "arched door R2000: units",
+    "ok": true,
+    "detail": "$INSUNITS=1 (inches)"
+  },
+  {
+    "name": "arched door R2000: lower-left at 0,0",
+    "ok": true,
+    "detail": "min x,y = 0,0"
+  },
+  {
+    "name": "arched door R2000: width 15\"",
+    "ok": true,
+    "detail": "got 15\" (14.9974\")"
+  },
+  {
+    "name": "arched door R2000: height 27\"",
+    "ok": true,
+    "detail": "got 27\" (26.9897\")"
+  },
+  {
+    "name": "arched door R2000: mirror-symmetric",
+    "ok": true,
+    "detail": "worst mismatch 2.7e-15\""
+  },
+  {
+    "name": "arched door R12: re-opened, only LINE and ARC entities",
+    "ok": true,
+    "detail": "kinds=ARC,LINE, 3 lines, 2 arcs"
+  },
+  {
+    "name": "arched door R12: every contour closed",
+    "ok": true,
+    "detail": "1/1 closed, expected 1"
+  },
+  {
+    "name": "arched door R12: units",
+    "ok": true,
+    "detail": "R12 (no units field in R12; values are inches)"
+  },
+  {
+    "name": "arched door R12: lower-left at 0,0",
+    "ok": true,
+    "detail": "min x,y = 0,0"
+  },
+  {
+    "name": "arched door R12: width 15\"",
+    "ok": true,
+    "detail": "got 15\" (14.9974\")"
+  },
+  {
+    "name": "arched door R12: height 27\"",
+    "ok": true,
+    "detail": "got 27\" (26.9897\")"
+  },
+  {
+    "name": "arched door R12: mirror-symmetric",
+    "ok": true,
+    "detail": "worst mismatch 2.7e-15\""
+  },
+  {
+    "name": "corbel: outline and cutout are closed loops",
+    "ok": true,
+    "detail": "outline 10 segs (6 arcs), cutout 2 segs"
+  },
+  {
+    "name": "corbel R2000: re-opened, only LINE and ARC entities",
+    "ok": true,
+    "detail": "kinds=ARC,LINE, 4 lines, 8 arcs"
+  },
+  {
+    "name": "corbel R2000: every contour closed",
+    "ok": true,
+    "detail": "2/2 closed, expected 2"
+  },
+  {
+    "name": "corbel R2000: units",
+    "ok": true,
+    "detail": "$INSUNITS=1 (inches)"
+  },
+  {
+    "name": "corbel R2000: lower-left at 0,0",
+    "ok": true,
+    "detail": "min x,y = 0,0"
+  },
+  {
+    "name": "corbel R2000: width 6\"",
+    "ok": true,
+    "detail": "got 6\" (5.9748\")"
+  },
+  {
+    "name": "corbel R2000: height 10\"",
+    "ok": true,
+    "detail": "got 10\" (9.9938\")"
+  },
+  {
+    "name": "corbel R2000: mirror-symmetric",
+    "ok": true,
+    "detail": "worst mismatch 1.5e-6\""
+  },
+  {
+    "name": "corbel R12: re-opened, only LINE and ARC entities",
+    "ok": true,
+    "detail": "kinds=ARC,LINE, 4 lines, 8 arcs"
+  },
+  {
+    "name": "corbel R12: every contour closed",
+    "ok": true,
+    "detail": "2/2 closed, expected 2"
+  },
+  {
+    "name": "corbel R12: units",
+    "ok": true,
+    "detail": "R12 (no units field in R12; values are inches)"
+  },
+  {
+    "name": "corbel R12: lower-left at 0,0",
+    "ok": true,
+    "detail": "min x,y = 0,0"
+  },
+  {
+    "name": "corbel R12: width 6\"",
+    "ok": true,
+    "detail": "got 6\" (5.9748\")"
+  },
+  {
+    "name": "corbel R12: height 10\"",
+    "ok": true,
+    "detail": "got 10\" (9.9938\")"
+  },
+  {
+    "name": "corbel R12: mirror-symmetric",
+    "ok": true,
+    "detail": "worst mismatch 1.5e-6\""
+  },
+  {
+    "name": "hand-traced half corbel: re-opened, only LINE and ARC entities",
+    "ok": true,
+    "detail": "kinds=LINE,ARC, 6 lines, 4 arcs"
+  },
+  {
+    "name": "hand-traced half corbel: every contour closed",
+    "ok": true,
+    "detail": "1/1 closed, expected 1"
+  },
+  {
+    "name": "hand-traced half corbel: units",
+    "ok": true,
+    "detail": "$INSUNITS=1 (inches)"
+  },
+  {
+    "name": "hand-traced half corbel: lower-left at 0,0",
+    "ok": true,
+    "detail": "min x,y = 0,0"
+  },
+  {
+    "name": "hand-traced half corbel: width 6\"",
+    "ok": true,
+    "detail": "got 6\" (6.0000\")"
+  },
+  {
+    "name": "hand-traced half corbel: height 10\"",
+    "ok": true,
+    "detail": "got 10\" (10.0000\")"
+  },
+  {
+    "name": "hand-traced half corbel: mirror-symmetric",
+    "ok": true,
+    "detail": "worst mismatch 5.6e-15\""
+  },
+  {
+    "name": "cathedral door (mirrored, kept right half): re-opened, only LINE and ARC entities",
+    "ok": true,
+    "detail": "kinds=LINE,ARC, 3 lines, 2 arcs"
+  },
+  {
+    "name": "cathedral door (mirrored, kept right half): every contour closed",
+    "ok": true,
+    "detail": "1/1 closed, expected 1"
+  },
+  {
+    "name": "cathedral door (mirrored, kept right half): units",
+    "ok": true,
+    "detail": "$INSUNITS=1 (inches)"
+  },
+  {
+    "name": "cathedral door (mirrored, kept right half): lower-left at 0,0",
+    "ok": true,
+    "detail": "min x,y = 0,0"
+  },
+  {
+    "name": "cathedral door (mirrored, kept right half): width 16\"",
+    "ok": true,
+    "detail": "got 16\" (15.9927\")"
+  },
+  {
+    "name": "cathedral door (mirrored, kept right half): height 30\"",
+    "ok": true,
+    "detail": "got 30\" (30.0125\")"
+  },
+  {
+    "name": "cathedral door (mirrored, kept right half): mirror-symmetric",
+    "ok": true,
+    "detail": "worst mismatch 6.4e-15\""
+  },
+  {
+    "name": "arched door (mirror off): re-opened, only LINE and ARC entities",
+    "ok": true,
+    "detail": "kinds=LINE,ARC, 3 lines, 1 arcs"
+  },
+  {
+    "name": "arched door (mirror off): every contour closed",
+    "ok": true,
+    "detail": "1/1 closed, expected 1"
+  },
+  {
+    "name": "arched door (mirror off): units",
+    "ok": true,
+    "detail": "$INSUNITS=1 (inches)"
+  },
+  {
+    "name": "arched door (mirror off): lower-left at 0,0",
+    "ok": true,
+    "detail": "min x,y = 0,0"
+  },
+  {
+    "name": "arched door (mirror off): width 15\"",
+    "ok": true,
+    "detail": "got 15\" (14.9966\")"
+  },
+  {
+    "name": "arched door (mirror off): height 27\"",
+    "ok": true,
+    "detail": "got 27\" (26.9963\")"
+  }
+]
