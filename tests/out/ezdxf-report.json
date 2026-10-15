@@ -170,12 +170,12 @@
       "ARC",
       "LINE"
     ],
-    "lines": 6,
+    "lines": 10,
     "arcs": 4,
     "contours": 1,
     "all_closed": true,
     "min_xy": [
-      0.0,
+      -0.0,
       0.0
     ],
     "size": [

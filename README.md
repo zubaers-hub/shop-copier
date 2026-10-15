@@ -2,7 +2,7 @@
 
 A phone web app for the shop. Two tools:
 
-1. **Shape → DXF.** Photo of a part, tap the 4 corners of something rectangular (a sheet of paper works), type its size, auto-detect or trace the outline, clean it up into true lines and arcs, mirror it if it's symmetric, and download a DXF for Mozaik's Part Editor → DXF In.
+1. **Shape → DXF.** Photo of a part, tap the 4 corners of something rectangular (the door itself, or a sheet of paper), type its size, auto-detect or trace the outline, then **Details**: find the panel outlines, arches, cutouts, grooves and carved lines inside it (or tap an area, or draw a shape or line), give each one a cut type (outside cut, inside cut, pocket, groove/V-carve, profile edge, not cut), optionally let Claude suggest them, clean everything up into true lines and arcs, mirror it if it's symmetric, and download a layered DXF (or the outline alone for Mozaik's Part Editor → DXF In).
 2. **Cabinet build sheet.** Photo of a run of cabinets; Claude lists each box left to right with sizes, doors, drawers and style. Everything is editable, and it prints as a build sheet. Decorative parts get a button that sends the same photo to Shape → DXF.
 
 Everything runs on the phone. Jobs save on the phone. The Claude API key is typed once in ⚙ Settings and stays on the phone; photos go straight from the phone to Anthropic.
@@ -25,7 +25,9 @@ Everything runs on the phone. Jobs save on the phone. The Claude API key is type
 ## DXF details (what Mozaik gets)
 
 - Units inches. DXF 2000 by default (stores `$INSUNITS = 1`); R12 is a Settings option (R12 has no units field, values are inches).
-- One closed outline on layer `OUTLINE`, each cutout its own closed contour on layer `CUTOUT` (layer names editable in Settings).
+- One layer per kind of cut: `OUTSIDE_CUT`, `INSIDE_CUT`, `POCKET_<depth>`, `VGROOVE_<angle>_<depth>` or `GROOVE_<bit>_<depth>`, `PROFILE_EDGE_<bit>` (e.g. `POCKET_0.25`, `VGROOVE_90_0.125`, `PROFILE_EDGE_RAISED_PANEL_COVE`). Shapes marked "not cut" (a raised panel's field) are left out. R12 can't have a dot in a layer name, so R12 files write `POCKET_0p25`.
+- Every shape on a cut-through or pocket layer is closed. Grooves and profile edges may be open lines.
+- "Outer outline only" writes just the outline on layer `OUTLINE` (name editable in Settings), for Mozaik's Part Editor.
 - Only LINE and ARC entities. No splines or polylines.
 - Lower-left corner of the part at 0,0.
 - Every export is re-opened by the app and checked before you download it (closed, lines/arcs only, units, 0,0, size).

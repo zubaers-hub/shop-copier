@@ -45,3 +45,20 @@ There's no API key here, so Claude's API was simulated. `tests/e2e-cabinets.mjs`
 **Not tested:** a real Claude call on a real cabinet photo, or how good its estimates are. That needs your key.
 
 **Also not tested:** Mozaik itself and a real phone camera. The files follow the DXF rules Mozaik's DXF In expects, but import one test part in Mozaik before cutting.
+
+## 4. Interior details on two door photos (`tests/e2e-doors.mjs`, 39 of 39 checks pass)
+
+`tests/make_door_photos.py` draws two 15" × 28" doors photographed at an angle on a gray wall, with known true shapes: a raised-panel cathedral door and a door with a glass lite and a V-groove around it. The test drives the real app in a phone-sized Chromium: corners, size, outline auto-detect, Find details (sensitivity 5, minimum size 3/4"), cut types, mirror, export, then re-opens both DXFs with the app's checker and with ezdxf.
+
+| Door | Found | Cut guessed | Found size vs true | DXF shape vs true (mean / worst) |
+|---|---|---|---|---|
+| Cathedral | frame opening | profile edge | 10.07 × 21.44 vs 10 × 21.5 | 0.062" / 0.108" |
+| Cathedral | flat field | not cut | 9.72 × 20.06 vs 7 × 18.5 (merges with the arch bevel in the photo) | not exported |
+| Glass | glass opening | inside cut | 10.00 × 23.00 vs 10 × 23 | 0.022" / 0.048" (4 lines, 4 arcs) |
+| Glass | V-groove loop | groove | 11.72 × 24.72 vs 11.8 × 24.8 | 0.056" / 0.086" (4 lines, 4 arcs) |
+
+No extra shapes were found on either door. Find details took about 1 second. Also checked: picking a shape by tapping it, the cut buttons and depth field, the bit list, drawing a groove line by hand, tap-an-area to add a shape, remove and undo, hiding a layer in the legend, the outline-only file, and "Suggest details" with Claude simulated (request goes to Sonnet 5.5 with the photo and numbered shapes; the answer relabels shapes and adds a missed line).
+
+`tests/dxf.test.mjs` adds a layered door (66 of 66 checks): one layer per cut type in R2000 and R12, the groove stays open, "not cut" is left out, and the outline-only file has just the outline.
+
+**Not tested:** real door photos (only drawn ones), a real Claude call, and Mozaik / your CAM reading the layers. Raised-panel fields often blend into the bevel in a photo; that doesn't affect the file because the field isn't cut, but check the profile line before cutting.

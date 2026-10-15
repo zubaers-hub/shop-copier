@@ -1,5 +1,6 @@
 // Photo work: perspective correction (homography) and outline detection (OpenCV.js, loaded on first use).
 import { homography, applyH, invertH, bboxOf } from './core.js';
+import { findDetails, regionAt, freeDetails } from './details.js';
 
 // Loads a File/Blob into an image no bigger than maxSide pixels on its long side. Returns a canvas.
 export async function loadPhoto(blob, maxSide = 2400) {
@@ -19,6 +20,8 @@ export const canvasToBlob = (c, type = 'image/jpeg', q = 0.88) => new Promise((r
 // Straightens the photo so the tapped rectangle (corners TL,TR,BR,BL in photo px) becomes a true
 // W x H inch rectangle. Returns { canvas, ppi, ox, oy }: canvas pixel (u,v) = inches (ox + u/ppi, oy + v/ppi),
 // with inches measured from the rectangle's top-left corner.
+// fill color for the parts of the straightened canvas the photo doesn't reach
+const OFF_PHOTO = [43, 47, 54];
 export function straighten(photo, corners, W, H, maxSide = 2000) {
   const Hm = homography(corners, [[0, 0], [W, 0], [W, H], [0, H]]);
   if (!Hm) throw new Error('Those 4 corners don’t make a usable rectangle. Move them and try again.');
@@ -48,7 +51,7 @@ export function straighten(photo, corners, W, H, maxSide = 2000) {
       const sx = (Hi[0] * xIn + Hi[1] * yIn + Hi[2]) / w - 0.5;
       const sy = (Hi[3] * xIn + Hi[4] * yIn + Hi[5]) / w - 0.5;
       const o = (v * cw + u) * 4;
-      if (w <= 0 || sx < 0 || sy < 0 || sx >= pw - 1 || sy >= ph - 1) { D[o] = 43; D[o + 1] = 47; D[o + 2] = 54; D[o + 3] = 255; continue; }
+      if (w <= 0 || sx < 0 || sy < 0 || sx >= pw - 1 || sy >= ph - 1) { D[o] = OFF_PHOTO[0]; D[o + 1] = OFF_PHOTO[1]; D[o + 2] = OFF_PHOTO[2]; D[o + 3] = 255; continue; }
       const x0 = sx | 0, y0 = sy | 0, fx = sx - x0, fy = sy - y0;
       const i00 = (y0 * pw + x0) * 4, i10 = i00 + 4, i01 = i00 + pw * 4, i11 = i01 + 4;
       for (let c = 0; c < 3; c++) {
@@ -114,8 +117,25 @@ export async function detectOutline(canvas, { mode = 'edges', sensitivity = 5, s
       const lo = 15 + (10 - sensitivity) * 9;
       const edges = M(new cv.Mat());
       cv.Canny(blur, edges, lo, lo * 2.5);
+      // also look for color edges: an orange door on a gray wall can have almost the same brightness
+      const chans = M(new cv.MatVector());
+      cv.split(src, chans);
+      for (let c = 0; c < 3; c++) {
+        const ch = chans.get(c), ce = new cv.Mat();
+        cv.GaussianBlur(ch, ch, new cv.Size(5, 5), 0);
+        cv.Canny(ch, ce, lo, lo * 2.5);
+        cv.bitwise_or(edges, ce, edges);
+        ch.delete(); ce.delete();
+      }
       const dil = M(new cv.Mat());
       cv.dilate(edges, dil, k3, new cv.Point(-1, -1), 2);
+      // the area beyond the photo's own edges (filled flat by straighten) counts as background, so the
+      // line where the photo ends doesn't wall the real background in with the part
+      const off = M(new cv.Mat());
+      const lo3 = M(new cv.Mat(src.rows, src.cols, src.type(), new cv.Scalar(...OFF_PHOTO, 255)));
+      cv.inRange(src, lo3, lo3, off);
+      cv.dilate(off, off, k3, new cv.Point(-1, -1), 5);
+      dil.setTo(new cv.Scalar(0), off);
       // fill every region the edges enclose: flood the background in from the border
       const filled = M(dil.clone());
       const ffMask = M(cv.Mat.zeros(filled.rows + 2, filled.cols + 2, cv.CV_8U));
@@ -187,3 +207,36 @@ export function resampleOutline(pts, step) {
   if (cnt) out.push([acc[0] / cnt, acc[1] / cnt]);
   return out;
 }
+
+// Same as resampleOutline, for an open line: keeps both end points.
+export function resampleLine(pts, step) {
+  const n = pts.length;
+  if (n < 3) return pts;
+  const out = [pts[0]];
+  let acc = [0, 0], cnt = 0, run = 0;
+  for (let i = 1; i < n - 1; i++) {
+    const p = pts[i];
+    acc[0] += p[0]; acc[1] += p[1]; cnt++;
+    run += Math.hypot(p[0] - pts[i - 1][0], p[1] - pts[i - 1][1]);
+    if (run >= step) { out.push([acc[0] / cnt, acc[1] / cnt]); acc = [0, 0]; cnt = 0; run = 0; }
+  }
+  out.push(pts[n - 1]);
+  return out;
+}
+
+// ---------------------------------------------------------------- interior details
+
+// Finds details inside the outline on the straightened canvas. outerPx: outline in canvas px.
+// Keeps the edge map so a tap can add the area around a point (detailAt). Call freeDetailEdges when done.
+export async function detectDetails(canvas, outerPx, ppi, opts) {
+  const cv = await loadOpenCV();
+  const src = cv.imread(canvas);
+  try {
+    return findDetails(cv, src, outerPx, ppi, opts);
+  } finally { src.delete(); }
+}
+export async function detailAt(found, pointPx) {
+  const cv = await loadOpenCV();
+  return regionAt(cv, found, pointPx);
+}
+export const freeDetailEdges = (found) => freeDetails(found);

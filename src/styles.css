@@ -157,3 +157,24 @@ input[type=checkbox] { width: 28px; height: 28px; accent-color: var(--accent); v
   .note { border: 1px solid #999; background: none; color: #000; }
   .sheet tr { break-inside: avoid; }
 }
+
+/* interior details: cut types, shape list, layer legend */
+.cut-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 6px 0; }
+.cut-btn { border-color: var(--c); color: var(--c); background: #fff; min-height: 60px; font-size: .95rem; letter-spacing: .02em; }
+.cut-btn.picked { background: var(--c); color: #fff; box-shadow: 0 0 0 3px #fff inset; }
+.sel-info { padding: 6px 0; }
+.sel-title { font-weight: 800; border-left: 8px solid var(--c); padding-left: 8px; }
+.feat-list { display: flex; flex-direction: column; gap: 6px; }
+.feat-row { justify-content: flex-start; text-align: left; min-height: 48px; font-weight: 600; border-color: var(--line); color: var(--ink); padding: 6px 10px; }
+.feat-row.on { border-color: var(--c); box-shadow: 0 0 0 2px var(--c) inset; }
+.feat-row .grow { flex: 1; }
+.dot { flex: none; width: 28px; height: 28px; border-radius: 50%; background: var(--c); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: .85rem; font-weight: 800; }
+.legend { display: flex; flex-direction: column; gap: 6px; }
+.legend-item { justify-content: flex-start; min-height: 48px; border-color: var(--line); color: var(--ink); font-weight: 700; font-size: .9rem; padding: 6px 10px; }
+.legend-item .grow { flex: 1; text-align: left; overflow-wrap: anywhere; }
+.legend-item .swatch { flex: none; width: 28px; height: 10px; border-radius: 4px; background: var(--c); }
+.legend-item.off { opacity: .5; }
+.legend-item.off .swatch { background: repeating-linear-gradient(90deg, var(--c) 0 4px, transparent 4px 8px); }
+.export-stage { height: 52vh; min-height: 300px; flex: none; border-radius: var(--radius); margin: 8px 0; }
+.layer-table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: .85rem; }
+.layer-table th, .layer-table td { text-align: left; padding: 4px 6px; border-bottom: 1px solid rgba(0,0,0,.12); overflow-wrap: anywhere; }

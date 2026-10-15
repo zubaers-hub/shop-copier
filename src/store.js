@@ -43,7 +43,6 @@ export const DEFAULT_SETTINGS = {
   model: 'claude-opus-5-5',
   dxfVersion: 'R2000',
   layerOuter: 'OUTLINE',
-  layerHole: 'CUTOUT',
   denom: 16,
 };
 export function loadSettings() {

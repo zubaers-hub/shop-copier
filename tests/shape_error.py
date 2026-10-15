@@ -11,7 +11,7 @@ doc = ezdxf.readfile(sys.argv[1])
 msp = doc.modelspace()
 pts = []
 for e in msp:
-    if e.dxf.layer.upper() != 'OUTLINE': continue
+    if e.dxf.layer.upper() not in ('OUTLINE', 'OUTSIDE_CUT'): continue
     p = ezpath.make_path(e)
     pts += [(v.x, v.y) for v in p.flattening(0.002)]
 P = np.array(pts)

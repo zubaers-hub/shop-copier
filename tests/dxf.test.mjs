@@ -6,7 +6,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   buildShape, writeDXF, checkDXF, parseDXF, segPoints, parseInches, formatInches, homography, applyH, invertH,
-  orderCorners, loopIsClosed, autoCenter,
+  orderCorners, loopIsClosed, autoCenter, layerFor,
 } from '../src/core.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -167,6 +167,35 @@ const hole = [A([2.5, 2.5], [3, 2], [3.5, 2.5]), A([3.5, 2.5], [3, 3], [2.5, 2.5
   const file = path.join(outDir, 'arched-door-top-no-mirror-R2000.dxf');
   fs.writeFileSync(file, writeDXF(shape, { version: 'R2000' }));
   verifyFile('arched door (mirror off)', file, shape, 15, 27);
+}
+
+// ------------------------------------------------------------- sample 6: door with interior details, one layer per cut
+{
+  const rect = (x0, y0, x1, y1) => [L([x0, y0], [x1, y0]), L([x1, y0], [x1, y1]), L([x1, y1], [x0, y1]), L([x0, y1], [x0, y0])];
+  const outer = traced(rect(0, 0, 15, 28));
+  const features = [
+    { pts: traced(rect(2.5, 2.5, 12.5, 25.5)), closed: true, cut: 'inside' },
+    { pts: traced(rect(3, 3, 6, 6)), closed: true, cut: 'pocket', depth: 0.25 },
+    { pts: [{ x: 2, y: 26.5 }, { x: 7.5, y: 26.8 }, { x: 13, y: 26.5 }], closed: false, cut: 'groove', depth: 0.125, bit: 'v90' },
+    { pts: traced(rect(1.5, 1.5, 13.5, 27)), closed: true, cut: 'profile', bit: 'rp_cove' },
+    { pts: traced(rect(8, 8, 10, 10)), closed: true, cut: 'skip' },
+  ];
+  const shape = buildShape({ outer, features }, { mirror: { on: false }, smooth: 3 });
+  const want = ['OUTSIDE_CUT', 'INSIDE_CUT', 'POCKET_0.25', 'VGROOVE_90_0.125', 'PROFILE_EDGE_RAISED_PANEL_COVE'];
+  for (const version of ['R2000', 'R12']) {
+    const text = writeDXF(shape, { version });
+    const file = path.join(outDir, `door-layers-${version}.dxf`);
+    fs.writeFileSync(file, text);
+    const chk = checkDXF(text);
+    const names = Object.keys(chk.layers).sort();
+    const expect = want.map((n) => (version === 'R12' ? n.replace(/\./g, 'p') : n)).sort();
+    check(`layered door ${version}: one layer per cut type, "not cut" left out`, JSON.stringify(names) === JSON.stringify(expect), names.join(', '));
+    check(`layered door ${version}: self-check ok (closed where required, lines/arcs only, 0,0)`, chk.ok, chk.problems.join(' '));
+    check(`layered door ${version}: the groove stays an open line`, chk.openLoops === 1, `open: ${chk.openLoops}`);
+    const only = checkDXF(writeDXF(shape, { version, outlineOnly: true, outlineLayer: 'OUTLINE' }));
+    check(`layered door ${version}: outline-only file has just the outline`, Object.keys(only.layers).join() === 'OUTLINE' && only.ok, Object.keys(only.layers).join());
+  }
+  check('layer names carry depth and bit', layerFor({ cut: 'groove', depth: 0.1875, bit: 'ball0.25' }) .startsWith('GROOVE_BALL') && layerFor({ cut: 'pocket', depth: 0.375 }) === 'POCKET_0.375', layerFor({ cut: 'groove', depth: 0.1875, bit: 'ball0.25' }));
 }
 
 fs.writeFileSync(path.join(outDir, 'report.json'), JSON.stringify(results, null, 2));

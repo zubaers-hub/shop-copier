@@ -49,13 +49,16 @@ export class Stage {
       const first = !this.cssW;
       this.canvas.width = w; this.canvas.height = h;
       this.cssW = r.width; this.cssH = r.height;
+      // keep the last framing while the user hasn't panned or zoomed (the panel below can change the stage height)
       if (first || this.autoFit) this.fit();
+      else if (this.lastFit !== undefined && !this.moved) this.fit(this.lastFit);
     }
     this.render();
   }
 
   fit(box) {
     const W = this.cssW || 1, H = this.cssH || 1;
+    this.lastFit = box; this.moved = false;
     const b = box || { x: 0, y: 0, w: this.imgW, h: this.imgH };
     const s = Math.min(W / b.w, H / b.h) * 0.94;
     this.view = { s, tx: (W - b.w * s) / 2 - b.x * s, ty: (H - b.h * s) / 2 - b.y * s };
@@ -68,6 +71,7 @@ export class Stage {
   local(e) { const r = this.canvas.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; }
 
   zoomAt(p, k) {
+    this.moved = true;
     const s = Math.max(0.02, Math.min(this.view.s * k, 60));
     const q = this.toImg(p);
     this.view.s = s;
@@ -105,6 +109,7 @@ export class Stage {
       this.loupe = p;
       if (this.cb.onDrag) this.cb.onDrag(this.toImg(p), this);
     } else if (this.mode === 'pan' && this.start?.moved) {
+      this.moved = true;
       this.view.tx += p[0] - prev[0];
       this.view.ty += p[1] - prev[1];
     } else if (this.mode === 'pinch' && this.pointers.size >= 2) {

@@ -187,7 +187,7 @@
   {
     "name": "hand-traced half corbel: re-opened, only LINE and ARC entities",
     "ok": true,
-    "detail": "kinds=LINE,ARC, 6 lines, 4 arcs"
+    "detail": "kinds=LINE,ARC, 10 lines, 4 arcs"
   },
   {
     "name": "hand-traced half corbel: every contour closed",
@@ -217,7 +217,7 @@
   {
     "name": "hand-traced half corbel: mirror-symmetric",
     "ok": true,
-    "detail": "worst mismatch 5.6e-15\""
+    "detail": "worst mismatch 7.4e-7\""
   },
   {
     "name": "cathedral door (mirrored, kept right half): re-opened, only LINE and ARC entities",
@@ -283,5 +283,50 @@
     "name": "arched door (mirror off): height 27\"",
     "ok": true,
     "detail": "got 27\" (26.9963\")"
+  },
+  {
+    "name": "layered door R2000: one layer per cut type, \"not cut\" left out",
+    "ok": true,
+    "detail": "INSIDE_CUT, OUTSIDE_CUT, POCKET_0.25, PROFILE_EDGE_RAISED_PANEL_COVE, VGROOVE_90_0.125"
+  },
+  {
+    "name": "layered door R2000: self-check ok (closed where required, lines/arcs only, 0,0)",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "layered door R2000: the groove stays an open line",
+    "ok": true,
+    "detail": "open: 1"
+  },
+  {
+    "name": "layered door R2000: outline-only file has just the outline",
+    "ok": true,
+    "detail": "OUTLINE"
+  },
+  {
+    "name": "layered door R12: one layer per cut type, \"not cut\" left out",
+    "ok": true,
+    "detail": "INSIDE_CUT, OUTSIDE_CUT, POCKET_0p25, PROFILE_EDGE_RAISED_PANEL_COVE, VGROOVE_90_0p125"
+  },
+  {
+    "name": "layered door R12: self-check ok (closed where required, lines/arcs only, 0,0)",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "layered door R12: the groove stays an open line",
+    "ok": true,
+    "detail": "open: 1"
+  },
+  {
+    "name": "layered door R12: outline-only file has just the outline",
+    "ok": true,
+    "detail": "OUTLINE"
+  },
+  {
+    "name": "layer names carry depth and bit",
+    "ok": true,
+    "detail": "GROOVE_BALL_0.25_0.1875"
   }
 ]

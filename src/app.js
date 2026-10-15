@@ -77,27 +77,27 @@ function settingsPage() {
   const ver = el('select', {}, el('option', { value: 'R2000' }, 'DXF 2000 (stores inches)'), el('option', { value: 'R12' }, 'DXF R12'));
   ver.value = s.dxfVersion;
   const lo = el('input', { value: s.layerOuter });
-  const lh = el('input', { value: s.layerHole });
   const den = el('select', {}, el('option', { value: 8 }, '1/8"'), el('option', { value: 16 }, '1/16"'), el('option', { value: 32 }, '1/32"'));
   den.value = String(s.denom);
   const saveB = el('button', { class: 'go' }, 'Save settings');
   saveB.onclick = () => {
     settings = { ...s, apiKey: key.value.trim(), model: model.value, dxfVersion: ver.value,
       layerOuter: (lo.value.trim() || 'OUTLINE').replace(/[^A-Za-z0-9_\-$]/g, '_'),
-      layerHole: (lh.value.trim() || 'CUTOUT').replace(/[^A-Za-z0-9_\-$]/g, '_'), denom: +den.value };
+      denom: +den.value };
     saveSettings(settings);
     toast('Saved on this device');
     home();
   };
   page.append(
-    el('h2', {}, 'Claude (for cabinet build sheets)'),
+    el('h2', {}, 'Claude (build sheets and “Suggest details”)'),
     el('label', {}, 'Anthropic API key'), el('div', { class: 'row' }, key, show),
     el('p', { class: 'small muted' }, 'Stored only on this device, in this browser. Photos go straight from this phone to Anthropic’s API. Get a key at console.anthropic.com.'),
-    el('label', {}, 'Model'), model,
+    el('label', {}, 'Model for build sheets'), model,
+    el('p', { class: 'small muted' }, '“Suggest details” in Shape → DXF always uses Claude Sonnet 5.5.'),
     el('h2', {}, 'DXF export'),
     el('label', {}, 'Default format'), ver,
-    el('label', {}, 'Layer for the outline'), lo,
-    el('label', {}, 'Layer for cutouts'), lh,
+    el('label', {}, 'Layer name for “outline only” files (Mozaik Part Editor)'), lo,
+    el('p', { class: 'small muted' }, 'Full files use one layer per cut: OUTSIDE_CUT, INSIDE_CUT, POCKET_0.25, VGROOVE_90_0.125, PROFILE_EDGE_…'),
     el('label', {}, 'Round fractions to'), den,
     el('div', { style: 'margin-top:16px' }, saveB),
     el('div', { class: 'note' }, ACCURACY_NOTE),

@@ -1,0 +1,354 @@
+{
+ "cathedral": {
+  "found": [
+   {
+    "truth": "raised panel: frame opening (profile edge, raised-panel bit)",
+    "expect": "profile",
+    "trueSize": "10.00 x 21.50",
+    "found": "#1",
+    "foundSize": "10.07 x 21.44",
+    "meanGap": 0.042,
+    "worstGap": 0.165,
+    "guessed": "profile"
+   },
+   {
+    "truth": "raised panel: flat field (made by the same bit, not a separate cut)",
+    "expect": "skip",
+    "trueSize": "7.00 x 18.50",
+    "found": "#2",
+    "foundSize": "9.72 x 20.06",
+    "meanGap": 0.749,
+    "worstGap": 1.74,
+    "guessed": "skip"
+   }
+  ],
+  "dxf": {
+   "full": {
+    "file": "tests/e2e-out/cathedral-door.dxf",
+    "layers": {
+     "OUTSIDE_CUT": {
+      "lines": 4,
+      "arcs": 0,
+      "shapes": 1,
+      "closed": 1
+     },
+     "PROFILE_EDGE_RAISED_PANEL_OGEE": {
+      "lines": 5,
+      "arcs": 3,
+      "shapes": 1,
+      "closed": 1
+     },
+     "VGROOVE_90_0.125": {
+      "lines": 2,
+      "arcs": 0,
+      "shapes": 1,
+      "closed": 0
+     }
+    },
+    "size": [
+     15,
+     27.997
+    ],
+    "ok": true,
+    "problems": [],
+    "ezdxf": {
+     "audit_errors": 0,
+     "units": 1,
+     "layers": {
+      "OUTSIDE_CUT": {
+       "types": [
+        "LINE"
+       ],
+       "shapes": 1,
+       "closed": 1,
+       "in_table": true
+      },
+      "PROFILE_EDGE_RAISED_PANEL_OGEE": {
+       "types": [
+        "ARC",
+        "LINE"
+       ],
+       "shapes": 1,
+       "closed": 1,
+       "in_table": true
+      },
+      "VGROOVE_90_0.125": {
+       "types": [
+        "LINE"
+       ],
+       "shapes": 1,
+       "closed": 0,
+       "in_table": true
+      }
+     },
+     "ok": true,
+     "min": [
+      0,
+      0
+     ],
+     "size": [
+      15.0004,
+      27.9974
+     ]
+    }
+   },
+   "outline": {
+    "file": "tests/e2e-out/cathedral-door-outline.dxf",
+    "layers": {
+     "OUTLINE": {
+      "lines": 4,
+      "arcs": 0,
+      "shapes": 1,
+      "closed": 1
+     }
+    },
+    "size": [
+     15,
+     27.997
+    ],
+    "ok": true,
+    "problems": [],
+    "ezdxf": {
+     "audit_errors": 0,
+     "units": 1,
+     "layers": {
+      "OUTLINE": {
+       "types": [
+        "LINE"
+       ],
+       "shapes": 1,
+       "closed": 1,
+       "in_table": true
+      }
+     },
+     "ok": true,
+     "min": [
+      0,
+      0
+     ],
+     "size": [
+      15.0004,
+      27.9974
+     ]
+    }
+   }
+  },
+  "outline": {
+   "w": 15.013,
+   "h": 28.017
+  },
+  "findMs": 1027,
+  "extra": 0,
+  "all": [
+   "#1 profile shape 10.07x21.44",
+   "#2 skip shape 9.72x20.06"
+  ],
+  "cleanParts": [
+   {
+    "cut": "profile",
+    "closed": true,
+    "n": 8,
+    "arcs": 3
+   },
+   {
+    "cut": "skip",
+    "closed": true,
+    "n": 15,
+    "arcs": 9
+   },
+   {
+    "cut": "groove",
+    "closed": false,
+    "n": 2,
+    "arcs": 0
+   }
+  ],
+  "cleaned": [
+   {
+    "truth": "raised panel: frame opening (profile edge, raised-panel bit)",
+    "meanGap": 0.062,
+    "worstGap": 0.108,
+    "lines": 5,
+    "arcs": 3
+   }
+  ],
+  "legendCount": 4
+ },
+ "glass": {
+  "found": [
+   {
+    "truth": "glass opening (inside cut)",
+    "expect": "inside",
+    "trueSize": "10.00 x 23.00",
+    "found": "#2",
+    "foundSize": "10.00 x 23.00",
+    "meanGap": 0.009,
+    "worstGap": 0.028,
+    "guessed": "inside"
+   },
+   {
+    "truth": "decorative V-groove loop",
+    "expect": "groove",
+    "trueSize": "11.80 x 24.80",
+    "found": "#1",
+    "foundSize": "11.72 x 24.72",
+    "meanGap": 0.056,
+    "worstGap": 0.084,
+    "guessed": "groove"
+   }
+  ],
+  "dxf": {
+   "full": {
+    "file": "tests/e2e-out/glass-door.dxf",
+    "layers": {
+     "OUTSIDE_CUT": {
+      "lines": 4,
+      "arcs": 0,
+      "shapes": 1,
+      "closed": 1
+     },
+     "VGROOVE_90_0.125": {
+      "lines": 4,
+      "arcs": 4,
+      "shapes": 1,
+      "closed": 1
+     },
+     "INSIDE_CUT": {
+      "lines": 4,
+      "arcs": 4,
+      "shapes": 1,
+      "closed": 1
+     }
+    },
+    "size": [
+     14.99,
+     28.005
+    ],
+    "ok": true,
+    "problems": [],
+    "ezdxf": {
+     "audit_errors": 0,
+     "units": 1,
+     "layers": {
+      "OUTSIDE_CUT": {
+       "types": [
+        "LINE"
+       ],
+       "shapes": 1,
+       "closed": 1,
+       "in_table": true
+      },
+      "VGROOVE_90_0.125": {
+       "types": [
+        "ARC",
+        "LINE"
+       ],
+       "shapes": 1,
+       "closed": 1,
+       "in_table": true
+      },
+      "INSIDE_CUT": {
+       "types": [
+        "ARC",
+        "LINE"
+       ],
+       "shapes": 1,
+       "closed": 1,
+       "in_table": true
+      }
+     },
+     "ok": true,
+     "min": [
+      0,
+      0
+     ],
+     "size": [
+      14.9903,
+      28.0045
+     ]
+    }
+   },
+   "outline": {
+    "file": "tests/e2e-out/glass-door-outline.dxf",
+    "layers": {
+     "OUTLINE": {
+      "lines": 4,
+      "arcs": 0,
+      "shapes": 1,
+      "closed": 1
+     }
+    },
+    "size": [
+     14.99,
+     28.005
+    ],
+    "ok": true,
+    "problems": [],
+    "ezdxf": {
+     "audit_errors": 0,
+     "units": 1,
+     "layers": {
+      "OUTLINE": {
+       "types": [
+        "LINE"
+       ],
+       "shapes": 1,
+       "closed": 1,
+       "in_table": true
+      }
+     },
+     "ok": true,
+     "min": [
+      0,
+      0
+     ],
+     "size": [
+      14.9903,
+      28.0045
+     ]
+    }
+   }
+  },
+  "outline": {
+   "w": 15.009,
+   "h": 28.005
+  },
+  "findMs": 1231,
+  "extra": 0,
+  "all": [
+   "#1 groove shape 11.72x24.72",
+   "#2 inside shape 10.00x23.00"
+  ],
+  "cleanParts": [
+   {
+    "cut": "groove",
+    "closed": true,
+    "n": 8,
+    "arcs": 4
+   },
+   {
+    "cut": "inside",
+    "closed": true,
+    "n": 8,
+    "arcs": 4
+   }
+  ],
+  "cleaned": [
+   {
+    "truth": "glass opening (inside cut)",
+    "meanGap": 0.022,
+    "worstGap": 0.048,
+    "lines": 4,
+    "arcs": 4
+   },
+   {
+    "truth": "decorative V-groove loop",
+    "meanGap": 0.056,
+    "worstGap": 0.086,
+    "lines": 4,
+    "arcs": 4
+   }
+  ],
+  "legendCount": 3
+ }
+}

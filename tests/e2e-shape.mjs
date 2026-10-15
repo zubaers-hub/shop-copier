@@ -59,9 +59,11 @@ await page.locator('select').first().selectOption('dark');
 await page.getByRole('button', { name: /Auto-detect/ }).click();
 await page.waitForFunction(() => window.__editor.job.contours.outer.length > 10, null, { timeout: 60000 });
 await page.waitForTimeout(300);
-const found = await page.evaluate(() => ({ outer: window.__editor.job.contours.outer.length, holes: window.__editor.job.contours.holes.map((h) => h.length) }));
+const found = await page.evaluate(() => ({ outer: window.__editor.job.contours.outer.length, holes: window.__editor.job.features.map((h) => h.pts.length) }));
 step('auto-detect ' + JSON.stringify(found));
 await shot('04-trace');
+await page.getByRole('button', { name: /Next: details/ }).click(); // the hole found with the outline is already an inside cut
+await page.waitForTimeout(300);
 await page.getByRole('button', { name: /Next: clean up/ }).click();
 await page.waitForTimeout(300);
 await page.getByRole('button', { name: /Mirror: off/ }).click();

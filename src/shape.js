@@ -1,15 +1,16 @@
 // Mode 1: photo -> perspective fix -> scale -> trace -> mirror/cleanup -> DXF for Mozaik "DXF In".
 import {
   parseInches, formatInches, orderCorners, quadAspect, buildShape, shapeBBox, segPoints, writeDXF, checkDXF,
-  autoCenter, dist, toCadSpace, arcGeom,
+  autoCenter, dist, toCadSpace, arcGeom, CUT_TYPES, bitsFor, DEFAULT_DEPTH, DEFAULT_BIT, layerFor, openAllowed,
 } from './core.js';
-import { loadPhoto, canvasToBlob, straighten, detectOutline, resampleOutline } from './vision.js';
+import { loadPhoto, canvasToBlob, straighten, detectOutline, resampleOutline, resampleLine, detectDetails, detailAt, freeDetailEdges } from './vision.js';
+import { suggestDetails } from './claude.js';
 import { Stage } from './stage.js';
 import { saveJob } from './store.js';
 import { el, toast, downloadBlob, shareFile, safeFileName, ACCURACY_NOTE } from './ui.js';
 
 const STEPS = [
-  ['photo', 'Photo'], ['corners', 'Corners'], ['size', 'Size'], ['trace', 'Trace'], ['clean', 'Clean'], ['export', 'Export'],
+  ['photo', 'Photo'], ['corners', 'Corners'], ['size', 'Size'], ['trace', 'Outline'], ['details', 'Details'], ['clean', 'Clean'], ['export', 'Export'],
 ];
 
 export async function openShapeEditor(view, job, settings, { onTitle }) {
@@ -21,13 +22,19 @@ export async function openShapeEditor(view, job, settings, { onTitle }) {
 class ShapeEditor {
   constructor(view, job, settings, onTitle) {
     this.view = view; this.job = job; this.settings = settings; this.onTitle = onTitle;
-    job.contours ||= { outer: [], holes: [] };
+    job.contours ||= { outer: [] };
+    // older jobs kept cutouts as plain holes; now every interior shape is a feature with a cut type
+    job.features ||= (job.contours.holes || []).filter((h) => h.length >= 3).map((pts) => ({ pts, closed: true, cut: 'inside', src: 'hand' }));
+    delete job.contours.holes;
+    job.hiddenLayers ||= {};
+    job.detailSens ??= 5;
+    job.minFeature ??= 0.75;
     job.mirror ||= { on: false, cx: null, keep: 'left' };
     job.smooth ??= 3;
     job.snap ??= true;
     job.corners ||= [];
     this.tool = 'move';
-    this.active = -1; // -1 = outline, 0.. = cutout index
+    this.active = -1; // -1 = outline, 0.. = index into job.features
     this.drawing = false;
     this.undo = [];
     this.shape = null;
@@ -41,13 +48,14 @@ class ShapeEditor {
     this.go(this.job.step && this.canGo(this.job.step) ? this.job.step : this.photo ? (this.straight ? 'trace' : 'corners') : 'photo');
   }
 
-  destroy() { if (this.stage) this.stage.destroy(); }
+  destroy() { if (this.stage) this.stage.destroy(); freeDetailEdges(this.found); }
 
   canGo(step) {
     if (step === 'photo') return true;
     if (step === 'corners') return !!this.photo;
     if (step === 'size') return this.photo && this.job.corners.length === 4;
-    if (step === 'trace' || step === 'clean') return !!this.straight;
+    if (step === 'trace') return !!this.straight;
+    if (step === 'details' || step === 'clean') return !!this.straight && this.job.contours.outer.length >= 3;
     if (step === 'export') return !!this.straight && this.job.contours.outer.length >= 3;
     return false;
   }
@@ -74,7 +82,7 @@ class ShapeEditor {
     });
     this.view.appendChild(bar);
     ({ photo: () => this.stepPhoto(), corners: () => this.stepCorners(), size: () => this.stepSize(), trace: () => this.stepTrace(),
-      clean: () => this.stepClean(), export: () => this.stepExport() })[step]();
+      details: () => this.stepDetails(), clean: () => this.stepClean(), export: () => this.stepExport() })[step]();
     bar.querySelector('.current')?.scrollIntoView({ inline: 'center', block: 'nearest' });
   }
 
@@ -228,24 +236,26 @@ class ShapeEditor {
   px(p) { const s = this.straight; return [(p.x - s.ox) * s.ppi, (p.y - s.oy) * s.ppi]; }
   inch(q) { const s = this.straight; return { x: q[0] / s.ppi + s.ox, y: q[1] / s.ppi + s.oy }; }
 
-  contour(i = this.active) { return i < 0 ? this.job.contours.outer : this.job.contours.holes[i]; }
-  setContour(pts, i = this.active) { if (i < 0) this.job.contours.outer = pts; else this.job.contours.holes[i] = pts; }
+  contour(i = this.active) { return i < 0 ? this.job.contours.outer : this.job.features[i]?.pts; }
+  setContour(pts, i = this.active) { if (i < 0) this.job.contours.outer = pts; else if (this.job.features[i]) this.job.features[i].pts = pts; }
+  isClosed(i = this.active) { return i < 0 || this.job.features[i]?.closed !== false; }
 
   pushUndo() {
-    this.undo.push(JSON.stringify({ c: this.job.contours, m: this.job.mirror }));
+    this.undo.push(JSON.stringify({ c: this.job.contours, f: this.job.features, m: this.job.mirror }));
     if (this.undo.length > 40) this.undo.shift();
   }
   popUndo() {
     const s = this.undo.pop();
     if (!s) { toast('Nothing to undo'); return; }
     const o = JSON.parse(s);
-    this.job.contours = o.c; this.job.mirror = o.m;
-    if (this.active >= this.job.contours.holes.length) this.active = -1;
+    this.job.contours = o.c; this.job.features = o.f || []; this.job.mirror = o.m;
+    if (this.active >= this.job.features.length) this.active = -1;
+    this.refreshTools && this.refreshTools();
     this.changed();
   }
 
   rebuild() {
-    const raw = this.job.contours;
+    const raw = { outer: this.job.contours.outer, features: this.job.features };
     if (raw.outer.length < 3) { this.shape = null; return; }
     const m = this.job.mirror;
     if (m.on && m.cx == null) m.cx = autoCenter(raw.outer);
@@ -259,7 +269,7 @@ class ShapeEditor {
 
   changed(now = false) {
     clearTimeout(this.buildT);
-    const run = () => { this.rebuild(); this.updateBadges && this.updateBadges(); this.stage && this.stage.render(); };
+    const run = () => { this.rebuild(); this.updateBadges && this.updateBadges(); if (this.step === 'trace') this.refreshTools && this.refreshTools(); this.stage && this.stage.render(); };
     if (now) run(); else this.buildT = setTimeout(run, 120);
     this.stage && this.stage.render();
     this.save();
@@ -292,7 +302,8 @@ class ShapeEditor {
           const cxs = st.toScr(this.px({ x: this.job.mirror.cx, y: 0 }))[0];
           if (Math.abs(sp[0] - cxs) < 26) { this.pushUndo(); drag = { kind: 'center' }; return true; }
         }
-        if (this.tool === 'move') {
+        // (in Details, nothing picked means nothing to drag: the outline belongs to the Outline step)
+        if (this.tool === 'move' && !(this.step === 'details' && this.active < 0)) {
           const c = this.contour();
           const i = c ? this.nearest(c.map((q) => st.toScr(this.px(q))), sp, 26) : -1;
           if (i >= 0) { this.pushUndo(); drag = { kind: 'point', i }; return true; }
@@ -324,24 +335,28 @@ class ShapeEditor {
     const sp = st.toScr(p);
     const c = this.contour() || [];
     const q = this.inch(p);
+    const closed = this.isClosed();
     if (this.drawing) {
-      if (c.length >= 3 && Math.hypot(...sub2(st.toScr(this.px(c[0])), sp)) < 28) { this.finishDrawing(); return; }
+      if (closed && c.length >= 3 && Math.hypot(...sub2(st.toScr(this.px(c[0])), sp)) < 28) { this.finishDrawing(); return; }
       this.pushUndo();
       c.push({ x: q.x, y: q.y });
       this.setContour(c);
       this.changed();
       return;
     }
+    if (this.tool === 'select') { this.selectAt(p, st); return; }
+    if (this.tool === 'region') { this.addRegionAt(p); return; }
     if (this.tool === 'add') {
       if (c.length < 2) return;
       // insert on the nearest edge
       let best = -1, bd = Infinity;
-      for (let i = 0; i < c.length; i++) {
+      const edges = closed ? c.length : c.length - 1;
+      for (let i = 0; i < edges; i++) {
         const a = st.toScr(this.px(c[i])), b = st.toScr(this.px(c[(i + 1) % c.length]));
         const d = segDist(sp, a, b);
         if (d < bd) { bd = d; best = i; }
       }
-      if (bd > 40) { toast('Tap closer to the outline to add a point there'); return; }
+      if (bd > 40) { toast('Tap closer to the line to add a point there'); return; }
       this.pushUndo();
       c.splice(best + 1, 0, { x: q.x, y: q.y });
       this.changed();
@@ -364,16 +379,64 @@ class ShapeEditor {
       this.tool = 'move';
       this.refreshTools && this.refreshTools();
       this.stage.render();
+    } else if (this.step === 'details') {
+      this.selectAt(p, st); // in Details, a tap on empty space or another shape picks it
     }
+  }
+
+  // Picks the interior shape under a tap: the nearest line within reach, else the smallest area around the point.
+  selectAt(p, st) {
+    const sp = st.toScr(p);
+    let best = -1, bd = 26;
+    this.job.features.forEach((f, i) => {
+      if (this.isHidden(f)) return;
+      const pts = f.pts.map((r) => st.toScr(this.px(r)));
+      const n = f.closed === false ? pts.length - 1 : pts.length;
+      for (let k = 0; k < n; k++) { const d = segDist(sp, pts[k], pts[(k + 1) % pts.length]); if (d < bd) { bd = d; best = i; } }
+    });
+    if (best < 0) {
+      const q = this.inch(p);
+      let area = Infinity;
+      this.job.features.forEach((f, i) => {
+        if (f.closed === false || this.isHidden(f) || !inPoly([q.x, q.y], f.pts)) return;
+        const a = polyArea(f.pts);
+        if (a < area) { area = a; best = i; }
+      });
+    }
+    this.active = best;
+    this.refreshTools && this.refreshTools();
+    this.stage.render();
+  }
+
+  async addRegionAt(p) {
+    try {
+      if (!this.found) await this.findDetails(false);
+      const pts = this.found && await detailAt(this.found, p);
+      if (!pts || pts.length < 8) { toast('No closed edge around that spot. Draw it with ✏️ instead, or raise the sensitivity.'); return; }
+      this.pushUndo();
+      const step = 0.08 * this.straight.ppi;
+      this.job.features.push({ pts: resampleOutline(pts, step).map((r) => this.inch(r)), closed: true, cut: 'pocket', depth: DEFAULT_DEPTH.pocket, src: 'tap' });
+      this.active = this.job.features.length - 1;
+      this.tool = 'select';
+      this.refreshTools && this.refreshTools();
+      this.changed();
+      toast('Added. Pick its cut type below.');
+    } catch (e) { toast(e.message); }
   }
 
   finishDrawing() {
     this.drawing = false;
     const c = this.contour();
-    if (c.length < 3) { toast('Need at least 3 points'); return; }
-    toast('Shape closed');
+    const need = this.isClosed() ? 3 : 2;
+    if (!c || c.length < need) { toast(`Need at least ${need} points`); return; }
+    toast(this.isClosed() ? 'Shape closed' : 'Line finished');
     this.refreshTools && this.refreshTools();
     this.changed();
+  }
+
+  isHidden(f) {
+    const name = f.cut === 'outside' ? 'OUTSIDE_CUT' : layerFor(f) || 'NOT_CUT';
+    return !!this.job.hiddenLayers[name];
   }
 
   drawOverlay(ctx, st, inLoupe) {
@@ -397,18 +460,28 @@ class ShapeEditor {
         ctx.fillStyle = '#fff'; ctx.font = 'bold 20px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('⇔', x, 68);
       }
     }
-    // raw traced contours
-    const all = [this.job.contours.outer, ...this.job.contours.holes];
-    all.forEach((c, k) => {
-      if (!c || !c.length) return;
-      const isActive = k - 1 === this.active;
+    // traced outline and interior shapes (thin), colored by cut type
+    const colorOf = (f) => (f ? CUT_TYPES[f.cut]?.color || '#888' : CUT_TYPES.outside.color);
+    const items = [{ pts: this.job.contours.outer, f: null, k: -1 }, ...this.job.features.map((f, k) => ({ pts: f.pts, f, k }))];
+    const editing = this.step === 'trace' || this.step === 'details';
+    for (const { pts: c, f, k } of items) {
+      if (!c || !c.length) continue;
+      if (f && (this.step === 'trace' || this.isHidden(f))) continue;
+      if (!f && this.job.hiddenLayers.OUTSIDE_CUT && this.step !== 'trace') continue;
+      const isActive = k === this.active && editing;
+      const closed = !f || f.closed !== false;
       const pts = c.map(S);
-      ctx.strokeStyle = isActive ? 'rgba(66,165,245,.95)' : 'rgba(66,165,245,.5)';
-      ctx.lineWidth = isActive ? 2 : 1.25;
+      const raw = this.step === 'trace' ? 'rgba(66,165,245,' : null;
+      ctx.strokeStyle = raw ? raw + (isActive ? '.95)' : '.5)') : colorOf(f);
+      ctx.globalAlpha = this.step === 'clean' || this.step === 'export' ? 0.45 : 1;
+      ctx.lineWidth = isActive ? 4 : editing ? 2.5 : 1.25;
+      if (f && f.cut === 'skip') ctx.setLineDash([8, 6]);
       ctx.beginPath(); pts.forEach((p, i) => (i ? ctx.lineTo(...p) : ctx.moveTo(...p)));
-      if (!(this.drawing && isActive)) ctx.closePath();
+      if (closed && !(this.drawing && isActive)) ctx.closePath();
       ctx.stroke();
-      if (isActive && this.step === 'trace') {
+      ctx.setLineDash([]);
+      ctx.globalAlpha = 1;
+      if (isActive && (this.step === 'trace' || this.tool !== 'select')) {
         const dense = pts.length > 150 && st.view.s < 4 && !inLoupe;
         pts.forEach((p, i) => {
           const q = c[i];
@@ -419,21 +492,38 @@ class ShapeEditor {
             ctx.beginPath(); ctx.arc(p[0], p[1], dense ? 3 : 5.5, 0, 7); ctx.fill(); ctx.stroke();
           }
         });
-        if (this.drawing && pts.length) { ctx.strokeStyle = '#ffd60a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(pts[0][0], pts[0][1], 14, 0, 7); ctx.stroke(); }
+        if (this.drawing && pts.length && closed) { ctx.strokeStyle = '#ffd60a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(pts[0][0], pts[0][1], 14, 0, 7); ctx.stroke(); }
       }
-    });
-    // cleaned shape
-    if (this.shape) {
-      ctx.strokeStyle = '#ff6b00'; ctx.lineWidth = this.step === 'clean' ? 3.5 : 2.5; ctx.lineJoin = 'round';
-      for (const loop of [this.shape.outer, ...this.shape.holes]) {
+      // number tags so the list and the picture match
+      if (f && this.step === 'details' && !inLoupe && pts.length) {
+        const top = pts.reduce((m, p) => (p[1] < m[1] ? p : m), pts[0]);
+        const label = String(k + 1);
+        ctx.font = 'bold 13px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillStyle = colorOf(f); ctx.beginPath(); ctx.arc(top[0], top[1] - 2, 11, 0, 7); ctx.fill();
+        ctx.fillStyle = '#fff'; ctx.fillText(label, top[0], top[1] - 2);
+      }
+    }
+    // cleaned shape: lines and arcs, colored by cut type
+    if (this.shape && (this.step === 'clean' || this.step === 'export' || this.step === 'trace')) {
+      ctx.lineJoin = 'round';
+      const loops = [{ segs: this.shape.outer, closed: true, cut: 'outside' }, ...(this.shape.parts || [])];
+      for (const loop of loops) {
+        if (this.step === 'trace' && loop.cut !== 'outside') continue;
+        const f = loop.cut === 'outside' ? { cut: 'outside' } : loop;
+        if (this.isHidden(f)) continue;
+        ctx.strokeStyle = CUT_TYPES[loop.cut]?.color || '#ff6b00';
+        ctx.lineWidth = this.step === 'trace' ? 2.5 : 3.5;
+        if (loop.cut === 'skip') ctx.setLineDash([8, 6]);
         ctx.beginPath();
-        loop.forEach((s, i) => segPoints(s, 0.05).forEach((q, j) => { const p = S({ x: q[0], y: q[1] }); if (i === 0 && j === 0) ctx.moveTo(...p); else ctx.lineTo(...p); }));
-        ctx.closePath(); ctx.stroke();
+        loop.segs.forEach((sg, i) => segPoints(sg, 0.05).forEach((q, j) => { const p = S({ x: q[0], y: q[1] }); if (i === 0 && j === 0) ctx.moveTo(...p); else ctx.lineTo(...p); }));
+        if (loop.closed) ctx.closePath();
+        ctx.stroke();
+        ctx.setLineDash([]);
       }
       if (this.step === 'clean' && !inLoupe) {
         // vertices where lines/arcs meet
         ctx.fillStyle = '#fff';
-        for (const loop of [this.shape.outer, ...this.shape.holes]) for (const s of loop) { const p = S({ x: s.a[0], y: s.a[1] }); ctx.beginPath(); ctx.arc(p[0], p[1], 3.5, 0, 7); ctx.fill(); }
+        for (const loop of loops) for (const sg of loop.segs) { const p = S({ x: sg.a[0], y: sg.a[1] }); ctx.beginPath(); ctx.arc(p[0], p[1], 3.5, 0, 7); ctx.fill(); }
       }
     }
     if (this.seed && this.step === 'trace') {
@@ -443,6 +533,8 @@ class ShapeEditor {
   }
 
   stepTrace() {
+    this.active = -1;
+    if (!['move', 'add', 'delete', 'corner', 'seed'].includes(this.tool)) this.tool = 'move';
     this.buildCanvasEditor((panel) => {
       const autoBtn = el('button', { class: 'primary' }, '✨ Auto-detect');
       const seedBtn = el('button', {}, '👆 Tap inside part');
@@ -454,7 +546,7 @@ class ShapeEditor {
       mode.value = this.job.detectMode || 'edges';
       const sens = el('input', { type: 'range', min: 1, max: 10, step: 1, value: this.job.sensitivity || 5 });
       const tools = el('div', { class: 'toolbar' });
-      const chips = el('div', { class: 'chips' });
+      const chips = el('p', { class: 'small muted' });
       const tb = {};
       [['move', '✋ Move'], ['add', '➕ Add'], ['delete', '🗑 Delete'], ['corner', '◆ Corner']].forEach(([id, label]) => {
         tb[id] = el('button', {}, label);
@@ -463,10 +555,10 @@ class ShapeEditor {
       });
       const undo = el('button', {}, '↶ Undo');
       const closeBtn = el('button', { class: 'go' }, 'Close shape');
-      const next = el('button', { class: 'go' }, 'Next: clean up →');
+      const next = el('button', { class: 'go' }, 'Next: details →');
       undo.onclick = () => this.popUndo();
       closeBtn.onclick = () => this.finishDrawing();
-      next.onclick = () => this.go('clean');
+      next.onclick = () => this.go('details');
       const hints = {
         move: 'Drag points to fix the outline. Pinch to zoom, drag empty space to pan.',
         add: 'Tap on the outline to add a point there.',
@@ -479,28 +571,8 @@ class ShapeEditor {
         handBtn.classList.toggle('on', this.drawing);
         closeBtn.style.display = this.drawing ? '' : 'none';
         this.hintEl.textContent = this.drawing ? 'Tap around the edge, one point at a time. Tap the first point (or Close shape) to finish. Mark sharp corners afterwards with ◆.' : hints[this.tool];
-        chips.innerHTML = '';
-        const mk = (label, idx) => {
-          const b = el('button', { class: idx === this.active ? 'on' : '' }, label);
-          b.onclick = () => { this.active = idx; this.drawing = false; this.refreshTools(); this.stage.render(); };
-          chips.appendChild(b);
-        };
-        mk(`Outline (${this.job.contours.outer.length} pts)`, -1);
-        this.job.contours.holes.forEach((h, i) => mk(`Cutout ${i + 1}`, i));
-        const add = el('button', {}, '+ Cutout');
-        add.onclick = () => {
-          this.pushUndo();
-          this.job.contours.holes.push([]);
-          this.active = this.job.contours.holes.length - 1;
-          this.drawing = true;
-          this.refreshTools();
-        };
-        chips.appendChild(add);
-        if (this.active >= 0) {
-          const del = el('button', { class: 'danger' }, 'Remove cutout');
-          del.onclick = () => { this.pushUndo(); this.job.contours.holes.splice(this.active, 1); this.active = -1; this.refreshTools(); this.changed(); };
-          chips.appendChild(del);
-        }
+        chips.textContent = `Outline: ${this.job.contours.outer.length} points. Panels, cutouts and grooves come next, in Details.`;
+        next.disabled = this.job.contours.outer.length < 3;
       };
       seedBtn.onclick = () => { this.tool = 'seed'; this.drawing = false; this.refreshTools(); };
       handBtn.onclick = () => {
@@ -522,12 +594,15 @@ class ShapeEditor {
           const step = 0.08 * this.straight.ppi; // a point about every 1/12"
           const conv = (pts) => resampleOutline(pts, step).map((q) => this.inch(q));
           this.job.contours.outer = conv(res.outer);
-          this.job.contours.holes = res.holes.map(conv).filter((h) => h.length >= 3);
+          // threshold modes also report holes; they become cutouts if no details were set up yet
+          const holes = res.holes.map(conv).filter((h) => h.length >= 3);
+          if (holes.length && !this.job.features.length) this.job.features = holes.map((pts) => ({ pts, closed: true, cut: 'inside', src: 'auto' }));
+          freeDetailEdges(this.found); this.found = null;
           this.active = -1;
           this.drawing = false;
           this.refreshTools();
           this.changed();
-          toast(`Found the outline${res.holes.length ? ` and ${res.holes.length} cutout(s)` : ''}. Check it, then clean up.`);
+          toast(`Found the outline${holes.length ? ` and ${holes.length} cutout(s)` : ''}. Check it, then go on to Details.`);
         } catch (e) {
           toast(e.message);
         } finally {
@@ -545,6 +620,286 @@ class ShapeEditor {
       );
       this.refreshTools();
     }, '');
+  }
+
+  // ---------------------------------------------------------------- step 5: interior details
+  stepDetails() {
+    if (this.active >= this.job.features.length) this.active = -1;
+    if (!['select', 'region', 'move', 'add', 'delete', 'corner'].includes(this.tool)) this.tool = 'select';
+    this.drawing = false;
+    this.buildCanvasEditor((panel) => {
+      const d = this.settings.denom;
+      const findBtn = el('button', { class: 'primary' }, '🔍 Find details');
+      const askBtn = el('button', {}, '🤖 Suggest details');
+      const sens = el('input', { type: 'range', min: 1, max: 10, step: 1, value: this.job.detailSens, 'aria-label': 'Sensitivity' });
+      const sensVal = el('span', { class: 'muted' });
+      const minSz = el('input', { type: 'range', min: 1, max: 16, step: 1, value: Math.round(this.job.minFeature * 4), 'aria-label': 'Minimum feature size' });
+      const minVal = el('span', { class: 'muted' });
+      // cut type buttons, color-coded like the drawing
+      const cutGrid = el('div', { class: 'cut-grid' });
+      const cutBtns = {};
+      for (const [id, t] of Object.entries(CUT_TYPES)) {
+        if (id === 'outside') continue;
+        const b = el('button', { class: 'cut-btn', style: `--c:${t.color}` }, t.label.toUpperCase());
+        b.onclick = () => this.setCut(id);
+        cutBtns[id] = b;
+        cutGrid.appendChild(b);
+      }
+      const depth = el('input', { inputmode: 'text', placeholder: 'e.g. 1/4', 'aria-label': 'Depth' });
+      const depthRow = el('div', {}, el('label', {}, 'Depth (inches)'), depth);
+      const bit = el('select', { 'aria-label': 'Bit' });
+      const bitRow = el('div', {}, el('label', {}, 'Router bit'), bit);
+      const info = el('div', { class: 'sel-info' });
+      depth.onchange = () => {
+        const f = this.job.features[this.active];
+        const v = parseInches(depth.value);
+        if (!f) return;
+        if (!(v > 0 && v < 3)) { toast('Can’t read that depth. Try 1/4 or 0.25'); depth.value = formatInches(f.depth, 64); return; }
+        this.pushUndo(); f.depth = v; this.changed(); this.refreshTools();
+      };
+      bit.onchange = () => { const f = this.job.features[this.active]; if (f) { this.pushUndo(); f.bit = bit.value; this.changed(); this.refreshTools(); } };
+      // tools
+      const tb = {};
+      const tools = el('div', { class: 'toolbar' });
+      [['select', '👆 Pick'], ['region', '➕ Tap area'], ['shape', '✏️ Draw shape'], ['line', '〰 Draw line']].forEach(([id, label]) => {
+        tb[id] = el('button', {}, label);
+        tools.appendChild(tb[id]);
+      });
+      const ptools = el('div', { class: 'toolbar' });
+      [['move', '✋ Move pts'], ['add', '➕ Add pt'], ['delete', '🗑 Delete pt'], ['corner', '◆ Corner']].forEach(([id, label]) => {
+        tb[id] = el('button', {}, label);
+        ptools.appendChild(tb[id]);
+      });
+      for (const id of ['select', 'region', 'move', 'add', 'delete', 'corner']) tb[id].onclick = () => { this.tool = id; this.drawing = false; this.refreshTools(); this.stage.render(); };
+      const startDraw = (closed) => {
+        this.pushUndo();
+        this.job.features.push({ pts: [], closed, cut: closed ? 'pocket' : 'groove', depth: closed ? DEFAULT_DEPTH.pocket : DEFAULT_DEPTH.groove, bit: closed ? undefined : DEFAULT_BIT.groove, src: 'hand' });
+        this.active = this.job.features.length - 1;
+        this.drawing = true;
+        this.tool = 'move';
+        this.refreshTools();
+      };
+      tb.shape.onclick = () => startDraw(true);
+      tb.line.onclick = () => startDraw(false);
+      const doneBtn = el('button', { class: 'go' }, '✓ Done drawing');
+      doneBtn.onclick = () => this.finishDrawing();
+      const removeBtn = el('button', { class: 'danger' }, '🗑 Remove shape');
+      removeBtn.onclick = () => {
+        if (this.active < 0) return;
+        this.pushUndo();
+        this.job.features.splice(this.active, 1);
+        this.active = -1; this.drawing = false;
+        this.refreshTools(); this.changed();
+      };
+      const undo = el('button', {}, '↶ Undo');
+      undo.onclick = () => this.popUndo();
+      const next = el('button', { class: 'go' }, 'Next: clean up →');
+      next.onclick = () => { if (this.drawing) this.finishDrawing(); this.go('clean'); };
+      const list = el('div', { class: 'feat-list' });
+      const legend = el('div');
+      const claudeNote = el('div');
+
+      const run = async (btn, label, fn) => {
+        btn.disabled = true;
+        const old = btn.textContent;
+        btn.textContent = label;
+        try { await fn(); } catch (e) { toast(e.message || String(e), 5000); } finally { btn.disabled = false; btn.textContent = old; }
+      };
+      findBtn.onclick = () => run(findBtn, 'Looking…', async () => {
+        this.pushUndo();
+        const n = await this.findDetails(true);
+        this.active = -1;
+        this.refreshTools(); this.changed();
+        toast(n ? `Found ${n} detail${n > 1 ? 's' : ''}. Tap one to check its cut type.` : 'Nothing found. Raise the sensitivity, lower the minimum size, or draw it.', 4000);
+      });
+      askBtn.onclick = () => run(askBtn, 'Asking Claude…', async () => {
+        const res = await this.suggestWithClaude();
+        claudeNote.className = 'note';
+        claudeNote.textContent = `Claude: ${res.summary}` + (res.warnings?.length ? ` · ${res.warnings.join(' · ')}` : '') + ' Check each shape before you export.';
+        this.refreshTools(); this.changed();
+      });
+      sens.oninput = () => { this.job.detailSens = +sens.value; this.refreshTools(); this.save(); };
+      minSz.oninput = () => { this.job.minFeature = +minSz.value / 4; this.refreshTools(); this.save(); };
+
+      const hints = {
+        select: 'Tap a shape to pick it, then choose its cut type. Pinch to zoom.',
+        region: 'Tap inside an area the edges surround (a panel, an arch) to add it as a shape.',
+        move: 'Drag the picked shape’s points.',
+        add: 'Tap on the picked shape’s line to add a point.',
+        delete: 'Tap a point of the picked shape to delete it.',
+        corner: 'Tap a point: sharp corner → smooth → automatic.',
+      };
+      this.refreshTools = () => {
+        const f = this.job.features[this.active];
+        sensVal.textContent = ` ${this.job.detailSens} of 10`;
+        minVal.textContent = ` ${formatInches(this.job.minFeature, 16)}`;
+        Object.entries(tb).forEach(([id, b]) => b.classList.toggle('on', (id === this.tool && !this.drawing) || (this.drawing && f && id === (f.closed === false ? 'line' : 'shape'))));
+        for (const id of ['move', 'add', 'delete', 'corner']) tb[id].disabled = !f;
+        removeBtn.disabled = !f;
+        doneBtn.style.display = this.drawing ? '' : 'none';
+        this.hintEl.textContent = this.drawing
+          ? (f?.closed === false ? 'Tap along the line, one point at a time, then ✓ Done drawing.' : 'Tap around the shape, one point at a time. Tap the first point (or ✓ Done) to close it.')
+          : !f && ['move', 'add', 'delete', 'corner'].includes(this.tool) ? 'Tap a shape (its line or inside it) to pick it.' : hints[this.tool];
+        for (const [id, b] of Object.entries(cutBtns)) { b.disabled = !f; b.classList.toggle('picked', !!f && f.cut === id); }
+        const t = f && CUT_TYPES[f.cut];
+        depthRow.style.display = t?.depth ? '' : 'none';
+        bitRow.style.display = t?.bit ? '' : 'none';
+        if (f && t?.depth) depth.value = formatInches(f.depth ?? DEFAULT_DEPTH[f.cut], 64);
+        if (f && t?.bit) {
+          const bits = bitsFor(f.cut);
+          bit.innerHTML = '';
+          bits.forEach((b) => bit.appendChild(el('option', { value: b.id }, b.label)));
+          bit.value = bits.some((b) => b.id === f.bit) ? f.bit : bits[0].id;
+        }
+        info.innerHTML = '';
+        if (f) {
+          const bb = ptsBBox(f.pts);
+          info.append(
+            el('div', { class: 'sel-title', style: `--c:${t.color}` }, `#${this.active + 1} · ${t.label}`, el('span', { class: 'muted' }, ` · ${f.closed === false ? 'line' : 'shape'} ${formatInches(bb.w, d)} × ${formatInches(bb.h, d)}`)),
+            f.why ? el('div', { class: 'small muted' }, (f.src === 'claude' ? '🤖 ' : f.src === 'auto' ? '🔍 ' : '') + f.why) : '',
+            f.cut === 'profile' ? el('div', { class: 'small muted' }, 'A photo can’t show how deep a profile goes: the bit sets it. The layer name carries the bit.') : '',
+            el('div', { class: 'small' }, 'DXF layer: ', el('b', {}, layerFor(f) || 'not exported')),
+          );
+        } else info.append(el('div', { class: 'small muted' }, this.job.features.length ? 'Tap a shape (or a number in the list) to pick it.' : 'Tap 🔍 Find details, or draw shapes by hand.'));
+        // list of shapes
+        list.innerHTML = '';
+        this.job.features.forEach((g, i) => {
+          const tt = CUT_TYPES[g.cut] || CUT_TYPES.skip;
+          const bb = ptsBBox(g.pts);
+          const row = el('button', { class: 'feat-row' + (i === this.active ? ' on' : ''), style: `--c:${tt.color}` },
+            el('span', { class: 'dot' }, String(i + 1)),
+            el('span', { class: 'grow' }, `${tt.label}${tt.depth ? ' ' + formatInches(g.depth ?? DEFAULT_DEPTH[g.cut], 64) : ''}`, el('span', { class: 'muted' }, ` · ${formatInches(bb.w, 8)} × ${formatInches(bb.h, 8)}`)),
+            g.src === 'claude' ? el('span', { class: 'tag' }, 'Claude') : '');
+          row.onclick = () => { this.active = i; this.drawing = false; if (!['select', 'move', 'add', 'delete', 'corner'].includes(this.tool)) this.tool = 'select'; this.refreshTools(); this.stage.render(); };
+          list.appendChild(row);
+        });
+        legend.replaceChildren(this.legendEl());
+      };
+      panel.append(
+        el('div', { class: 'grid2' }, findBtn, askBtn),
+        el('label', {}, 'Edge sensitivity', sensVal), sens,
+        el('label', {}, 'Ignore details smaller than', minVal), minSz,
+        claudeNote,
+        tools,
+        el('div', { class: 'row', style: 'margin-top:6px' }, doneBtn),
+        el('h3', {}, 'Picked shape'), info,
+        el('div', { class: 'small', style: 'font-weight:700;margin-top:6px' }, 'Cut type'), cutGrid, depthRow, bitRow,
+        ptools,
+        el('div', { class: 'row', style: 'margin-top:8px' }, removeBtn, undo),
+        el('h3', {}, 'All shapes'), list,
+        el('h3', {}, 'Layers'), legend,
+        el('div', { class: 'row', style: 'margin-top:12px' }, next),
+      );
+      this.refreshTools();
+    }, '');
+  }
+
+  setCut(cut) {
+    const f = this.job.features[this.active];
+    if (!f) return;
+    this.pushUndo();
+    f.cut = cut;
+    if (CUT_TYPES[cut].depth && !(f.depth > 0)) f.depth = DEFAULT_DEPTH[cut];
+    if (CUT_TYPES[cut].bit && !bitsFor(cut).some((b) => b.id === f.bit)) f.bit = DEFAULT_BIT[cut];
+    this.changed();
+    this.refreshTools && this.refreshTools();
+  }
+
+  // Runs detection inside the outline. apply: replace earlier auto-found shapes with the new ones
+  // (shapes you drew, tapped or got from Claude stay). Returns how many were found.
+  async findDetails(apply = true) {
+    const ppi = this.straight.ppi;
+    const outerPx = this.job.contours.outer.map((q) => this.px(q));
+    freeDetailEdges(this.found);
+    this.found = await detectDetails(this.straight.canvas, outerPx, ppi, { sensitivity: this.job.detailSens, minSize: this.job.minFeature });
+    if (!apply) return this.found.shapes.length;
+    const step = 0.08 * ppi; // a point about every 1/12"
+    const auto = this.found.shapes.map((sh) => ({
+      pts: (sh.closed ? resampleOutline(sh.pts, step) : resampleLine(sh.pts, step)).map((r) => this.inch(r)),
+      closed: sh.closed, cut: sh.guess.cut, why: sh.guess.why, src: 'auto',
+      depth: DEFAULT_DEPTH[sh.guess.cut], bit: DEFAULT_BIT[sh.guess.cut],
+    }));
+    this.job.features = [...auto, ...this.job.features.filter((f) => f.src !== 'auto')];
+    return auto.length;
+  }
+
+  // Sends the straightened part, with the shapes drawn and numbered on it, to Claude; applies its answer.
+  async suggestWithClaude() {
+    if (!this.settings.apiKey) throw new Error('Add your Claude API key in Settings first (⚙ top right).');
+    const bb = ptsBBox(this.job.contours.outer);
+    const m = 0.4;
+    const x0 = bb.minX - m, y0 = bb.minY - m, wIn = bb.w + 2 * m, hIn = bb.h + 2 * m;
+    const k = Math.min(1568 / Math.max(wIn, hIn), this.straight.ppi);
+    const c = document.createElement('canvas');
+    c.width = Math.round(wIn * k); c.height = Math.round(hIn * k);
+    const ctx = c.getContext('2d');
+    const p0 = this.px({ x: x0, y: y0 });
+    ctx.drawImage(this.straight.canvas, p0[0], p0[1], wIn * this.straight.ppi, hIn * this.straight.ppi, 0, 0, c.width, c.height);
+    const T = (q) => [(q.x - x0) * k, (q.y - y0) * k];
+    const shapes = [];
+    this.job.features.forEach((f, i) => {
+      if (f.pts.length < 2) return;
+      const col = CUT_TYPES[f.cut]?.color || '#888';
+      ctx.strokeStyle = col; ctx.lineWidth = 3;
+      ctx.beginPath(); f.pts.forEach((q, j) => (j ? ctx.lineTo(...T(q)) : ctx.moveTo(...T(q)))); if (f.closed !== false) ctx.closePath(); ctx.stroke();
+      const top = f.pts.reduce((a, q) => (q.y < a.y ? q : a), f.pts[0]);
+      const [tx, ty] = T(top);
+      ctx.fillStyle = col; ctx.beginPath(); ctx.arc(tx, ty, 15, 0, 7); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.font = 'bold 18px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(String(i + 1), tx, ty);
+      const fb = ptsBBox(f.pts);
+      shapes.push({ id: i + 1, closed: f.closed !== false, cut: f.cut, x: fb.minX - x0, y: fb.minY - y0, w: fb.w, h: fb.h });
+    });
+    const b64 = c.toDataURL('image/jpeg', 0.88).split(',')[1];
+    const res = await suggestDetails({ apiKey: this.settings.apiKey, imageBase64: b64, widthIn: wIn, heightIn: hIn, shapes });
+    this.pushUndo();
+    const bitOk = (cut, b) => bitsFor(cut).some((x) => x.id === b);
+    for (const a of res.shapes || []) {
+      const f = this.job.features[a.id - 1];
+      if (!f || !CUT_TYPES[a.cut]) continue;
+      f.cut = a.cut;
+      if (CUT_TYPES[a.cut].depth) f.depth = a.depth_in > 0 && a.depth_in < 3 ? a.depth_in : f.depth ?? DEFAULT_DEPTH[a.cut];
+      if (CUT_TYPES[a.cut].bit) f.bit = bitOk(a.cut, a.bit) ? a.bit : f.bit ?? DEFAULT_BIT[a.cut];
+      f.why = `${a.description} (${a.confidence} confidence)`;
+      f.src = f.src === 'auto' ? 'claude' : f.src;
+    }
+    for (const a of res.missing || []) {
+      const pts = (a.points_in || []).filter((q) => isFinite(q.x) && isFinite(q.y)).map((q) => ({ x: q.x + x0, y: q.y + y0 }));
+      if (pts.length < (a.closed ? 3 : 2) || !CUT_TYPES[a.cut]) continue;
+      this.job.features.push({
+        pts, closed: a.closed, cut: a.cut, src: 'claude', why: `${a.description}. Drawn by Claude from the photo: rough, check the points.`,
+        depth: CUT_TYPES[a.cut].depth ? (a.depth_in > 0 && a.depth_in < 3 ? a.depth_in : DEFAULT_DEPTH[a.cut]) : undefined,
+        bit: CUT_TYPES[a.cut].bit ? (bitOk(a.cut, a.bit) ? a.bit : DEFAULT_BIT[a.cut]) : undefined,
+      });
+    }
+    return res;
+  }
+
+  // Layer list with a show/hide toggle for each (what's on screen only; export is unaffected).
+  legendEl() {
+    const layers = new Map();
+    layers.set('OUTSIDE_CUT', { color: CUT_TYPES.outside.color, label: 'Outside cut', n: 1 });
+    for (const f of this.job.features) {
+      const name = layerFor(f) || 'NOT_CUT';
+      const t = CUT_TYPES[f.cut] || CUT_TYPES.skip;
+      const cur = layers.get(name) || { color: t.color, label: t.label, n: 0 };
+      cur.n++;
+      layers.set(name, cur);
+    }
+    const box = el('div', { class: 'legend' });
+    for (const [name, l] of layers) {
+      const hidden = !!this.job.hiddenLayers[name];
+      const b = el('button', { class: 'legend-item' + (hidden ? ' off' : ''), style: `--c:${l.color}`, 'aria-pressed': String(!hidden) },
+        el('span', { class: 'swatch' }), el('span', { class: 'grow' }, name === 'NOT_CUT' ? 'Not cut (not exported)' : name, el('span', { class: 'muted' }, ` · ${l.n}`)), el('span', {}, hidden ? '🙈' : '👁'));
+      b.onclick = () => {
+        if (hidden) delete this.job.hiddenLayers[name]; else this.job.hiddenLayers[name] = true;
+        this.save();
+        this.refreshTools ? this.refreshTools() : b.replaceWith(this.legendEl());
+        this.stage && this.stage.render();
+        this.onLegend && this.onLegend();
+      };
+      box.appendChild(b);
+    }
+    return box;
   }
 
   stepClean() {
@@ -568,7 +923,7 @@ class ShapeEditor {
         smoothVal.textContent = ` ${this.job.smooth} (${['none', 'very light', 'light', 'normal', 'normal', 'medium', 'medium', 'strong', 'strong', 'very strong', 'max'][this.job.smooth]})`;
         this.hintEl.textContent = m.on
           ? 'Drag the pink ⇔ handle to move the centerline. The shaded half is replaced by the mirror image of the other.'
-          : 'Orange = clean shape (lines and true arcs). Blue = your trace. Turn on Mirror for symmetric parts.';
+          : 'Bold = the clean shapes (lines and true arcs), faint = your trace. Turn on Mirror for symmetric parts; it mirrors the details too.';
       };
       mirrorBtn.onclick = () => {
         this.pushUndo();
@@ -589,11 +944,14 @@ class ShapeEditor {
         warn.className = w.length ? 'note' : '';
         warn.textContent = w.join(' ');
         if (this.shape) {
-          const all = [this.shape.outer, ...this.shape.holes].flat();
+          const all = [this.shape.outer, ...this.shape.parts.filter((q) => q.cut !== 'skip').map((q) => q.segs)].flat();
           const nl = all.filter((s) => s.type === 'line').length, na = all.length - nl;
-          this.hintEl.textContent = `${nl} lines + ${na} arcs. ` + (m.on ? 'Drag the pink ⇔ handle to move the centerline.' : 'Orange = clean shape. Blue = your trace.');
+          this.hintEl.textContent = `${nl} lines + ${na} arcs. ` + (m.on ? 'Drag the pink ⇔ handle to move the centerline.' : 'Bold = clean shapes, faint = your trace.');
         }
       };
+      const legend = el('div');
+      this.refreshTools = () => legend.replaceChildren(this.legendEl());
+      this.refreshTools();
       panel.append(
         el('div', { class: 'grid2' }, mirrorBtn, keepBtn),
         center,
@@ -601,6 +959,7 @@ class ShapeEditor {
         el('label', { class: 'check' }, snap, 'Snap near-straight edges to level / plumb'),
         warn,
         el('div', { class: 'row' }, undo, next),
+        el('h3', {}, 'Layers'), legend,
       );
       refresh();
     }, '');
@@ -612,29 +971,39 @@ class ShapeEditor {
     const page = el('div', { class: 'page' });
     const s = this.settings;
     if (!this.shape || !this.shape.outer.length) {
-      page.append(el('div', { class: 'bad-box' }, 'No clean shape yet. Go back to Trace.'));
+      page.append(el('div', { class: 'bad-box' }, 'No clean shape yet. Go back to Outline.'));
       this.view.appendChild(page);
       return;
     }
-    const bb = shapeBBox(this.shape);
+    const bb = shapeBBox({ outer: this.shape.outer, holes: [] });
     const d = s.denom;
+    // all layers over the straightened photo, with a legend to show/hide each
+    const wrap = el('div', { class: 'stage-wrap export-stage' });
+    const legend = el('div');
+    const refreshLegend = () => legend.replaceChildren(this.legendEl());
+    this.onLegend = refreshLegend;
     const prev = renderShapePNG(this.shape, { name: this.job.name, denom: d, width: 900 });
     const name = el('input', { value: this.job.fileName || safeFileName(this.job.name || 'shape') });
     const ver = el('select', {}, el('option', { value: 'R2000' }, 'DXF 2000 (units stored as inches)'), el('option', { value: 'R12' }, 'DXF R12 (oldest, most compatible)'));
     ver.value = this.job.dxfVersion || s.dxfVersion;
+    const only = el('input', { type: 'checkbox' });
+    only.checked = !!this.job.outlineOnly;
     const result = el('div');
     const dl = el('button', { class: 'go' }, '⬇ Download DXF');
     const share = el('button', {}, '📤 Share DXF');
     const png = el('button', {}, '🖼 Save PNG with dimensions');
+    const verNote = el('p', { class: 'small muted' });
     const build = () => {
-      this.job.fileName = name.value; this.job.dxfVersion = ver.value; this.save();
-      const text = writeDXF(this.shape, { version: ver.value, layerOuter: s.layerOuter, layerHole: s.layerHole });
+      this.job.fileName = name.value; this.job.dxfVersion = ver.value; this.job.outlineOnly = only.checked; this.save();
+      const text = writeDXF(this.shape, { version: ver.value, outlineOnly: only.checked, outlineLayer: s.layerOuter });
       const chk = checkDXF(text);
       showCheck(result, chk, d);
-      return { text, chk, file: safeFileName(name.value || 'shape') + '.dxf' };
+      verNote.textContent = ver.value === 'R12' && !only.checked ? 'R12 layer names can’t contain dots, so depths are written like POCKET_0p25.' : '';
+      const base = safeFileName(name.value || 'shape');
+      return { text, chk, file: (only.checked && !/outline/i.test(base) ? base + '-outline' : base) + '.dxf' };
     };
     build();
-    name.oninput = ver.onchange = () => build();
+    name.oninput = ver.onchange = only.onchange = () => build();
     dl.onclick = () => {
       const { text, chk, file } = build();
       if (!chk.ok && !confirm('The self-check found a problem (see below). Download anyway?')) return;
@@ -649,20 +1018,32 @@ class ShapeEditor {
       const c = renderShapePNG(this.shape, { name: this.job.name, denom: d, width: 1800, footer: true });
       downloadBlob(await canvasToBlob(c, 'image/png'), safeFileName(name.value || 'shape') + '.png');
     };
-    const cad = toCadSpace(this.shape);
+    const hasProfile = (this.shape.parts || []).some((q) => q.cut === 'profile');
     page.append(
       el('h2', {}, `${formatInches(bb.w, d)} wide × ${formatInches(bb.h, d)} tall`),
+      el('p', { class: 'small muted' }, 'All layers over your photo. Tap a layer below to hide or show it (screen only; the file always has every layer).'),
+      wrap,
+      legend,
+      el('h3', {}, 'With dimensions'),
       el('img', { class: 'preview-img', src: prev.toDataURL('image/png'), alt: 'Shape preview' }),
-      el('div', { class: 'note' }, ACCURACY_NOTE + (this.job.aspectGuess ? ' Only one side of the reference rectangle was entered, so the other direction is a photo estimate.' : '')),
+      el('div', { class: 'note' }, ACCURACY_NOTE + (this.job.aspectGuess ? ' Only one side of the reference rectangle was entered, so the other direction is a photo estimate.' : '') +
+        ' Depths are what you entered: a photo can’t show depth.' + (hasProfile ? ' Profile depth comes from the bit you pick.' : '')),
       el('label', {}, 'File name'), name,
-      el('label', {}, 'DXF format'), ver,
+      el('label', {}, 'DXF format'), ver, verNote,
+      el('label', { class: 'check' }, only, 'Outer outline only (for Mozaik’s Part Editor)'),
       el('div', { class: 'stack', style: 'margin-top:12px' }, dl, share, png),
       el('h3', {}, 'Self-check (the file is re-opened and tested)'), result,
       el('h3', {}, 'In Mozaik'),
-      el('p', { class: 'small' }, `Part Editor → DXF In → pick this file. Lower-left corner is at 0,0. Outline on layer “${s.layerOuter}”` +
-        (cad.holes.length ? `, ${cad.holes.length} cutout(s) on layer “${s.layerHole}”.` : '.')),
+      el('p', { class: 'small' }, `Part Editor → DXF In → pick the outline-only file (outline on layer “${s.layerOuter}”, lower-left corner at 0,0). ` +
+        'The full file has one layer per cut: OUTSIDE_CUT, INSIDE_CUT, POCKET_<depth>, VGROOVE_<angle>_<depth>, PROFILE_EDGE_<bit>. Map each layer to a toolpath in your CAM.'),
     );
     this.view.appendChild(page);
+    refreshLegend();
+    this.stage = new Stage(wrap, { draw: (ctx, st, inLoupe) => this.drawOverlay(ctx, st, inLoupe) });
+    this.stage.setImage(this.straight.canvas);
+    const pts = this.job.contours.outer.map((q) => this.px(q));
+    const xs = pts.map((q) => q[0]), ys = pts.map((q) => q[1]);
+    this.stage.fit({ x: Math.min(...xs) - 20, y: Math.min(...ys) - 20, w: Math.max(...xs) - Math.min(...xs) + 40, h: Math.max(...ys) - Math.min(...ys) + 40 });
   }
 
   nearest(screenPts, sp, maxD) {
@@ -676,17 +1057,43 @@ function showCheck(box, chk, denom) {
   box.innerHTML = '';
   const li = (ok, text) => el('li', {}, (ok ? '✅ ' : '❌ ') + text);
   box.className = chk.ok ? 'ok-box' : 'bad-box';
+  const names = Object.keys(chk.layers);
+  const mustClose = names.filter((n) => !openAllowed(n));
+  const closedOk = mustClose.every((n) => chk.layers[n].closed === chk.layers[n].shapes);
+  const openLines = names.filter(openAllowed).reduce((t, n) => t + chk.layers[n].shapes - chk.layers[n].closed, 0);
   box.append(el('ul', { class: 'checks' },
-    li(chk.closedLoops === chk.loops, `${chk.loops} contour(s), all closed`),
+    li(closedOk, `${chk.loops} shape(s); every cut-through and pocket shape is closed` + (openLines ? ` (plus ${openLines} open groove/profile line${openLines > 1 ? 's' : ''}, which is fine)` : '')),
     li(chk.kinds.every((k) => k === 'LINE' || k === 'ARC'), `Only lines and arcs (${chk.lines} lines, ${chk.arcs} arcs, no splines)`),
     li(chk.version === 'AC1009' || chk.insunits === 1, chk.version === 'AC1015' ? 'Units: inches ($INSUNITS = 1)' : 'R12 file: no units field, all values are inches'),
     li(!chk.problems.some((p) => p.includes('Lower-left')), 'Lower-left corner at 0,0'),
     li(true, `Size in file: ${formatInches(chk.width, denom)} × ${formatInches(chk.height, denom)}`),
   ));
+  const t = el('table', { class: 'layer-table' }, el('tr', {}, el('th', {}, 'Layer'), el('th', {}, 'Shapes'), el('th', {}, 'Lines'), el('th', {}, 'Arcs')));
+  for (const n of names) t.append(el('tr', {}, el('td', {}, n), el('td', {}, `${chk.layers[n].shapes}${chk.layers[n].closed < chk.layers[n].shapes ? ` (${chk.layers[n].shapes - chk.layers[n].closed} open)` : ''}`), el('td', {}, String(chk.layers[n].lines)), el('td', {}, String(chk.layers[n].arcs))));
+  box.append(t);
   if (chk.problems.length) box.append(el('p', {}, chk.problems.join(' ')));
 }
 
 const sub2 = (a, b) => [a[0] - b[0], a[1] - b[1]];
+function inPoly(pt, poly) {
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const a = poly[i], b = poly[j];
+    if ((a.y > pt[1]) !== (b.y > pt[1]) && pt[0] < ((b.x - a.x) * (pt[1] - a.y)) / (b.y - a.y) + a.x) inside = !inside;
+  }
+  return inside;
+}
+function ptsBBox(pts) {
+  const xs = pts.map((p) => p.x), ys = pts.map((p) => p.y);
+  if (!pts.length) return { minX: 0, minY: 0, w: 0, h: 0 };
+  const minX = Math.min(...xs), minY = Math.min(...ys);
+  return { minX, minY, w: Math.max(...xs) - minX, h: Math.max(...ys) - minY };
+}
+function polyArea(poly) {
+  let a = 0;
+  for (let i = 0; i < poly.length; i++) { const p = poly[i], q = poly[(i + 1) % poly.length]; a += p.x * q.y - q.x * p.y; }
+  return Math.abs(a) / 2;
+}
 function segDist(p, a, b) {
   const ab = sub2(b, a), l2 = ab[0] * ab[0] + ab[1] * ab[1];
   const t = l2 ? Math.max(0, Math.min(1, ((p[0] - a[0]) * ab[0] + (p[1] - a[1]) * ab[1]) / l2)) : 0;
@@ -707,20 +1114,33 @@ export function renderShapePNG(shape, { name = '', denom = 16, width = 1200, foo
   const bb = shapeBBox(cad);
   const margin = width * 0.12;
   const k = (width - 2 * margin) / Math.max(bb.w, bb.h * 0.75);
-  const W = width, H = Math.round(bb.h * k + 2 * margin + (footer ? 70 : 0));
+  const nLayers = new Set((shape.parts || []).filter((p) => p.cut !== 'skip').map((p) => layerFor(p))).size;
+  const legendH = nLayers ? (nLayers + 1) * Math.round(width / 40) + 10 : 0;
+  const W = width, H = Math.round(bb.h * k + 2 * margin + (footer ? 70 : 0) + legendH);
   const c = document.createElement('canvas');
   c.width = W; c.height = H;
   const ctx = c.getContext('2d');
   ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H);
   const ox = (W - bb.w * k) / 2;
   const T = (p) => [ox + p[0] * k, margin + (bb.h - p[1]) * k];
-  ctx.beginPath();
-  for (const loop of [cad.outer, ...cad.holes]) {
+  const trace = (loop, closed = true) => {
     loop.forEach((s, i) => segPoints(s, 0.02).forEach((q, j) => { const p = T(q); if (i === 0 && j === 0) ctx.moveTo(...p); else ctx.lineTo(...p); }));
-    ctx.closePath();
-  }
+    if (closed) ctx.closePath();
+  };
+  ctx.beginPath();
+  for (const loop of [cad.outer, ...cad.holes]) trace(loop);
   ctx.fillStyle = '#ffe8d6'; ctx.fill('evenodd');
-  ctx.strokeStyle = '#000'; ctx.lineWidth = Math.max(2, width / 500); ctx.stroke();
+  ctx.strokeStyle = '#000'; ctx.lineWidth = Math.max(2, width / 500);
+  ctx.beginPath(); trace(cad.outer); ctx.stroke();
+  // interior shapes in their layer colors
+  const used = new Map();
+  for (const p of cad.parts || []) {
+    if (p.cut === 'skip') continue;
+    const t = CUT_TYPES[p.cut];
+    ctx.strokeStyle = t.color; ctx.lineWidth = Math.max(2, width / 450);
+    ctx.beginPath(); trace(p.segs, p.closed); ctx.stroke();
+    used.set(layerFor(p), t.color);
+  }
   // dimension lines
   const fs = Math.round(width / 32);
   ctx.font = `bold ${fs}px system-ui, sans-serif`;
@@ -749,6 +1169,16 @@ export function renderShapePNG(shape, { name = '', denom = 16, width = 1200, foo
     const [mx, my] = T(s.m);
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText(`R ${formatInches(g.r, denom)}`, mx, my + (my < (yt + yb) / 2 ? -fs * 0.6 : fs * 0.6));
+  }
+  if (used.size) {
+    const lh = Math.round(width / 40);
+    let y = margin + bb.h * k + margin * 0.95;
+    ctx.font = `${Math.round(lh * 0.8)}px system-ui, sans-serif`; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    for (const [n, col] of [['OUTSIDE_CUT', '#000'], ...used]) {
+      ctx.fillStyle = col; ctx.fillRect(20, y - lh * 0.3, lh * 1.2, lh * 0.6);
+      ctx.fillStyle = '#111'; ctx.fillText(n, 30 + lh * 1.2, y);
+      y += lh;
+    }
   }
   if (footer) {
     ctx.fillStyle = '#333'; ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';

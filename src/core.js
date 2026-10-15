@@ -2,7 +2,7 @@
 // Conventions: shape points are in INCHES in "image space" (x right, y DOWN), as measured on the
 // perspective-corrected photo. DXF export flips to CAD space (y UP) and moves the lower-left corner to 0,0.
 
-import { DXF_R2000_TEMPLATE, MODEL_SPACE_HANDLE, FIRST_FREE_HANDLE } from './dxf-template.js';
+import { DXF_R2000_TEMPLATE, MODEL_SPACE_HANDLE, FIRST_FREE_HANDLE, LAYER_TABLE_HANDLE, PLOT_STYLE_HANDLE, BASE_LAYER_COUNT } from './dxf-template.js';
 
 // ---------------------------------------------------------------- inches & fractions
 
@@ -199,7 +199,8 @@ export function bboxOf(pts) {
 }
 
 export function shapeBBox(shape) {
-  const boxes = [shape.outer, ...shape.holes].flat().map(segBBox);
+  const loops = shape.parts ? [shape.outer, ...shape.parts.map((p) => p.segs)] : [shape.outer, ...(shape.holes || [])];
+  const boxes = loops.flat().map(segBBox);
   return bboxOf(boxes.flatMap((b) => [[b.minX, b.minY], [b.maxX, b.maxY]]));
 }
 
@@ -252,7 +253,7 @@ export function turnAngles(pts, reach = 0.2, closed = true) {
 export const CORNER_REACH = 0.4;
 export const CORNER_DEG = 30;
 export const CORNER_DEG_CLEAN = 22;
-export function cornerFlags(points, closed = true, threshold = CORNER_DEG) {
+export function cornerFlags(points, closed = true, threshold = CORNER_DEG, fine = false) {
   let pts = points.map((p) => [p.x, p.y]);
   const n = pts.length;
   // traced outlines are dense and wobbly: smooth a little before measuring how sharp each bend is
@@ -271,6 +272,13 @@ export function cornerFlags(points, closed = true, threshold = CORNER_DEG) {
   const a1 = turnAngles(pts, CORNER_REACH, closed), a2 = turnAngles(pts, CORNER_REACH * 2, closed);
   // ...and a smooth curve keeps turning the further you look (about twice the angle at twice the reach)
   const ang = a1.map((v, i) => (a2[i] < 1.6 * v ? Math.min(v, a2[i]) : 0));
+  if (fine) {
+    // a clean trace can also tell a rounded corner (a fillet, 1/4" radius or more) from a sharp one:
+    // close up, a fillet has turned only part of the way while a sharp corner has turned all of it
+    const raw = points.map((p) => [p.x, p.y]);
+    const a0 = turnAngles(raw, 0.15, closed);
+    for (let i = 0; i < n; i++) if (a0[i] < 0.8 * a1[i]) ang[i] = 0;
+  }
   const auto = ang.map((a) => a >= threshold);
   // arc-length position of each point, for "nearby" tests
   const pos = [0];
@@ -733,9 +741,10 @@ function cleanPoints(points, smooth, snap, closed, cx = null) {
   const pts = points.map((p) => [p.x, p.y]);
   if (pts.length < (closed ? 3 : 2)) return [];
   const noise = traceNoise(pts, closed);
-  const tol = Math.max(tolFor(smooth), 1.5 * noise);
+  // a clean trace (auto-detected edge) is held to a tighter fit, so a fillet isn't swallowed by its neighbours
+  const tol = noise < 0.01 ? Math.max(0.025, tolFor(smooth) * 0.5) : Math.max(tolFor(smooth), 1.5 * noise);
   // clean traces (auto-detected edges) can be trusted with gentler bends; shaky hand traces can't
-  const flags = cornerFlags(points, closed, noise < 0.01 ? CORNER_DEG_CLEAN : CORNER_DEG);
+  const flags = cornerFlags(points, closed, noise < 0.01 ? CORNER_DEG_CLEAN : CORNER_DEG, noise < 0.01);
   let idx = flags.map((c, i) => (c ? i : -1)).filter((i) => i >= 0);
   if (closed && idx.length < 2) { // round shapes: split into two halves so each stretch has distinct ends
     const first = idx.length ? idx[0] : 0;
@@ -878,10 +887,109 @@ function mirrorClosed(points, mirror, smooth, snap) {
   return { segs, warning: hc.warning };
 }
 
+// ---------------------------------------------------------------- cut types and layers
+
+// What each interior shape is cut as. Colors are the on-screen colors; aci is the DXF layer color.
+export const CUT_TYPES = {
+  outside: { label: 'Outside cut', short: 'OUTSIDE', color: '#ff6b00', aci: 7 },
+  inside: { label: 'Inside cut', short: 'INSIDE', color: '#e53935', aci: 1 },
+  pocket: { label: 'Pocket', short: 'POCKET', color: '#1e88e5', aci: 5, depth: true },
+  groove: { label: 'Groove / V-carve', short: 'GROOVE', color: '#2e9e44', aci: 3, depth: true, bit: 'groove' },
+  profile: { label: 'Profile edge', short: 'PROFILE', color: '#9c27b0', aci: 6, bit: 'profile' },
+  skip: { label: 'Not cut', short: 'SKIP', color: '#9e9e9e', aci: 8 },
+};
+export const GROOVE_BITS = [
+  { id: 'v90', label: 'V-bit 90°', tag: 'VGROOVE_90' },
+  { id: 'v60', label: 'V-bit 60°', tag: 'VGROOVE_60' },
+  { id: 'v120', label: 'V-bit 120°', tag: 'VGROOVE_120' },
+  { id: 'ball0.125', label: 'Ball nose 1/8"', tag: 'GROOVE_BALL_0.125' },
+  { id: 'ball0.25', label: 'Ball nose 1/4"', tag: 'GROOVE_BALL_0.25' },
+  { id: 'str0.125', label: 'Straight 1/8"', tag: 'GROOVE_STRAIGHT_0.125' },
+  { id: 'str0.25', label: 'Straight 1/4"', tag: 'GROOVE_STRAIGHT_0.25' },
+];
+export const PROFILE_BITS = [
+  { id: 'rp_cove', label: 'Raised panel, cove', tag: 'RAISED_PANEL_COVE' },
+  { id: 'rp_ogee', label: 'Raised panel, ogee', tag: 'RAISED_PANEL_OGEE' },
+  { id: 'rp_bevel', label: 'Raised panel, straight bevel', tag: 'RAISED_PANEL_BEVEL' },
+  { id: 'ro0.25', label: 'Roundover 1/4"', tag: 'ROUNDOVER_0.25' },
+  { id: 'ro0.375', label: 'Roundover 3/8"', tag: 'ROUNDOVER_0.375' },
+  { id: 'ro0.5', label: 'Roundover 1/2"', tag: 'ROUNDOVER_0.5' },
+  { id: 'ogee', label: 'Ogee', tag: 'OGEE' },
+  { id: 'roman', label: 'Roman ogee', tag: 'ROMAN_OGEE' },
+  { id: 'cove', label: 'Cove', tag: 'COVE' },
+  { id: 'chamfer', label: 'Chamfer 45°', tag: 'CHAMFER_45' },
+  { id: 'bead', label: 'Bead', tag: 'BEAD' },
+  { id: 'other', label: 'Other (note in layer)', tag: 'OTHER' },
+];
+export const bitsFor = (cut) => (CUT_TYPES[cut]?.bit === 'groove' ? GROOVE_BITS : CUT_TYPES[cut]?.bit === 'profile' ? PROFILE_BITS : []);
+export const DEFAULT_DEPTH = { pocket: 0.25, groove: 0.125 };
+export const DEFAULT_BIT = { groove: 'v90', profile: 'rp_cove' };
+
+// 0.25 -> "0.25", 0.125 -> "0.125", 0.5 -> "0.5"
+export function depthTag(d) {
+  const v = Math.round((+d || 0) * 10000) / 10000;
+  return String(v);
+}
+
+// The DXF layer a shape goes on, e.g. OUTSIDE_CUT, INSIDE_CUT, POCKET_0.25, VGROOVE_90_0.125, PROFILE_EDGE_ROUNDOVER_0.25.
+// R12 layer names can't contain dots, so there 0.25 becomes 0p25.
+export function layerFor(f, { r12 = false } = {}) {
+  let name;
+  const bit = bitsFor(f.cut).find((b) => b.id === f.bit) || bitsFor(f.cut)[0];
+  if (f.cut === 'outside') name = 'OUTSIDE_CUT';
+  else if (f.cut === 'inside') name = 'INSIDE_CUT';
+  else if (f.cut === 'pocket') name = `POCKET_${depthTag(f.depth ?? DEFAULT_DEPTH.pocket)}`;
+  else if (f.cut === 'groove') name = `${bit.tag}_${depthTag(f.depth ?? DEFAULT_DEPTH.groove)}`;
+  else if (f.cut === 'profile') name = `PROFILE_EDGE_${bit.tag}`;
+  else return null;
+  return r12 ? name.replace(/\./g, 'p') : name;
+}
+
 // ---------------------------------------------------------------- the whole shape
 
-// raw: { outer: [{x,y,corner?}], holes: [[...]] } in inches (image space).
-// mirror: { on, cx, keep: 'left'|'right' }. smooth: 0..10.
+const flipX = (cx) => (p) => [2 * cx - p[0], p[1]];
+const mirrorSegs = (segs, cx) => segs.map((s) => reverseSeg(transformSeg(s, flipX(cx)))).reverse();
+
+// An open line (groove) cleaned into lines and arcs; its two ends stay where they are.
+function cleanOpen(points, smooth, snap) {
+  if (points.length < 2) return [];
+  const pts = points.map((p, i) => (i === 0 || i === points.length - 1 ? { ...p, corner: true } : p));
+  return cleanPoints(pts, smooth, snap, false, null);
+}
+
+// Open line with mirror: keep the part on the kept side, clean it, add its mirror image (joined if it reaches the centerline).
+function mirrorOpen(points, mirror, smooth, snap) {
+  const cx = mirror.cx;
+  const kept = (p) => (mirror.keep === 'left' ? p.x <= cx : p.x >= cx);
+  const nk = points.filter(kept).length;
+  if (nk === 0) return [];
+  if (nk === points.length) { const segs = cleanOpen(points, smooth, snap); return [segs, mirrorSegs(segs, cx)]; }
+  // cut at the first crossing; the kept run ends exactly on the centerline
+  let run = [];
+  for (let i = 0; i < points.length; i++) {
+    const p = points[i];
+    if (kept(p)) run.push(p);
+    if (i + 1 < points.length && kept(p) !== kept(points[i + 1])) {
+      const q = points[i + 1], t = (cx - p.x) / ((q.x - p.x) || 1e-9);
+      const hit = { x: cx, y: p.y + (q.y - p.y) * t, corner: true };
+      if (kept(p)) { run.push(hit); break; } else run = [hit];
+    }
+  }
+  if (run.length < 2) return [];
+  const atStart = Math.abs(run[0].x - cx) < 1e-9;
+  if (atStart) run.reverse(); // now ends on the centerline
+  let segs = cleanOpen(run, smooth, snap);
+  if (!segs.length) return [];
+  // pin the end to the centerline exactly, then join with the mirror image
+  const last = segs[segs.length - 1];
+  segs[segs.length - 1] = fixArc({ ...last, b: [cx, last.b[1]] });
+  const other = mirrorSegs(segs, cx);
+  return [mergeSegments([...segs, ...other], tolFor(smooth), false)];
+}
+
+// raw: { outer: [{x,y,corner?}], features: [{ pts, closed, cut, depth, bit }] } in inches (image space).
+// (Older jobs have raw.holes: plain cutouts.) mirror: { on, cx, keep: 'left'|'right' }. smooth: 0..10.
+// Returns { outer, parts: [{ segs, closed, cut, depth, bit, src }], holes (closed inside cuts), warnings }.
 export function buildShape(raw, { mirror = { on: false }, smooth = 3, snap = true } = {}) {
   const warnings = [];
   const one = (pts) => {
@@ -892,24 +1000,32 @@ export function buildShape(raw, { mirror = { on: false }, smooth = 3, snap = tru
     return r.segs;
   };
   const outer = one(raw.outer);
-  const holes = [];
-  for (const h of raw.holes || []) {
-    if (!h || h.length < 3) continue;
-    if (!mirror.on) { holes.push(cleanClosed(h, smooth, snap)); continue; }
-    const cx = mirror.cx;
-    const keptSide = (p) => (mirror.keep === 'left' ? p.x <= cx : p.x >= cx);
-    const kept = h.filter(keptSide).length;
-    if (kept === 0) continue; // on the side being replaced by the mirror image
-    if (kept === h.length) {
-      const segs = cleanClosed(h, smooth, snap);
-      holes.push(segs);
-      holes.push(segs.map((s) => reverseSeg(transformSeg(s, (p) => [2 * cx - p[0], p[1]]))).reverse());
-    } else {
-      const r = mirrorClosed(h, mirror, smooth, snap);
-      if (r.segs.length) holes.push(r.segs);
+  const feats = raw.features || (raw.holes || []).map((pts) => ({ pts, closed: true, cut: 'inside' }));
+  const parts = [];
+  feats.forEach((f, src) => {
+    const h = f.pts;
+    const meta = { closed: f.closed !== false, cut: f.cut || 'inside', depth: f.depth, bit: f.bit, src };
+    if (!h || h.length < (meta.closed ? 3 : 2)) return;
+    let loops;
+    try {
+      if (!meta.closed) loops = mirror.on ? mirrorOpen(h, mirror, smooth, snap) : [cleanOpen(h, smooth, snap)];
+      else if (!mirror.on) loops = [cleanClosed(h, smooth, snap)];
+      else {
+        const cx = mirror.cx;
+        const keptSide = (p) => (mirror.keep === 'left' ? p.x <= cx : p.x >= cx);
+        const kept = h.filter(keptSide).length;
+        if (kept === 0) loops = []; // on the side being replaced by the mirror image
+        else if (kept === h.length) { const segs = cleanClosed(h, smooth, snap); loops = [segs, mirrorSegs(segs, cx)]; }
+        else loops = [mirrorClosed(h, mirror, smooth, snap).segs];
+      }
+    } catch (e) {
+      warnings.push(`Shape ${src + 1} could not be cleaned up.`);
+      loops = [];
     }
-  }
-  return { outer, holes: holes.filter((h) => h.length), warnings };
+    for (const segs of loops) if (segs && segs.length) parts.push({ ...meta, segs, mirrored: loops.length > 1 && segs !== loops[0] });
+  });
+  const holes = parts.filter((p) => p.cut === 'inside' && p.closed).map((p) => p.segs);
+  return { outer, parts, holes, warnings };
 }
 
 // ---------------------------------------------------------------- checks
@@ -920,13 +1036,15 @@ export function loopIsClosed(segs, eps = 1e-6) {
   return true;
 }
 
-// Moves CAD-space shape so the bounding box lower-left is 0,0. Input in image space (y down).
+// Moves the shape to CAD space (y up) with the outline's lower-left corner at 0,0. Input in image space (y down).
 export function toCadSpace(shape) {
   const flip = (p) => [p[0], -p[1]];
-  const fl = { outer: shape.outer.map((s) => transformSeg(s, flip)), holes: shape.holes.map((h) => h.map((s) => transformSeg(s, flip))) };
+  const parts0 = shape.parts || (shape.holes || []).map((segs) => ({ segs, closed: true, cut: 'inside' }));
+  const fl = { outer: shape.outer.map((s) => transformSeg(s, flip)), parts: parts0.map((p) => ({ ...p, segs: p.segs.map((s) => transformSeg(s, flip)) })) };
   const bb = shapeBBox(fl);
   const mv = (p) => [p[0] - bb.minX, p[1] - bb.minY];
-  return { outer: fl.outer.map((s) => transformSeg(s, mv)), holes: fl.holes.map((h) => h.map((s) => transformSeg(s, mv))) };
+  const parts = fl.parts.map((p) => ({ ...p, segs: p.segs.map((s) => transformSeg(s, mv)) }));
+  return { outer: fl.outer.map((s) => transformSeg(s, mv)), parts, holes: parts.filter((p) => p.cut === 'inside' && p.closed).map((p) => p.segs) };
 }
 
 // ---------------------------------------------------------------- DXF writing
@@ -937,9 +1055,28 @@ const num = (v) => {
 };
 const deg = (rad) => { let d = (rad * 180) / Math.PI; d = ((d % 360) + 360) % 360; return d.toFixed(6); };
 
-function dxfEntities(cad, version, layers) {
+// Which loops go on which layer. outlineOnly: just the outer outline, on outlineLayer (for Mozaik's Part Editor).
+export function dxfLayers(cad, { version = 'R2000', outlineOnly = false, outlineLayer = 'OUTLINE' } = {}) {
+  const r12 = version === 'R12';
+  const groups = [];
+  const add = (name, aci, segs) => {
+    let g = groups.find((x) => x.name === name);
+    if (!g) groups.push((g = { name, aci, loops: [] }));
+    g.loops.push(segs);
+  };
+  add(outlineOnly ? outlineLayer : 'OUTSIDE_CUT', 7, cad.outer);
+  if (!outlineOnly) {
+    for (const p of cad.parts || []) {
+      const name = layerFor(p, { r12 });
+      if (name && p.segs.length) add(name, CUT_TYPES[p.cut].aci, p.segs);
+    }
+  }
+  return groups;
+}
+
+function dxfEntities(groups, version, firstHandle) {
   const out = [];
-  let handle = FIRST_FREE_HANDLE;
+  let handle = firstHandle;
   const r2000 = version === 'R2000';
   const head = (type, layer) => {
     out.push('0', type);
@@ -962,29 +1099,32 @@ function dxfEntities(cad, version, layers) {
       }
     }
   };
-  emit(cad.outer, layers.outer);
-  cad.holes.forEach((h) => emit(h, layers.hole));
+  for (const g of groups) for (const loop of g.loops) emit(loop, g.name);
   return { lines: out, nextHandle: handle };
 }
 
 // shape: output of buildShape (image space, inches). Returns DXF text (CRLF line ends).
-export function writeDXF(shape, { version = 'R2000', layerOuter = 'OUTLINE', layerHole = 'CUTOUT' } = {}) {
+// Every cut type gets its own layer (see layerFor); outlineOnly exports just the outer outline.
+export function writeDXF(shape, { version = 'R2000', outlineOnly = false, outlineLayer = 'OUTLINE' } = {}) {
   const cad = toCadSpace(shape);
   const bb = shapeBBox(cad);
-  const { lines, nextHandle } = dxfEntities(cad, version, { outer: layerOuter, hole: layerHole });
+  const groups = dxfLayers(cad, { version, outlineOnly, outlineLayer });
   let text;
   if (version === 'R2000') {
-    let t = DXF_R2000_TEMPLATE;
-    // custom layer names need table entries; the template carries OUTLINE and CUTOUT only
-    if (!['OUTLINE', 'CUTOUT', '0'].includes(layerOuter) || !['OUTLINE', 'CUTOUT', '0'].includes(layerHole)) {
-      t = t.replace(/\n\s*2\nOUTLINE\n/g, `\n  2\n${layerOuter}\n`).replace(/\n\s*2\nCUTOUT\n/g, `\n  2\n${layerHole}\n`);
-    }
-    text = t
+    let h = FIRST_FREE_HANDLE;
+    const layerRecs = groups.flatMap((g) => ['0', 'LAYER', '5', (h++).toString(16).toUpperCase(), '330', LAYER_TABLE_HANDLE,
+      '100', 'AcDbSymbolTableRecord', '100', 'AcDbLayerTableRecord', '2', g.name, '70', '0', '62', String(g.aci),
+      '6', 'Continuous', '370', '-3', '390', PLOT_STYLE_HANDLE]);
+    const { lines, nextHandle } = dxfEntities(groups, version, h);
+    text = DXF_R2000_TEMPLATE
+      .replace('@@LAYERCOUNT@@', String(BASE_LAYER_COUNT + groups.length))
+      .replace('@@LAYERS@@', layerRecs.join('\n'))
       .replace('@@HANDSEED@@', nextHandle.toString(16).toUpperCase())
       .replace('@@MINX@@', num(bb.minX)).replace('@@MINY@@', num(bb.minY))
       .replace('@@MAXX@@', num(bb.maxX)).replace('@@MAXY@@', num(bb.maxY))
       .replace('@@ENTITIES@@', lines.join('\n'));
   } else {
+    const { lines } = dxfEntities(groups, version, 0);
     const hdr = ['0', 'SECTION', '2', 'HEADER',
       '9', '$ACADVER', '1', 'AC1009',
       '9', '$INSBASE', '10', '0.0', '20', '0.0', '30', '0.0',
@@ -996,8 +1136,8 @@ export function writeDXF(shape, { version = 'R2000', layerOuter = 'OUTLINE', lay
       '0', 'TABLE', '2', 'LTYPE', '70', '1',
       '0', 'LTYPE', '2', 'CONTINUOUS', '70', '0', '3', 'Solid line', '72', '65', '73', '0', '40', '0.0',
       '0', 'ENDTAB',
-      '0', 'TABLE', '2', 'LAYER', '70', '3',
-      ...[['0', 7], [layerOuter, 7], [layerHole, 1]].filter((l, i, a) => a.findIndex((x) => x[0] === l[0]) === i)
+      '0', 'TABLE', '2', 'LAYER', '70', String(groups.length + 1),
+      ...[['0', 7], ...groups.map((g) => [g.name, g.aci])]
         .flatMap(([name, color]) => ['0', 'LAYER', '2', name, '70', '0', '62', String(color), '6', 'CONTINUOUS']),
       '0', 'ENDTAB',
       '0', 'ENDSEC',
@@ -1090,6 +1230,9 @@ export function dxfBBox(entities) {
   return bboxOf(pts);
 }
 
+// Layers whose shapes may be open lines (a groove or an edge profile can follow a line that isn't a loop).
+export const openAllowed = (layer) => /^(VGROOVE|GROOVE|PROFILE_EDGE)/.test(layer || '');
+
 // Self-check run before every download and by the tests.
 export function checkDXF(text) {
   const { header, entities } = parseDXF(text);
@@ -1097,14 +1240,25 @@ export function checkDXF(text) {
   const kinds = [...new Set(entities.map((e) => e.type))];
   const bad = kinds.filter((k) => k !== 'LINE' && k !== 'ARC');
   if (bad.length) problems.push(`Has ${bad.join(', ')} entities (only LINE and ARC allowed).`);
-  const { loops, openEnds } = dxfLoops(entities);
-  if (openEnds) problems.push(`${loops.filter((l) => !l.closed).length} outline(s) are not closed.`);
+  // link loops layer by layer, so shapes on different layers never join up
+  const layerNames = [...new Set(entities.map((e) => e.layer))];
+  const layers = {};
+  let loops = [];
+  for (const name of layerNames) {
+    const ents = entities.filter((e) => e.layer === name);
+    const r = dxfLoops(ents);
+    layers[name] = { lines: ents.filter((e) => e.type === 'LINE').length, arcs: ents.filter((e) => e.type === 'ARC').length,
+      shapes: r.loops.length, closed: r.loops.filter((l) => l.closed).length };
+    loops = loops.concat(r.loops.map((l) => ({ ...l, layer: name })));
+  }
+  const badOpen = loops.filter((l) => !l.closed && !openAllowed(l.layer));
+  if (badOpen.length) problems.push(`${badOpen.length} shape(s) that must be closed are not (layer ${[...new Set(badOpen.map((l) => l.layer))].join(', ')}).`);
   const bb = dxfBBox(entities);
   if (Math.abs(bb.minX) > 1e-4 || Math.abs(bb.minY) > 1e-4) problems.push(`Lower-left corner is at ${bb.minX.toFixed(4)}, ${bb.minY.toFixed(4)} instead of 0,0.`);
   const version = header.$ACADVER ? header.$ACADVER[1] : '?';
   const insunits = header.$INSUNITS ? parseInt(header.$INSUNITS[70], 10) : null;
   if (version === 'AC1015' && insunits !== 1) problems.push('Units are not set to inches.');
   return { ok: problems.length === 0, problems, version, insunits, width: bb.w, height: bb.h, loops: loops.length,
-    closedLoops: loops.filter((l) => l.closed).length, lines: entities.filter((e) => e.type === 'LINE').length,
-    arcs: entities.filter((e) => e.type === 'ARC').length, kinds };
+    closedLoops: loops.filter((l) => l.closed).length, openLoops: loops.filter((l) => !l.closed).length,
+    lines: entities.filter((e) => e.type === 'LINE').length, arcs: entities.filter((e) => e.type === 'ARC').length, kinds, layers };
 }
