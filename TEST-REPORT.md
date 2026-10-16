@@ -34,7 +34,7 @@ It caught two real bugs, both fixed:
 
 ## 3. Cabinet build sheet (Claude simulated)
 
-There's no API key here, so Claude's API was simulated. `tests/e2e-cabinets.mjs`, 20 of 20 checks pass:
+There's no API key here, so Claude's API was simulated. `tests/e2e-cabinets.mjs`, 26 of 26 checks pass:
 - The key is saved on the device.
 - The request has the key, the browser-access header, the model, a JSON-format answer, the photo and your measurement.
 - A bad key, a refusal, and an account without the newer fallback feature each give a clear message or a retry.
@@ -42,6 +42,7 @@ There's no API key here, so Claude's API was simulated. `tests/e2e-cabinets.mjs`
 - The sheet marks estimates with ≈, lists the style, and flags the valance for Shape → DXF.
 - "Trace in Shape → DXF" opens a new shape job with the same photo.
 - Claude is asked where each cabinet and decorative part sits in the photo; the Boxes step and the printed sheet show the photo with each one outlined and numbered like the list (base blue, wall green, tall orange, decorative purple D1, D2…), and tapping a box on the photo jumps to it in the list.
+- Each flagged decorative part shows a close-up of where it is in the photo. "Trace" opens Shape → DXF with that close-up, its name and description in a strip at the top, the corner step zoomed on the part and outlined. After the DXF is saved, "Done, back to …" returns to the build sheet at that part, ticked off ("1 of 1 traced", file name and size), and the printed sheet marks it ✓. Opening it again reopens the same shape job.
 
 **Not tested:** a real Claude call on a real cabinet photo, or how good its estimates are. That needs your key.
 

@@ -28,7 +28,7 @@ const msg = (text) => ({ id: 'msg_test', type: 'message', role: 'assistant', mod
   stop_reason: 'end_turn', stop_sequence: null, usage: { input_tokens: 1500, output_tokens: 900 } });
 
 const browser = await chromium.launch();
-const ctx = await browser.newContext({ ...devices['iPhone 13'] });
+const ctx = await browser.newContext({ ...devices['iPhone 13'], acceptDownloads: true });
 const page = await ctx.newPage();
 const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
@@ -135,11 +135,59 @@ await page.getByRole('button', { name: /Trace in Shape/ }).first().click();
 await page.waitForSelector('.stage-wrap canvas', { timeout: 10000 }).catch(() => {});
 const title = await page.locator('#title').textContent();
 check('“Trace in Shape → DXF” opens a shape job with the photo', (await page.locator('.stage-wrap canvas').count()) === 1, title);
+// the part to trace goes with it: a close-up, its name and description, and the way back
+const banner = await page.locator('.task-banner').innerText().catch(() => '');
+const cropOk = await page.locator('.task-banner img.task-crop').evaluate((im) => im.naturalWidth > 100).catch(() => false);
+check('Shape job shows what to trace (close-up, D1 valance, description) and a way back', /Tracing D1 Valance/.test(banner) && /Arched valance/.test(banner) && /Smith kitchen/.test(banner) && cropOk, banner.replace(/\n/g, ' | '));
+const zoom = await page.evaluate(() => { const st = window.__stage, w = st.imgW; const a = st.toScr([0.28 * w, 0]), b = st.toScr([0.75 * w, 0]); return { a: a[0], b: b[0], cw: st.cssW }; });
+check('Corner step starts zoomed on the part, outlined', zoom.a > 0 && zoom.b < zoom.cw && zoom.b - zoom.a > zoom.cw * 0.4, JSON.stringify(zoom));
 await page.screenshot({ path: `${OUT}/c4-trace-decor.png` });
+// trace it: the valance's top rectangle as reference (30" wide), outline set by hand, export
+const tapPhoto = async (fx, fy) => {
+  const box = await page.locator('.stage-wrap canvas').first().boundingBox();
+  const sp = await page.evaluate(([fx, fy]) => window.__stage.toScr([fx * window.__stage.imgW, fy * window.__stage.imgH]), [fx, fy]);
+  await page.touchscreen.tap(box.x + sp[0], box.y + sp[1]);
+  await page.waitForTimeout(120);
+};
+await page.evaluate(() => { const st = window.__stage; st.fit({ x: 0.25 * st.imgW, y: 0.04 * st.imgH, w: 0.53 * st.imgW, h: 0.2 * st.imgH }); }); // like pinching in
+for (const [fx, fy] of [[0.2813, 0.08], [0.75, 0.08], [0.75, 0.2], [0.2813, 0.2]]) await tapPhoto(fx, fy);
+await page.getByRole('button', { name: /Next: size/ }).click();
+await page.locator('.page input').nth(0).fill('30');
+await page.locator('.page input').nth(1).fill('7.5');
+await page.getByRole('button', { name: /Straighten photo/ }).click();
+await page.waitForSelector('.stage-wrap canvas');
+await page.evaluate(() => {
+  const e = window.__editor;
+  e.job.contours.outer = [{ x: 0, y: 0 }, { x: 30, y: 0 }, { x: 30, y: 5 }, { x: 22.5, y: 5 }, { x: 15, y: 7.5 }, { x: 7.5, y: 5 }, { x: 0, y: 5 }].map((p) => ({ ...p, corner: true }));
+  e.changed();
+});
+await page.getByRole('button', { name: /Next: details/ }).click();
+await page.getByRole('button', { name: /Next: clean up/ }).click();
+await page.getByRole('button', { name: /Next: export/ }).click();
+await page.waitForTimeout(400);
+const doneHidden = await page.locator('.ok-box:has-text("ticked off")').isHidden();
+const [dl] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: /Download DXF/ }).click()]);
+await page.waitForTimeout(500);
+check('After the DXF is saved, “Done, back to Smith kitchen” appears', doneHidden && await page.locator('.ok-box:has-text("ticked off")').isVisible(), dl.suggestedFilename());
+await page.locator('.ok-box').getByRole('button', { name: /back to Smith kitchen/ }).click();
+await page.waitForSelector('.decor-progress');
+await page.waitForTimeout(800);
+const back = await page.evaluate(() => ({ title: document.querySelector('#title').textContent, step: document.querySelector('nav.steps .current')?.textContent,
+  flashed: !!document.querySelector('.cab.flash[data-decor]'), progress: document.querySelector('.decor-progress').innerText, card: document.querySelector('.cab[data-decor]').innerText }));
+check('Back lands on the build sheet’s Boxes step at D1, ticked off', back.title === 'Smith kitchen' && back.step === 'Boxes' && back.flashed && /1 of 1 traced/.test(back.progress) && /DXF made: .*\.dxf/.test(back.card), JSON.stringify(back).slice(0, 300));
+await page.screenshot({ path: `${OUT}/c5-back-from-trace.png` });
+await page.locator('nav.steps button', { hasText: 'Build sheet' }).click();
+await page.waitForTimeout(300);
+check('Build sheet lists the valance as done with its DXF', /✓ D1 Valance.*\.dxf/.test(await page.locator('.sheet').innerText()));
+// opening it again goes to the same shape job, not a new one
+await page.locator('nav.steps button', { hasText: 'Boxes' }).click();
+await page.getByRole('button', { name: /Open the traced shape/ }).click();
+await page.waitForSelector('.task-banner');
+check('“Open the traced shape” reopens the same job', /Tracing D1/.test(await page.locator('.task-banner').innerText()));
 await page.goto(BASE);
 await page.waitForTimeout(400);
 const jobs = await page.locator('.card .name').allTextContents();
-check('Both jobs are in the saved list', jobs.length >= 2, JSON.stringify(jobs));
+check('Both jobs are in the saved list (one shape job, not two)', jobs.length === 2, JSON.stringify(jobs));
 check('No page errors', !errors.length, errors.join(' | '));
 await browser.close();
 const failed = results.filter((x) => !x.ok).length;

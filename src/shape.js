@@ -6,15 +6,16 @@ import {
 import { loadPhoto, canvasToBlob, straighten, detectOutline, resampleOutline, resampleLine, detectDetails, detailAt, freeDetailEdges } from './vision.js';
 import { suggestDetails } from './claude.js';
 import { Stage } from './stage.js';
-import { saveJob } from './store.js';
+import { saveJob, getJob } from './store.js';
 import { el, toast, downloadBlob, shareFile, safeFileName, ACCURACY_NOTE } from './ui.js';
 
 const STEPS = [
   ['photo', 'Photo'], ['corners', 'Corners'], ['size', 'Size'], ['trace', 'Outline'], ['details', 'Details'], ['clean', 'Clean'], ['export', 'Export'],
 ];
 
-export async function openShapeEditor(view, job, settings, { onTitle }) {
+export async function openShapeEditor(view, job, settings, { onTitle, onOpenJob }) {
   const ed = new ShapeEditor(view, job, settings, onTitle);
+  ed.onOpenJob = onOpenJob;
   await ed.init();
   return ed;
 }
@@ -81,9 +82,52 @@ class ShapeEditor {
       bar.appendChild(b);
     });
     this.view.appendChild(bar);
+    if (this.job.parent) this.view.appendChild(this.taskBanner());
     ({ photo: () => this.stepPhoto(), corners: () => this.stepCorners(), size: () => this.stepSize(), trace: () => this.stepTrace(),
       details: () => this.stepDetails(), clean: () => this.stepClean(), export: () => this.stepExport() })[step]();
     bar.querySelector('.current')?.scrollIntoView({ inline: 'center', block: 'nearest' });
+  }
+
+  // ---------------------------------------------------------------- tracing a part flagged on a build sheet
+  // A strip above every step: what to trace (close-up), and the way back to the build sheet.
+  taskBanner() {
+    const t = this.job.parent;
+    const big = !!this.bannerOpen;
+    const img = t.crop ? el('img', { class: 'task-crop' + (big ? ' big' : ''), src: t.crop, alt: 'The part to trace', title: 'Tap to enlarge' }) : '';
+    if (img) img.onclick = () => { this.bannerOpen = !this.bannerOpen; img.classList.toggle('big', this.bannerOpen); };
+    const back = el('button', { class: 'task-back', 'aria-label': `Back to ${t.jobName}` }, '← Back');
+    back.onclick = () => this.backToParent();
+    return el('div', { class: 'task-banner no-print' }, img,
+      el('div', { class: 'task-text' },
+        el('div', { class: 'task-title' }, (this.job.parentDone ? '✓ ' : '') + `Tracing ${t.label} for ${t.jobName}`),
+        t.description ? el('div', { class: 'small task-desc' }, t.description) : ''),
+      back);
+  }
+
+  async backToParent() {
+    const t = this.job.parent;
+    clearTimeout(this.saveT);
+    await saveJob(this.job).catch(() => {});
+    if (this.onOpenJob) this.onOpenJob(t.jobId, { focusDecor: t.decorId });
+  }
+
+  // a DXF was saved: tick the part off on the build sheet
+  async markParentDone(file) {
+    const t = this.job.parent;
+    if (!t) return;
+    const bb = shapeBBox({ outer: this.shape.outer, holes: [] });
+    try {
+      const cab = await getJob(t.jobId);
+      const part = cab?.result?.decor?.find((d) => d.id === t.decorId);
+      if (part) {
+        part.dxf = { file, w: bb.w, h: bb.h, at: Date.now() };
+        part.shapeJobId = this.job.id;
+        await saveJob(cab);
+      }
+    } catch { /* the build sheet was deleted: nothing to tick */ }
+    this.job.parentDone = true;
+    this.save();
+    if (this.doneBox) this.doneBox.style.display = '';
   }
 
   // ---------------------------------------------------------------- step 1: photo
@@ -140,7 +184,9 @@ class ShapeEditor {
     const refresh = () => {
       const n = this.job.corners.length;
       hint.textContent = n < 4
-        ? `Tap corner ${n + 1} of 4 of something truly rectangular. Pinch to zoom for accuracy.`
+        ? (this.job.parent?.box && n === 0
+          ? 'Purple = the part to trace. Tap 4 corners of a rectangle beside it whose size you know (a cabinet face, or the part itself).'
+          : `Tap corner ${n + 1} of 4 of something truly rectangular. Pinch to zoom for accuracy.`)
         : 'Drag a corner to fine-tune it (the magnifier helps). Then tap Next.';
       next.disabled = n !== 4;
       this.stage.render();
@@ -165,6 +211,18 @@ class ShapeEditor {
         refresh();
       },
       draw: (ctx, st) => {
+        const pb = this.job.parent?.box;
+        if (pb) {
+          // where the part to trace is in the photo
+          const a = st.toScr([pb.x0 * this.photo.width, pb.y0 * this.photo.height]), b = st.toScr([pb.x1 * this.photo.width, pb.y1 * this.photo.height]);
+          ctx.save(); ctx.setLineDash([8, 6]); ctx.lineWidth = 3; ctx.strokeStyle = '#c04fd6';
+          ctx.strokeRect(a[0], a[1], b[0] - a[0], b[1] - a[1]);
+          ctx.setLineDash([]); ctx.fillStyle = '#9c27b0'; ctx.font = 'bold 13px system-ui'; ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+          const lab = 'Part to trace';
+          ctx.fillRect(a[0], a[1] - 20, ctx.measureText(lab).width + 12, 20);
+          ctx.fillStyle = '#fff'; ctx.fillText(lab, a[0] + 6, a[1] - 4);
+          ctx.restore();
+        }
         const pts = this.job.corners.map((c) => st.toScr(c));
         ctx.lineWidth = 2.5; ctx.strokeStyle = '#ffd60a';
         if (pts.length > 1) {
@@ -182,6 +240,12 @@ class ShapeEditor {
       },
     });
     this.stage.setImage(this.photo);
+    const pb = this.job.parent?.box;
+    if (pb && !this.job.corners.length) {
+      // start zoomed on the part, with room around it for a reference rectangle
+      const W = this.photo.width, H = this.photo.height, bw = (pb.x1 - pb.x0) * W, bh = (pb.y1 - pb.y0) * H, m = Math.max(bw, bh) * 0.6;
+      this.stage.fit({ x: pb.x0 * W - m, y: pb.y0 * H - m, w: bw + 2 * m, h: bh + 2 * m });
+    }
     refresh();
   }
 
@@ -1008,12 +1072,23 @@ class ShapeEditor {
       const { text, chk, file } = build();
       if (!chk.ok && !confirm('The self-check found a problem (see below). Download anyway?')) return;
       downloadBlob(new Blob([text], { type: 'application/dxf' }), file);
+      this.markParentDone(file);
     };
     share.onclick = async () => {
       const { text, file } = build();
       const ok = await shareFile(new File([text], file, { type: 'application/dxf' }), 'DXF for Mozaik');
       if (!ok) downloadBlob(new Blob([text], { type: 'application/dxf' }), file);
+      this.markParentDone(file);
     };
+    // tracing a part from a build sheet: once the DXF is saved, the way back is the next step
+    let doneBox = '';
+    if (this.job.parent) {
+      const backB = el('button', { class: 'go' }, `← Done, back to ${this.job.parent.jobName}`);
+      backB.onclick = () => this.backToParent();
+      doneBox = el('div', { class: 'ok-box' }, el('p', {}, `✓ DXF saved. ${this.job.parent.label} is ticked off on the build sheet.`), backB);
+      doneBox.style.display = this.job.parentDone ? '' : 'none';
+      this.doneBox = doneBox;
+    }
     png.onclick = async () => {
       const c = renderShapePNG(this.shape, { name: this.job.name, denom: d, width: 1800, footer: true });
       downloadBlob(await canvasToBlob(c, 'image/png'), safeFileName(name.value || 'shape') + '.png');
@@ -1032,6 +1107,7 @@ class ShapeEditor {
       el('label', {}, 'DXF format'), ver, verNote,
       el('label', { class: 'check' }, only, 'Outer outline only (for Mozaik’s Part Editor)'),
       el('div', { class: 'stack', style: 'margin-top:12px' }, dl, share, png),
+      doneBox,
       el('h3', {}, 'Self-check (the file is re-opened and tested)'), result,
       el('h3', {}, 'In Mozaik'),
       el('p', { class: 'small' }, `Part Editor → DXF In → pick the outline-only file (outline on layer “${s.layerOuter}”, lower-left corner at 0,0). ` +

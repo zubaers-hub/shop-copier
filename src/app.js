@@ -38,7 +38,7 @@ async function home() {
       j.thumb ? el('img', { src: j.thumb, alt: '' }) : el('img', { alt: '' }),
       el('div', { class: 'grow' },
         el('div', { class: 'name' }, j.name || 'Untitled'),
-        el('div', { class: 'small muted' }, `${j.kind === 'shape' ? 'Shape → DXF' : 'Build sheet'} · ${fmtDate(j.updated || j.created)}`)),
+        el('div', { class: 'small muted' }, `${j.kind === 'shape' ? (j.parent ? `Part of ${j.parent.jobName}` : 'Shape → DXF') : 'Build sheet'} · ${fmtDate(j.updated || j.created)}`)),
       open, del));
   }
 }
@@ -51,14 +51,15 @@ async function createJob(kind) {
   openJob(job.id);
 }
 
-async function openJob(id) {
+// opts.focusDecor: coming back to a build sheet from tracing one of its decorative parts
+async function openJob(id, opts = {}) {
   close();
   const job = await getJob(id);
   if (!job) { toast('Job not found'); home(); return; }
   location.hash = 'job=' + id;
   setTitle(job.name);
-  if (job.kind === 'shape') current = await openShapeEditor(view, job, settings, { onTitle: setTitle });
-  else current = openCabinetJob(view, job, settings, { onOpenJob: openJob });
+  if (job.kind === 'shape') current = await openShapeEditor(view, job, settings, { onTitle: setTitle, onOpenJob: openJob });
+  else current = openCabinetJob(view, job, settings, { onOpenJob: openJob, focusDecor: opts.focusDecor });
 }
 
 function settingsPage() {

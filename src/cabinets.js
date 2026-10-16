@@ -2,7 +2,7 @@
 import { parseInches, formatInches } from './core.js';
 import { loadPhoto, canvasToBlob } from './vision.js';
 import { analyzeCabinets, CABINET_TYPES, DECOR_TYPES } from './claude.js';
-import { saveJob, newId } from './store.js';
+import { saveJob, getJob, newId } from './store.js';
 import { el, toast, ACCURACY_NOTE, fmtDate } from './ui.js';
 
 const TYPE_LABEL = {
@@ -79,10 +79,37 @@ export function normalize(result) {
   };
 }
 
-export function openCabinetJob(view, job, settings, { onOpenJob }) {
-  const ctx = { view, job, settings, onOpenJob };
-  const step = job.result ? (job.step === 'sheet' ? 'sheet' : 'edit') : 'photo';
+// focusDecor: id of a decorative part to scroll to (coming back from tracing it)
+export function openCabinetJob(view, job, settings, { onOpenJob, focusDecor } = {}) {
+  const ctx = { view, job, settings, onOpenJob, focusDecor };
+  const step = focusDecor && job.result ? 'edit' : job.result ? (job.step === 'sheet' ? 'sheet' : 'edit') : 'photo';
   show(ctx, step);
+}
+
+// A close-up of one part of the photo: the part outlined, with some of what's around it for context.
+// box: fractions of the photo (x0, y0, x1, y1). Returns a JPEG data URL, or null.
+export async function partCrop(photoBlob, box, maxSide = 900) {
+  if (!photoBlob || !box) return null;
+  const img = await loadPhoto(photoBlob, 2400);
+  const W = img.width, H = img.height;
+  const bw = (box.x1 - box.x0) * W, bh = (box.y1 - box.y0) * H;
+  const m = Math.max(0.35 * Math.max(bw, bh), 0.05 * Math.max(W, H));
+  const sx = Math.max(0, box.x0 * W - m), sy = Math.max(0, box.y0 * H - m);
+  const sw = Math.min(W, box.x1 * W + m) - sx, sh = Math.min(H, box.y1 * H + m) - sy;
+  const k = Math.min(1, maxSide / Math.max(sw, sh)) * 1;
+  const c = document.createElement('canvas');
+  c.width = Math.round(sw * k); c.height = Math.round(sh * k);
+  const g = c.getContext('2d');
+  g.drawImage(img, sx, sy, sw, sh, 0, 0, c.width, c.height);
+  // dim everything but the part, then outline it
+  const x = (box.x0 * W - sx) * k, y = (box.y0 * H - sy) * k, w = bw * k, h = bh * k;
+  g.fillStyle = 'rgba(0,0,0,.35)';
+  g.fillRect(0, 0, c.width, y); g.fillRect(0, y + h, c.width, c.height - y - h);
+  g.fillRect(0, y, x, h); g.fillRect(x + w, y, c.width - x - w, h);
+  const lw = Math.max(3, Math.round(c.width / 150));
+  g.strokeStyle = DECOR_COLOR; g.lineWidth = lw; g.setLineDash([lw * 3, lw * 2]);
+  g.strokeRect(x - lw / 2, y - lw / 2, w + lw, h + lw);
+  return c.toDataURL('image/jpeg', 0.85);
 }
 
 function save(ctx) {
@@ -364,6 +391,7 @@ function stepEdit(ctx) {
   }));
 
   const decor = el('div');
+  const progress = el('div', { class: 'decor-progress' });
   const renderDecor = () => {
     decor.innerHTML = '';
     decorCards.length = 0;
@@ -373,18 +401,42 @@ function stepEdit(ctx) {
       kind.onchange = () => { p.kind = kind.value; save(ctx); };
       const desc = el('input', { value: p.description || '' });
       desc.onchange = () => { p.description = desc.value; save(ctx); };
-      const trace = el('button', { class: 'primary' }, '✏️ Trace in Shape → DXF');
-      trace.onclick = async () => {
-        const shapeJob = { id: newId(), kind: 'shape', name: `${job.name} – ${DECOR_LABEL[p.kind]}`, created: Date.now(), photo: job.photo, thumb: job.thumb, step: 'corners' };
-        await saveJob(shapeJob);
-        ctx.onOpenJob(shapeJob.id);
-      };
+      const crop = el('img', { class: 'part-crop', alt: 'The part to trace' });
+      const cropBox = el('div', { class: 'part-crop-box' }, crop, el('p', { class: 'small muted' }, 'This is the part to trace. Take a straight-on photo of just this part for the best result, or use this one.'));
+      cropBox.style.display = 'none';
+      if (p.box) partCrop(job.photo, p.box).then((u) => { if (u) { crop.src = u; cropBox.style.display = ''; } }).catch(() => {});
+      const status = el('p', { class: 'small' });
+      const trace = el('button', { class: 'primary' });
+      if (p.dxf) {
+        status.className = 'small ok-line';
+        status.textContent = `✓ DXF made: ${p.dxf.file}` + (p.dxf.w ? ` (${formatInches(p.dxf.w, 16)} × ${formatInches(p.dxf.h, 16)})` : '');
+        trace.className = '';
+        trace.textContent = '✏️ Open the traced shape';
+      } else if (p.shapeJobId) {
+        status.textContent = 'Started tracing, no DXF yet.';
+        trace.textContent = '✏️ Continue tracing';
+      } else {
+        trace.textContent = '✏️ Trace in Shape → DXF';
+      }
+      trace.onclick = () => traceDecor(ctx, p, i);
       const del = el('button', { class: 'danger' }, '✕');
       del.onclick = () => { r.decor.splice(i, 1); save(ctx); renderDecor(); refreshMap(); };
-      const card = el('div', { class: 'cab' }, el('div', { class: 'cab-head' }, el('span', { class: 'num', style: `color:${DECOR_COLOR}` }, `D${i + 1}`), kind, del), el('label', {}, 'Description / where'), desc, el('p', { class: 'small muted' }, p.location || ''), trace);
+      const card = el('div', { class: 'cab', 'data-decor': p.id }, el('div', { class: 'cab-head' }, el('span', { class: 'num', style: `color:${DECOR_COLOR}` }, `D${i + 1}`), kind, del), cropBox, el('label', {}, 'Description / where'), desc, el('p', { class: 'small muted' }, p.location || ''), status, trace);
       decorCards.push(card);
       decor.appendChild(card);
     });
+    // progress, and the next part to do
+    const todo = r.decor.findIndex((p) => !p.dxf);
+    progress.innerHTML = '';
+    if (r.decor.length) {
+      const done = r.decor.filter((p) => p.dxf).length;
+      progress.append(el('p', {}, el('b', {}, `${done} of ${r.decor.length} traced.`), done === r.decor.length ? ' All decorative parts have a DXF.' : ' Each one becomes its own DXF; you come back here when it’s done.'));
+      if (todo >= 0) {
+        const nextB = el('button', { class: 'go' }, `✏️ Trace next: D${todo + 1} ${DECOR_LABEL[r.decor[todo].kind] || ''}`);
+        nextB.onclick = () => traceDecor(ctx, r.decor[todo], todo);
+        progress.append(nextB);
+      }
+    }
     const add = el('button', {}, '+ Add decorative part');
     add.onclick = () => { r.decor.push({ id: newId(), kind: 'valance', description: '', location: '' }); save(ctx); renderDecor(); };
     decor.appendChild(add);
@@ -396,7 +448,16 @@ function stepEdit(ctx) {
   const toSheet = el('button', { class: 'go' }, '📄 Make build sheet →');
   toSheet.onclick = () => show(ctx, 'sheet');
 
+  // the build sheet leads into tracing: say up front what's left to trace
+  const left = r.decor.filter((p) => !p.dxf).length;
+  let decorNote = '';
+  if (left) {
+    const jump = el('button', {}, `Go to them ↓`);
+    jump.onclick = () => document.getElementById('decor-head')?.scrollIntoView({ behavior: 'smooth' });
+    decorNote = el('div', { class: 'note decor-note' }, el('p', {}, `Claude flagged ${left} decorative part${left === 1 ? '' : 's'} to trace into a DXF (valance, corbel…). Each one opens in Shape → DXF with a close-up of what to trace, and brings you back here.`), jump);
+  }
   page.append(
+    decorNote,
     el('label', {}, 'Job name'), name,
     r.summary ? el('p', {}, r.summary) : '',
     r.scale_basis ? el('p', { class: 'small muted' }, 'Scale: ' + r.scale_basis) : '',
@@ -405,10 +466,38 @@ function stepEdit(ctx) {
     el('h2', {}, 'Check it on the photo'), mapHolder,
     el('h2', {}, `Cabinets, left to right (${r.cabinets.length})`), list, addB,
     el('h2', {}, 'Style'), style,
-    el('h2', {}, 'Decorative parts (Mode 1)'), decor,
+    el('h2', { id: 'decor-head' }, 'Decorative parts to trace'), progress, decor,
     el('div', { style: 'margin-top:16px' }, toSheet),
   );
   ctx.view.appendChild(page);
+  // back from tracing a part: show where you were
+  if (ctx.focusDecor) {
+    const i = r.decor.findIndex((p) => p.id === ctx.focusDecor);
+    ctx.focusDecor = null;
+    const card = decorCards[i];
+    if (card) {
+      setTimeout(() => flash(card), 150);
+      if (r.decor[i].dxf) toast(`D${i + 1} done. ${r.decor.every((p) => p.dxf) ? 'All decorative parts are traced.' : 'Next one is below.'}`, 3500);
+    }
+  }
+}
+
+// Opens Shape → DXF for one decorative part: the part's close-up and description go with it, and the
+// shape job knows to come back here when it's done.
+async function traceDecor(ctx, p, i) {
+  const { job } = ctx;
+  if (p.shapeJobId && (await getJob(p.shapeJobId))) { ctx.onOpenJob(p.shapeJobId); return; }
+  const label = `D${i + 1} ${DECOR_LABEL[p.kind] || p.kind}`;
+  const shapeJob = {
+    id: newId(), kind: 'shape', name: `${job.name} – ${label}`, created: Date.now(), photo: job.photo, thumb: job.thumb, step: 'corners',
+    parent: { jobId: job.id, jobName: job.name, decorId: p.id, label, description: [p.description, p.location].filter(Boolean).join(' · '),
+      box: p.box || null, crop: p.box ? await partCrop(job.photo, p.box).catch(() => null) : null },
+  };
+  await saveJob(shapeJob);
+  p.shapeJobId = shapeJob.id;
+  clearTimeout(ctx.saveT);
+  await saveJob(job);
+  ctx.onOpenJob(shapeJob.id);
 }
 
 // ---------------------------------------------------------------- printable sheet
@@ -448,7 +537,7 @@ function stepSheet(ctx) {
     styleRows.length ? el('h3', {}, 'Style') : '',
     styleRows.length ? el('table', {}, el('tbody', {}, ...styleRows.map(([k, v]) => el('tr', {}, el('th', {}, k), el('td', {}, String(v).replace(/_/g, ' ')))))) : '',
     r.decor.length ? el('h3', {}, 'Decorative parts → trace these in Shape → DXF (Mode 1)') : '',
-    r.decor.length ? el('ul', {}, ...r.decor.map((p, i) => el('li', {}, `D${i + 1} ${DECOR_LABEL[p.kind] || p.kind}: ${p.description || ''}${p.location ? ` (${p.location})` : ''}`))) : '',
+    r.decor.length ? el('ul', {}, ...r.decor.map((p, i) => el('li', {}, (p.dxf ? '✓ ' : '☐ ') + `D${i + 1} ${DECOR_LABEL[p.kind] || p.kind}: ${p.description || ''}${p.location ? ` (${p.location})` : ''}${p.dxf ? ` → ${p.dxf.file}` : ''}`))) : '',
     r.warnings.length ? el('h3', {}, 'Check on site') : '',
     r.warnings.length ? el('ul', {}, ...r.warnings.map((w) => el('li', {}, w))) : '',
   );
