@@ -178,3 +178,12 @@ input[type=checkbox] { width: 28px; height: 28px; accent-color: var(--accent); v
 .export-stage { height: 52vh; min-height: 300px; flex: none; border-radius: var(--radius); margin: 8px 0; }
 .layer-table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: .85rem; }
 .layer-table th, .layer-table td { text-align: left; padding: 4px 6px; border-bottom: 1px solid rgba(0,0,0,.12); overflow-wrap: anywhere; }
+
+/* build sheet: the photo with the found cabinets numbered */
+.photo-map { margin: 8px 0 12px; }
+.photo-map-canvas { width: 100%; height: auto; display: block; border-radius: var(--radius); border: 2px solid var(--line); background: #2b2f36; }
+.cab.flash { outline: 4px solid var(--accent, #e85d04); outline-offset: 2px; transition: outline-color .3s; }
+@media print { .photo-map-canvas { max-height: 4.5in; object-fit: contain; break-inside: avoid; } }
+.map-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 8px 0 4px; font-size: .9rem; font-weight: 700; }
+.map-legend > span { display: inline-flex; align-items: center; gap: 6px; }
+.map-legend .swatch { width: 22px; height: 10px; border-radius: 4px; }
