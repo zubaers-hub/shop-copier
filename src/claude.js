@@ -11,7 +11,10 @@ const str = { type: 'string' };
 const num = { type: 'number' };
 const int = { type: 'integer' };
 const bool = { type: 'boolean' };
+// where something sits in the photo, as fractions of the photo's width and height from its top-left corner
 const obj = (properties) => ({ type: 'object', properties, required: Object.keys(properties), additionalProperties: false });
+
+const box = () => obj({ left: num, top: num, right: num, bottom: num });
 
 const SCHEMA = obj({
   summary: str,
@@ -33,9 +36,10 @@ const SCHEMA = obj({
       doors: int, drawers: int,
       layout: str, hinge: str, notes: str,
       confidence: { type: 'string', enum: ['low', 'medium', 'high'] },
+      box_in_photo: box(),
     }),
   },
-  decorative_parts: { type: 'array', items: obj({ kind: { type: 'string', enum: DECOR_TYPES }, description: str, location: str }) },
+  decorative_parts: { type: 'array', items: obj({ kind: { type: 'string', enum: DECOR_TYPES }, description: str, location: str, box_in_photo: box() }) },
   warnings: { type: 'array', items: str },
 });
 
@@ -51,6 +55,8 @@ ${known ? `- The user measured: ${known}. Scale everything from that. Mark that 
 For each box give: door count, drawer count, a short layout description (for example "1 drawer over 2 doors", "4 drawers", "2 doors, 1 adjustable shelf visible"), hinge side for single doors if visible, and anything unusual in notes. Include fillers, end panels and appliance openings as their own entries when they take up width in the run.
 
 Style: door style (shaker, slab, raised panel, recessed panel, beadboard, glass, etc.), face frame or frameless, overlay, toe kick, crown, light rail, fillers, end panels, countertop, hardware, finish, and anything else worth knowing.
+
+For every box and every decorative part, give box_in_photo: the rectangle it occupies in the photo, as fractions of the photo's width and height measured from the top-left corner (left and right from 0 to 1 across, top and bottom from 0 to 1 down). The cabinet maker uses these rectangles to check, on the photo, that nothing was missed or counted twice, so make each one cover that box's face and nothing else.
 
 Decorative parts: list valances, corbels, brackets, arched or cathedral door tops, decorative end panels, appliqués or cutout patterns. These will be traced separately into DXF files.
 

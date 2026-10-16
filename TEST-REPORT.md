@@ -34,13 +34,14 @@ It caught two real bugs, both fixed:
 
 ## 3. Cabinet build sheet (Claude simulated)
 
-There's no API key here, so Claude's API was simulated. `tests/e2e-cabinets.mjs`, 16 of 16 checks pass:
+There's no API key here, so Claude's API was simulated. `tests/e2e-cabinets.mjs`, 20 of 20 checks pass:
 - The key is saved on the device.
 - The request has the key, the browser-access header, the model, a JSON-format answer, the photo and your measurement.
 - A bad key, a refusal, and an account without the newer fallback feature each give a clear message or a retry.
 - Widths come back rounded to 3" steps, and a hand-edited width (22 1/2) stays.
 - The sheet marks estimates with ≈, lists the style, and flags the valance for Shape → DXF.
 - "Trace in Shape → DXF" opens a new shape job with the same photo.
+- Claude is asked where each cabinet and decorative part sits in the photo; the Boxes step and the printed sheet show the photo with each one outlined and numbered like the list (base blue, wall green, tall orange, decorative purple D1, D2…), and tapping a box on the photo jumps to it in the list.
 
 **Not tested:** a real Claude call on a real cabinet photo, or how good its estimates are. That needs your key.
 

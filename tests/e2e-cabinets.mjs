@@ -17,11 +17,11 @@ const reply = {
   style: { door_style: 'Shaker', construction: 'face_frame', door_overlay: 'partial_overlay', toe_kick: '4" recessed', crown: 'none visible',
     light_rail: 'none', fillers: 'none visible', end_panels: 'none', countertop: 'laminate, 1 1/2" edge', hardware: 'none visible', finish: 'white paint', other: '' },
   cabinets: [
-    { position: 1, row: 'base', type: 'drawer_base', width_in: 17.6, height_in: 34.2, depth_in: 23, width_measured: false, height_measured: false, depth_measured: false, doors: 0, drawers: 4, layout: '4 drawers', hinge: '', notes: '', confidence: 'high' },
-    { position: 2, row: 'base', type: 'sink_base', width_in: 36.4, height_in: 34.5, depth_in: 24, width_measured: false, height_measured: false, depth_measured: false, doors: 2, drawers: 0, layout: '2 doors', hinge: 'left/right pair', notes: 'false front hidden by counter?', confidence: 'medium' },
-    { position: 3, row: 'base', type: 'base', width_in: 23.1, height_in: 34.5, depth_in: 24, width_measured: false, height_measured: false, depth_measured: false, doors: 2, drawers: 1, layout: '1 drawer over 2 doors', hinge: '', notes: '', confidence: 'low' },
+    { position: 1, row: 'base', type: 'drawer_base', width_in: 17.6, height_in: 34.2, depth_in: 23, width_measured: false, height_measured: false, depth_measured: false, doors: 0, drawers: 4, layout: '4 drawers', hinge: '', notes: '', confidence: 'high', box_in_photo: { left: 0.063, top: 0.5, right: 0.288, bottom: 0.9 } },
+    { position: 2, row: 'base', type: 'sink_base', width_in: 36.4, height_in: 34.5, depth_in: 24, width_measured: false, height_measured: false, depth_measured: false, doors: 2, drawers: 0, layout: '2 doors', hinge: 'left/right pair', notes: 'false front hidden by counter?', confidence: 'medium', box_in_photo: { left: 0.288, top: 0.5, right: 0.738, bottom: 0.9 } },
+    { position: 3, row: 'base', type: 'base', width_in: 23.1, height_in: 34.5, depth_in: 24, width_measured: false, height_measured: false, depth_measured: false, doors: 2, drawers: 1, layout: '1 drawer over 2 doors', hinge: '', notes: '', confidence: 'low', box_in_photo: { left: 0.738, top: 0.5, right: 1.0, bottom: 0.9 } },
   ],
-  decorative_parts: [{ kind: 'valance', description: 'Arched valance, about 30" wide', location: 'above the sink' }],
+  decorative_parts: [{ kind: 'valance', description: 'Arched valance, about 30" wide', location: 'above the sink', box_in_photo: { left: 0.28, top: 0.08, right: 0.75, bottom: 0.2 } }],
   warnings: ['Depth cannot be seen; standard 24" assumed.'],
 };
 const msg = (text) => ({ id: 'msg_test', type: 'message', role: 'assistant', model: 'claude-opus-5-5', content: [{ type: 'text', text }],
@@ -90,6 +90,27 @@ check('Request: key header, browser access header, model', r.headers['x-api-key'
 check('Request: structured JSON output + fallback beta', r.body.output_config?.format?.type === 'json_schema' && /server-side-fallback/.test(r.headers['anthropic-beta'] || ''), r.headers['anthropic-beta']);
 check('Request: photo sent as JPEG, max 1568 px', img && img.source.media_type === 'image/jpeg' && img.source.data.length > 10000);
 check('Request: the measurement is in the prompt', /78/.test(r.body.messages[0].content.find((c) => c.type === 'text').text));
+const schemaText = JSON.stringify(r.body.output_config?.format?.schema || r.body);
+check('Request: asks where each cabinet and decorative part is in the photo', (schemaText.match(/box_in_photo/g) || []).length >= 2 && /box_in_photo/.test(r.body.messages[0].content.find((c) => c.type === 'text').text));
+// the photo with numbered boxes, to check nothing was missed
+await page.waitForTimeout(800);
+const map = await page.evaluate(() => {
+  const c = document.querySelector('.photo-map-canvas');
+  if (!c || !c.width) return null;
+  const g = c.getContext('2d');
+  // outline colors just inside each box's edge: base blue for the cabinets, purple for the valance
+  const at = (fx, fy, dx = 0, dy = 0) => Array.from(g.getImageData(Math.round(fx * c.width) + dx, Math.round(fy * c.height) + dy, 1, 1).data.slice(0, 3));
+  return { w: c.width, h: c.height, cab2: at(0.738, 0.6, -3), valance: at(0.4, 0.08, 0, 3), note: document.querySelector('.photo-map p').textContent };
+});
+const near = (a, b) => a && a.every((v, i) => Math.abs(v - b[i]) < 60);
+check('Boxes step shows the photo with the cabinets numbered on it', map && map.w > 500 && near(map.cab2, [0x1e, 0x88, 0xe5]) && map.valance[0] > map.valance[1] + 30 && map.valance[2] > map.valance[1] + 40, JSON.stringify(map));
+// tapping a box on the photo jumps to that cabinet in the list
+const cv = await page.locator('.photo-map-canvas').boundingBox();
+await page.touchscreen.tap(cv.x + cv.width * 0.85, cv.y + cv.height * 0.7);
+await page.waitForTimeout(300);
+const flashed = await page.evaluate(() => [...document.querySelectorAll('.cab')].findIndex((e) => e.classList.contains('flash')));
+check('Tapping cabinet 3 on the photo jumps to #3 in the list', flashed === 2, `flashed index ${flashed}`);
+await page.locator('.photo-map').screenshot({ path: `${OUT}/c2b-photo-map.png` });
 await page.screenshot({ path: `${OUT}/c2-edit.png`, fullPage: true });
 
 // edit screen: rounded widths, est flags, editing
@@ -106,6 +127,7 @@ check('Sheet keeps the hand-edited width', /22 1\/2/.test(sheet));
 check('Sheet marks estimates with ≈', /≈/.test(sheet));
 check('Sheet flags the valance for Shape → DXF', /valance/i.test(sheet) && /Shape → DXF|DXF/.test(sheet));
 check('Sheet shows the style', /Shaker/.test(sheet));
+check('Sheet includes the numbered photo', await page.locator('.sheet img.photo-map-canvas').count() === 1 && /What was found in the photo/.test(sheet));
 // decorative part → new shape job with the same photo
 await page.locator('nav.steps button', { hasText: 'Boxes' }).click();
 await page.waitForTimeout(300);

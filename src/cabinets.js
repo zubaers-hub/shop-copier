@@ -34,6 +34,16 @@ const TALLISH = ['tall', 'pantry', 'oven_tall'];
 const WALLISH = ['wall', 'corner_wall'];
 
 // Rounds Claude's estimates to standard sizes. Measured numbers are left alone.
+// Claude's rectangle in the photo (fractions 0..1), checked; null if missing or nonsense
+function photoBox(b) {
+  if (!b) return null;
+  const c = (v) => Math.min(1, Math.max(0, +v));
+  const x0 = c(Math.min(b.left, b.right)), x1 = c(Math.max(b.left, b.right));
+  const y0 = c(Math.min(b.top, b.bottom)), y1 = c(Math.max(b.top, b.bottom));
+  if (![x0, x1, y0, y1].every(Number.isFinite) || x1 - x0 < 0.005 || y1 - y0 < 0.005) return null;
+  return { x0, y0, x1, y1 };
+}
+
 export function normalize(result) {
   const cabs = (result.cabinets || []).slice().sort((a, b) => a.position - b.position).map((c) => {
     const est = { w: !c.width_measured, h: !c.height_measured, d: !c.depth_measured };
@@ -58,12 +68,13 @@ export function normalize(result) {
       id: newId(), row: c.row, type: t, w, h, d, est,
       raw: { w: c.width_in, h: c.height_in, d: c.depth_in },
       doors: c.doors, drawers: c.drawers, layout: c.layout || '', hinge: c.hinge || '', notes: c.notes || '', confidence: c.confidence,
+      box: photoBox(c.box_in_photo),
     };
   });
   return {
     summary: result.summary || '', scale_basis: result.scale_basis || '',
     style: { ...result.style }, cabinets: cabs,
-    decor: (result.decorative_parts || []).map((p) => ({ id: newId(), kind: p.kind, description: p.description, location: p.location })),
+    decor: (result.decorative_parts || []).map((p) => ({ id: newId(), kind: p.kind, description: p.description, location: p.location, box: photoBox(p.box_in_photo) })),
     warnings: result.warnings || [],
   };
 }
@@ -197,6 +208,75 @@ function knownText(k) {
   }[k.what];
 }
 
+// ---------------------------------------------------------------- the photo with every found box drawn on it
+const ROW_COLOR = { base: '#1e88e5', wall: '#2e9e44', tall: '#e85d04' };
+const DECOR_COLOR = '#9c27b0';
+const rowOf = (c) => (WALLISH.includes(c.type) ? 'wall' : TALLISH.includes(c.type) ? 'tall' : c.row === 'wall' || c.row === 'tall' ? c.row : 'base');
+
+// onPick(kind, index): a box on the photo was tapped
+function photoMap(ctx, { onPick, forPrint = false } = {}) {
+  const { job } = ctx;
+  const r = job.result;
+  const wrap = el('div', { class: 'photo-map' });
+  const canvas = el('canvas', { class: 'photo-map-canvas' });
+  const legend = el('div', { class: 'map-legend' },
+    ...[['base', 'Base'], ['wall', 'Wall'], ['tall', 'Tall']].map(([k, t]) => el('span', {}, el('span', { class: 'swatch', style: `background:${ROW_COLOR[k]}` }), t)),
+    el('span', {}, el('span', { class: 'swatch', style: `background:${DECOR_COLOR}` }), 'Decorative (D1, D2…)'));
+  const missing = r.cabinets.map((c, i) => (c.box ? null : i + 1)).filter(Boolean);
+  const boxed = r.cabinets.length - missing.length;
+  const note = el('p', { class: 'small' });
+  if (!r.cabinets.some((c) => c.box) && !r.decor.some((p) => p.box)) {
+    note.textContent = 'This run was analyzed before the app marked boxes on the photo. Analyze the photo again to see them.';
+  } else {
+    note.textContent = `Every box Claude found is outlined and numbered like the list${forPrint ? '' : ' (tap one to jump to it)'}. A cabinet with no outline was missed: add it with “+ Add cabinet”. Two numbers on one cabinet means it was counted twice.`
+      + (missing.length ? ` Not on the photo: #${missing.join(', #')} (added by hand or not placed).` : '');
+  }
+  const hits = [];
+  (async () => {
+    if (!job.photo) return;
+    const img = await loadPhoto(job.photo, 1600);
+    const W = img.width, H = img.height;
+    canvas.width = W; canvas.height = H;
+    const g = canvas.getContext('2d');
+    g.drawImage(img, 0, 0);
+    g.fillStyle = 'rgba(0,0,0,.25)'; g.fillRect(0, 0, W, H);
+    const lw = Math.max(3, Math.round(W / 300)), fs = Math.max(18, Math.round(W / 32));
+    const draw = (b, color, label, dashed) => {
+      const x = b.x0 * W, y = b.y0 * H, w = (b.x1 - b.x0) * W, h = (b.y1 - b.y0) * H;
+      g.save();
+      g.drawImage(img, x, y, w, h, x, y, w, h); // box area at full brightness
+      g.strokeStyle = color; g.lineWidth = lw; g.setLineDash(dashed ? [lw * 3, lw * 2] : []);
+      g.strokeRect(x + lw / 2, y + lw / 2, w - lw, h - lw);
+      g.font = `900 ${fs}px system-ui, sans-serif`;
+      const tw = g.measureText(label).width + fs * 0.6, th = fs * 1.3;
+      const lx = x + w / 2 - tw / 2, ly = Math.min(Math.max(y + h / 2 - th / 2, 0), H - th);
+      g.fillStyle = color; g.beginPath(); g.roundRect ? g.roundRect(lx, ly, tw, th, th / 3) : g.rect(lx, ly, tw, th); g.fill();
+      g.fillStyle = '#fff'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(label, lx + tw / 2, ly + th / 2 + 1);
+      g.restore();
+    };
+    r.cabinets.forEach((c, i) => { if (c.box) { draw(c.box, ROW_COLOR[rowOf(c)], String(i + 1), false); hits.push({ kind: 'cab', i, b: c.box }); } });
+    r.decor.forEach((p, i) => { if (p.box) { draw(p.box, DECOR_COLOR, `D${i + 1}`, true); hits.push({ kind: 'decor', i, b: p.box }); } });
+    if (forPrint) {
+      // a printed sheet can't show a canvas reliably: swap in an image
+      const im = el('img', { class: 'photo-map-canvas', alt: 'Photo with the found cabinets numbered', src: canvas.toDataURL('image/jpeg', 0.85) });
+      canvas.replaceWith(im);
+    }
+  })().catch(() => { note.textContent = 'Couldn’t draw the photo.'; });
+  if (onPick) {
+    canvas.onclick = (e) => {
+      const rc = canvas.getBoundingClientRect();
+      const fx = (e.clientX - rc.left) / rc.width, fy = (e.clientY - rc.top) / rc.height;
+      // smallest box under the tap (a wall cabinet can sit inside a tall one's rectangle)
+      const under = hits.filter((h) => fx >= h.b.x0 && fx <= h.b.x1 && fy >= h.b.y0 && fy <= h.b.y1)
+        .sort((a, b) => (a.b.x1 - a.b.x0) * (a.b.y1 - a.b.y0) - (b.b.x1 - b.b.x0) * (b.b.y1 - b.b.y0));
+      if (under.length) onPick(under[0].kind, under[0].i);
+    };
+  }
+  wrap.append(canvas, legend, note);
+  wrap.dataset.boxed = String(boxed);
+  return wrap;
+}
+
 // ---------------------------------------------------------------- edit
 function stepEdit(ctx) {
   const { job, settings } = ctx;
@@ -208,6 +288,7 @@ function stepEdit(ctx) {
 
   const render = () => {
     list.innerHTML = '';
+    cards.length = 0;
     r.cabinets.forEach((c, i) => {
       const type = el('select', {}, ...CABINET_TYPES.map((t) => el('option', { value: t }, TYPE_LABEL[t] || t)));
       type.value = c.type;
@@ -241,17 +322,28 @@ function stepEdit(ctx) {
       upB.onclick = () => { [r.cabinets[i - 1], r.cabinets[i]] = [r.cabinets[i], r.cabinets[i - 1]]; save(ctx); render(); };
       dnB.onclick = () => { [r.cabinets[i + 1], r.cabinets[i]] = [r.cabinets[i], r.cabinets[i + 1]]; save(ctx); render(); };
       delB.onclick = () => { if (confirm(`Delete cabinet #${i + 1}?`)) { r.cabinets.splice(i, 1); save(ctx); render(); } };
-      list.appendChild(el('div', { class: 'cab' },
-        el('div', { class: 'cab-head' }, el('span', { class: 'num' }, `#${i + 1}`), type, upB, dnB, delB),
+      const card = el('div', { class: 'cab' },
+        el('div', { class: 'cab-head' }, el('span', { class: 'num', style: `color:${c.box ? ROW_COLOR[rowOf(c)] : 'inherit'}` }, `#${i + 1}`), type, upB, dnB, delB),
         c.confidence ? el('p', { class: 'small muted' }, `Claude’s confidence: ${c.confidence}` + (c.raw ? ` · raw estimate ${fmt(c.raw.w)} × ${fmt(c.raw.h)} × ${fmt(c.raw.d)}` : '')) : '',
         el('div', { class: 'dim3' }, dimInput('w', 'Width'), dimInput('h', 'Height'), dimInput('d', 'Depth')),
         el('div', { class: 'grid2' }, numInput('doors', 'Doors'), numInput('drawers', 'Drawers')),
         textInput('layout', 'Door / drawer layout'),
         textInput('hinge', 'Hinge side'),
         textInput('notes', 'Notes', true),
-      ));
+      );
+      cards.push(card);
+      list.appendChild(card);
     });
+    refreshMap();
   };
+  const cards = [];
+  const mapHolder = el('div');
+  const flash = (node) => { if (!node) return; node.scrollIntoView({ behavior: 'smooth', block: 'center' }); node.classList.add('flash'); setTimeout(() => node.classList.remove('flash'), 1500); };
+  const refreshMap = () => {
+    mapHolder.innerHTML = '';
+    mapHolder.append(photoMap(ctx, { onPick: (kind, i) => flash(kind === 'cab' ? cards[i] : decorCards[i]) }));
+  };
+  const decorCards = [];
   render();
 
   const addB = el('button', {}, '+ Add cabinet');
@@ -274,6 +366,7 @@ function stepEdit(ctx) {
   const decor = el('div');
   const renderDecor = () => {
     decor.innerHTML = '';
+    decorCards.length = 0;
     r.decor.forEach((p, i) => {
       const kind = el('select', {}, ...DECOR_TYPES.map((t) => el('option', { value: t }, DECOR_LABEL[t])));
       kind.value = p.kind;
@@ -287,8 +380,10 @@ function stepEdit(ctx) {
         ctx.onOpenJob(shapeJob.id);
       };
       const del = el('button', { class: 'danger' }, '✕');
-      del.onclick = () => { r.decor.splice(i, 1); save(ctx); renderDecor(); };
-      decor.appendChild(el('div', { class: 'cab' }, el('div', { class: 'cab-head' }, kind, del), el('label', {}, 'Description / where'), desc, el('p', { class: 'small muted' }, p.location || ''), trace));
+      del.onclick = () => { r.decor.splice(i, 1); save(ctx); renderDecor(); refreshMap(); };
+      const card = el('div', { class: 'cab' }, el('div', { class: 'cab-head' }, el('span', { class: 'num', style: `color:${DECOR_COLOR}` }, `D${i + 1}`), kind, del), el('label', {}, 'Description / where'), desc, el('p', { class: 'small muted' }, p.location || ''), trace);
+      decorCards.push(card);
+      decor.appendChild(card);
     });
     const add = el('button', {}, '+ Add decorative part');
     add.onclick = () => { r.decor.push({ id: newId(), kind: 'valance', description: '', location: '' }); save(ctx); renderDecor(); };
@@ -307,6 +402,7 @@ function stepEdit(ctx) {
     r.scale_basis ? el('p', { class: 'small muted' }, 'Scale: ' + r.scale_basis) : '',
     r.warnings.length ? el('div', { class: 'note' }, el('b', {}, 'Claude’s warnings: '), r.warnings.join(' · ')) : '',
     el('div', { class: 'note' }, 'Widths are rounded to 3" steps and heights/depths to standard sizes unless you entered them. Anything marked “estimate” came from the photo. Edit any field; it saves as you go.'),
+    el('h2', {}, 'Check it on the photo'), mapHolder,
     el('h2', {}, `Cabinets, left to right (${r.cabinets.length})`), list, addB,
     el('h2', {}, 'Style'), style,
     el('h2', {}, 'Decorative parts (Mode 1)'), decor,
@@ -336,11 +432,13 @@ function stepSheet(ctx) {
     el('h2', {}, job.name || 'Cabinet build sheet'),
     el('p', {}, `Date: ${fmtDate(job.created || Date.now())}` + (r.scale_basis ? ` · Scale: ${r.scale_basis}` : '')),
     el('div', { class: 'note' }, '≈ marks a size estimated from the photo (rounded to standard sizes). ' + ACCURACY_NOTE),
+    el('h3', {}, 'What was found in the photo'),
+    photoMap(ctx, { forPrint: true }),
     el('h3', {}, 'Cabinets, left to right'),
     el('table', {},
       el('thead', {}, el('tr', {}, ...['#', 'Type', 'W', 'H', 'D', 'Doors / drawers', 'Layout & notes'].map((h) => el('th', {}, h)))),
       el('tbody', {}, ...r.cabinets.map((c, i) => el('tr', {},
-        el('td', {}, String(i + 1)),
+        el('td', {}, el('b', { style: `color:${c.box ? ROW_COLOR[rowOf(c)] : 'inherit'}` }, String(i + 1))),
         el('td', {}, TYPE_LABEL[c.type] || c.type),
         el('td', {}, f(c.w, c.est.w)), el('td', {}, f(c.h, c.est.h)), el('td', {}, f(c.d, c.est.d)),
         el('td', {}, `${c.doors || 0} door${c.doors === 1 ? '' : 's'}, ${c.drawers || 0} drawer${c.drawers === 1 ? '' : 's'}`),
@@ -350,7 +448,7 @@ function stepSheet(ctx) {
     styleRows.length ? el('h3', {}, 'Style') : '',
     styleRows.length ? el('table', {}, el('tbody', {}, ...styleRows.map(([k, v]) => el('tr', {}, el('th', {}, k), el('td', {}, String(v).replace(/_/g, ' ')))))) : '',
     r.decor.length ? el('h3', {}, 'Decorative parts → trace these in Shape → DXF (Mode 1)') : '',
-    r.decor.length ? el('ul', {}, ...r.decor.map((p) => el('li', {}, `${DECOR_LABEL[p.kind] || p.kind}: ${p.description || ''}${p.location ? ` (${p.location})` : ''}`))) : '',
+    r.decor.length ? el('ul', {}, ...r.decor.map((p, i) => el('li', {}, `D${i + 1} ${DECOR_LABEL[p.kind] || p.kind}: ${p.description || ''}${p.location ? ` (${p.location})` : ''}`))) : '',
     r.warnings.length ? el('h3', {}, 'Check on site') : '',
     r.warnings.length ? el('ul', {}, ...r.warnings.map((w) => el('li', {}, w))) : '',
   );

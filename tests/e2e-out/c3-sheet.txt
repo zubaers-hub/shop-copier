@@ -1,9 +1,17 @@
 🖨 Print / save as PDF
 Smith kitchen
 
-Date: Oct 15, 2026 · Scale: Overall run width of 78" given by the user.
+Date: Oct 16, 2026 · Scale: Overall run width of 78" given by the user.
 
 ≈ marks a size estimated from the photo (rounded to standard sizes). Sizes from a photo are estimates. Lens distortion, camera angle and parts that aren’t flat all add error. Entering one real measured edge (tape measure) makes everything else much more accurate.
+What was found in the photo
+Base
+Wall
+Tall
+Decorative (D1, D2…)
+
+Every box Claude found is outlined and numbered like the list. A cabinet with no outline was missed: add it with “+ Add cabinet”. Two numbers on one cabinet means it was counted twice.
+
 Cabinets, left to right
 #	Type	W	H	D	Doors / drawers	Layout & notes
 1	Drawer base	≈ 18"	≈ 34 1/2"	≈ 24"	0 doors, 4 drawers	4 drawers
@@ -25,6 +33,6 @@ Countertop	laminate, 1 1/2" edge
 Hardware	none visible
 Finish	white paint
 Decorative parts → trace these in Shape → DXF (Mode 1)
-Valance: Arched valance, about 30" wide (above the sink)
+D1 Valance: Arched valance, about 30" wide (above the sink)
 Check on site
 Depth cannot be seen; standard 24" assumed.
