@@ -1,7 +1,7 @@
 🖨 Print / save as PDF
 Smith kitchen
 
-Date: Oct 16, 2026 · Scale: Overall run width of 78" given by the user.
+Date: Oct 17, 2026 · Scale: Overall run width of 78" given by the user.
 
 ≈ marks a size estimated from the photo (rounded to standard sizes). Sizes from a photo are estimates. Lens distortion, camera angle and parts that aren’t flat all add error. Entering one real measured edge (tape measure) makes everything else much more accurate.
 What was found in the photo

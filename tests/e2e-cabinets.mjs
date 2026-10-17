@@ -132,6 +132,11 @@ check('Sheet includes the numbered photo', await page.locator('.sheet img.photo-
 await page.locator('nav.steps button', { hasText: 'Boxes' }).click();
 await page.waitForTimeout(300);
 await page.getByRole('button', { name: /Trace in Shape/ }).first().click();
+await page.waitForSelector('.task-banner', { timeout: 10000 }).catch(() => {});
+const autoFirst = await page.getByRole('button', { name: /Find the part/ }).count();
+const sizeHeading = await page.locator('.page h2').first().textContent().catch(() => '');
+check('Tracing a part opens the automatic way first: just its size', autoFirst === 1 && /valance/i.test(sizeHeading), sizeHeading);
+await page.getByRole('button', { name: /do it by hand/ }).click(); // the hand-traced way is tested here; tests/e2e-auto.mjs covers automatic
 await page.waitForSelector('.stage-wrap canvas', { timeout: 10000 }).catch(() => {});
 const title = await page.locator('#title').textContent();
 check('“Trace in Shape → DXF” opens a shape job with the photo', (await page.locator('.stage-wrap canvas').count()) === 1, title);

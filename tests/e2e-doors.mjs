@@ -76,6 +76,7 @@ for (const door of ['cathedral', 'glass']) {
   const R = (report[door] = { found: [], dxf: {} });
   await page.getByRole('button', { name: /Shape → DXF/ }).click();
   await page.locator('input[type=file]:not([capture])').setInputFiles(`tests/doors/${door}.jpg`);
+  await page.getByRole('button', { name: /do it by hand/ }).click(); // this test drives every manual tool
   await page.waitForSelector('.stage-wrap canvas');
   await page.waitForTimeout(400);
   const scale = await ed(() => window.__stage.imgW / 1800);

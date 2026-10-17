@@ -153,6 +153,41 @@ export async function suggestDetails({ apiKey, imageBase64, widthIn, heightIn, s
   });
 }
 
+// ---------------------------------------------------------------- Mode 1: find the part in a photo
+
+const LOCATE_SCHEMA = obj({
+  found: bool,
+  part: str,
+  rectangular: bool,
+  corners: { type: 'array', items: pt },
+  inside_point: pt,
+  summary: str,
+  warnings: { type: 'array', items: str },
+});
+
+const LOCATE_PROMPT = ({ widthIn, heightIn, hint }) => `A cabinet maker photographed one cabinet part (a door, drawer front, panel, valance, corbel, bracket or similar) to copy it on a CNC router. They measured it: ${widthIn}" wide and ${heightIn}" tall overall.${hint ? `\n\nWhat to look for: ${hint}` : ''}
+
+Find that part in the photo and give:
+- corners: the 4 corners of the part's overall rectangle as it appears in the photo, in this order: top-left, top-right, bottom-right, bottom-left. For a rectangular part (most doors and panels) these are the part's own corners, exactly on its outer edge. For a shaped part (an arched valance, a corbel), they are the corners of the smallest rectangle that encloses it, drawn in the plane of the part so they follow the photo's perspective.
+- rectangular: true if the part's outline is a plain rectangle (rounded or profiled edges are still rectangular), false if the outline itself is shaped (arched top, scalloped bottom, curved corbel).
+- inside_point: a point clearly on the part itself, away from its edges.
+- part: what the part is, in a few words.
+
+Coordinates are fractions of the photo's width (x, 0 at the left, 1 at the right) and height (y, 0 at the top, 1 at the bottom). Be as exact as you can about the corners: the app straightens the photo with them, and it refines them on the part's edges afterwards.
+If you can't find a part that fits, set found to false and say why in warnings. Put anything else uncertain in warnings; in summary describe the part and its visible details in one or two sentences.`;
+
+// Finds the part in the photo. Returns { found, part, rectangular, corners: [{x,y}] fractions, inside_point, summary, warnings }.
+export async function locatePart({ apiKey, model, imageBase64, widthIn, heightIn, hint }) {
+  return callJSON({
+    apiKey, model, schema: LOCATE_SCHEMA,
+    content: [
+      { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: imageBase64 } },
+      { type: 'text', text: LOCATE_PROMPT({ widthIn, heightIn, hint }) },
+    ],
+    errors: { refusal: 'Claude declined to look at this photo.', cut: 'Claude’s answer was cut off. Try again.' },
+  });
+}
+
 function friendly(e) {
   if (e instanceof Anthropic.AuthenticationError) return new Error('The API key was rejected. Check it in Settings.');
   if (e instanceof Anthropic.PermissionDeniedError) return new Error('This API key is not allowed to use that model. Pick another model in Settings.');

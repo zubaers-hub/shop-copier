@@ -1,0 +1,88 @@
+{
+ "glass": {
+  "features": [
+   {
+    "cut": "groove",
+    "closed": true,
+    "w": 11.6875,
+    "h": 24.65625,
+    "src": "claude",
+    "bit": "v90",
+    "depth": 0.125
+   },
+   {
+    "cut": "inside",
+    "closed": true,
+    "w": 9.968749999999996,
+    "h": 22.968749999999996,
+    "src": "claude"
+   }
+  ],
+  "cornerErrPx": 2.5,
+  "ms": 2475,
+  "dxf": {
+   "file": "tests/e2e-out/auto-glass.dxf",
+   "layers": [
+    "OUTSIDE_CUT",
+    "VGROOVE_90_0.125",
+    "INSIDE_CUT"
+   ],
+   "size": [
+    15,
+    28
+   ]
+  }
+ },
+ "cathedral": {
+  "features": [
+   {
+    "cut": "profile",
+    "closed": true,
+    "w": 10.03125,
+    "h": 21.406250000000007,
+    "src": "auto",
+    "bit": "rp_cove"
+   },
+   {
+    "cut": "skip",
+    "closed": true,
+    "w": 9.625,
+    "h": 20.03125,
+    "src": "auto"
+   }
+  ],
+  "cornerErrPx": 2.999999999999943,
+  "ms": 2452,
+  "dxf": {
+   "file": "tests/e2e-out/auto-cathedral.dxf",
+   "layers": [
+    "OUTSIDE_CUT",
+    "PROFILE_EDGE_RAISED_PANEL_COVE"
+   ],
+   "size": [
+    15,
+    28
+   ]
+  }
+ },
+ "valance": {
+  "outline": {
+   "n": 694,
+   "w": 30,
+   "h": 4.75,
+   "midBottom": 4.75,
+   "endBottom": 2.98841059602649
+  },
+  "ms": 1415,
+  "dxf": {
+   "file": "tests/e2e-out/auto-valance.dxf",
+   "layers": [
+    "OUTSIDE_CUT"
+   ],
+   "size": [
+    29.994199,
+    4.749963
+   ]
+  }
+ }
+}

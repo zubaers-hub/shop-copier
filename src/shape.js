@@ -2,9 +2,10 @@
 import {
   parseInches, formatInches, orderCorners, quadAspect, buildShape, shapeBBox, segPoints, writeDXF, checkDXF,
   autoCenter, dist, toCadSpace, arcGeom, CUT_TYPES, bitsFor, DEFAULT_DEPTH, DEFAULT_BIT, layerFor, openAllowed,
+  homography, applyH,
 } from './core.js';
-import { loadPhoto, canvasToBlob, straighten, detectOutline, resampleOutline, resampleLine, detectDetails, detailAt, freeDetailEdges } from './vision.js';
-import { suggestDetails } from './claude.js';
+import { loadPhoto, canvasToBlob, straighten, findQuad, detectOutline, resampleOutline, resampleLine, detectDetails, detailAt, freeDetailEdges } from './vision.js';
+import { suggestDetails, locatePart } from './claude.js';
 import { Stage } from './stage.js';
 import { saveJob, getJob } from './store.js';
 import { el, toast, downloadBlob, shareFile, safeFileName, ACCURACY_NOTE } from './ui.js';
@@ -12,6 +13,8 @@ import { el, toast, downloadBlob, shareFile, safeFileName, ACCURACY_NOTE } from 
 const STEPS = [
   ['photo', 'Photo'], ['corners', 'Corners'], ['size', 'Size'], ['trace', 'Outline'], ['details', 'Details'], ['clean', 'Clean'], ['export', 'Export'],
 ];
+// the automatic way: you give the photo and the size, Claude and the photo do the rest
+const AUTO_STEPS = [['photo', 'Photo'], ['size', 'Size'], ['result', 'What I found'], ['export', 'Export']];
 
 export async function openShapeEditor(view, job, settings, { onTitle, onOpenJob }) {
   const ed = new ShapeEditor(view, job, settings, onTitle);
@@ -34,6 +37,8 @@ class ShapeEditor {
     job.smooth ??= 3;
     job.snap ??= true;
     job.corners ||= [];
+    // jobs traced by hand before the automatic way existed stay manual
+    job.mode ||= job.corners.length || job.contours.outer.length ? 'manual' : 'auto';
     this.tool = 'move';
     this.active = -1; // -1 = outline, 0.. = index into job.features
     this.drawing = false;
@@ -46,13 +51,20 @@ class ShapeEditor {
     window.__editor = this; // handy for automated tests
     if (this.job.photo) this.photo = await loadPhoto(this.job.photo);
     if (this.photo && this.job.corners.length === 4 && this.job.rectIn) this.restraighten();
-    this.go(this.job.step && this.canGo(this.job.step) ? this.job.step : this.photo ? (this.straight ? 'trace' : 'corners') : 'photo');
+    const steps = this.steps().map((x) => x[0]);
+    const auto = this.job.mode === 'auto';
+    const fallback = !this.photo ? 'photo' : auto ? (this.canGo('result') ? 'result' : 'size') : this.straight ? 'trace' : 'corners';
+    this.go(this.job.step && steps.includes(this.job.step) && this.canGo(this.job.step) ? this.job.step : fallback);
   }
 
   destroy() { if (this.stage) this.stage.destroy(); freeDetailEdges(this.found); }
 
+  steps() { return this.job.mode === 'auto' ? AUTO_STEPS : STEPS; }
+
   canGo(step) {
     if (step === 'photo') return true;
+    if (step === 'size' && this.job.mode === 'auto') return !!this.photo;
+    if (step === 'result') return !!this.straight && this.job.contours.outer.length >= 3;
     if (step === 'corners') return !!this.photo;
     if (step === 'size') return this.photo && this.job.corners.length === 4;
     if (step === 'trace') return !!this.straight;
@@ -73,18 +85,32 @@ class ShapeEditor {
     this.save();
     if (this.stage) { this.stage.destroy(); this.stage = null; }
     this.view.innerHTML = '';
+    window.scrollTo(0, 0);
     const bar = el('nav', { class: 'steps' });
-    const order = STEPS.map((s) => s[0]);
-    STEPS.forEach(([id, label]) => {
+    const list = this.steps();
+    const order = list.map((s) => s[0]);
+    list.forEach(([id, label]) => {
       const b = el('button', { class: (id === step ? 'current ' : '') + (order.indexOf(id) < order.indexOf(step) ? 'done' : '') }, label);
       b.disabled = !this.canGo(id);
       b.onclick = () => this.go(id);
       bar.appendChild(b);
     });
+    // switch between the automatic way and doing it by hand
+    if (this.job.mode === 'auto') {
+      if (this.canGo('result')) {
+        const hand = el('button', { class: 'mode-switch' }, '✏️ Fix by hand');
+        hand.onclick = () => { this.job.mode = 'manual'; this.go('details'); };
+        bar.appendChild(hand);
+      }
+    } else {
+      const auto = el('button', { class: 'mode-switch' }, '✨ Automatic');
+      auto.onclick = () => { this.job.mode = 'auto'; this.go(this.canGo('result') ? 'result' : 'size'); };
+      bar.prepend(auto);
+    }
     this.view.appendChild(bar);
     if (this.job.parent) this.view.appendChild(this.taskBanner());
     ({ photo: () => this.stepPhoto(), corners: () => this.stepCorners(), size: () => this.stepSize(), trace: () => this.stepTrace(),
-      details: () => this.stepDetails(), clean: () => this.stepClean(), export: () => this.stepExport() })[step]();
+      details: () => this.stepDetails(), clean: () => this.stepClean(), export: () => this.stepExport(), result: () => this.stepResult() })[step]();
     bar.querySelector('.current')?.scrollIntoView({ inline: 'center', block: 'nearest' });
   }
 
@@ -153,14 +179,14 @@ class ShapeEditor {
       this.job.thumb = thumbOf(this.photo);
       this.job.corners = [];
       this.straight = null;
-      this.go('corners');
+      this.go(this.job.mode === 'auto' ? 'size' : 'corners');
     };
     cam.onchange = () => onFile(cam);
     pick.onchange = () => onFile(pick);
     page.append(el('div', { class: 'stack' }, take, up), cam, pick);
     if (this.photo) {
       const keep = el('button', { class: 'go' }, 'Keep current photo →');
-      keep.onclick = () => this.go('corners');
+      keep.onclick = () => this.go(this.job.mode === 'auto' ? 'size' : 'corners');
       page.append(el('h3', {}, 'Current photo'), el('img', { class: 'preview-img', src: this.photo.toDataURL('image/jpeg', 0.6) }), keep);
     }
     this.view.appendChild(page);
@@ -251,6 +277,7 @@ class ShapeEditor {
 
   // ---------------------------------------------------------------- step 3: size
   stepSize() {
+    if (this.job.mode === 'auto') return this.stepSizeAuto();
     const page = el('div', { class: 'page' });
     const w = el('input', { inputmode: 'text', placeholder: 'e.g. 14 3/4', value: this.job.realW || '' });
     const h = el('input', { inputmode: 'text', placeholder: 'e.g. 22 1/2', value: this.job.realH || '' });
@@ -289,6 +316,186 @@ class ShapeEditor {
     };
     this.view.appendChild(page);
     setTimeout(() => w.focus(), 50);
+  }
+
+  // ---------------------------------------------------------------- the automatic way
+  stepSizeAuto() {
+    const page = el('div', { class: 'page' });
+    const rect = this.job.rectIn;
+    const w = el('input', { inputmode: 'text', placeholder: 'e.g. 15 3/4', value: this.job.realW || '', 'aria-label': 'Width' });
+    const h = el('input', { inputmode: 'text', placeholder: 'e.g. 28', value: this.job.realH || '', 'aria-label': 'Height' });
+    const msg = el('div');
+    const go = el('button', { class: 'go' }, '✨ Find the part and its details');
+    const status = el('div', { class: 'auto-status' });
+    const t = this.job.parent;
+    const manual = el('button', { class: 'linkish' }, 'Or do it by hand: tap the corners yourself');
+    manual.onclick = () => { this.job.mode = 'manual'; this.go('corners'); };
+    page.append(
+      el('h2', {}, t ? `How big is ${t.label.replace(/^D\d+\s*/, 'the ').toLowerCase()}?` : 'How big is the part?'),
+      el('p', {}, 'Measure the part with a tape: its overall width (left to right) and height (top to bottom), in inches. Fractions are fine (14 3/4). That’s all you need to enter.'),
+      el('div', { class: 'grid2' }, el('div', {}, el('label', {}, 'Width (inches)'), w), el('div', {}, el('label', {}, 'Height (inches)'), h)),
+      el('img', { class: 'preview-img', src: this.photo.toDataURL('image/jpeg', 0.6), alt: 'Your photo' }),
+      msg, go, status,
+      manual,
+      el('p', { class: 'small muted' }, this.settings.apiKey
+        ? 'Claude finds the part in the photo and works out what each detail is. The photo goes from this phone straight to Anthropic.'
+        : 'No Claude key yet (Settings ⚙): the app will still find a rectangular part and its details, but can’t tell what each detail is or handle shaped parts as well.'),
+    );
+    const check = () => {
+      const W = parseInches(w.value), H = parseInches(h.value);
+      msg.className = ''; msg.textContent = '';
+      if (w.value && !(W > 0)) { msg.className = 'bad-box'; msg.textContent = 'Can’t read the width. Try 14 3/4 or 14.75'; }
+      else if (h.value && !(H > 0)) { msg.className = 'bad-box'; msg.textContent = 'Can’t read the height. Try 22 1/2 or 22.5'; }
+      go.disabled = !(W > 0 && H > 0);
+      return { W, H };
+    };
+    w.oninput = h.oninput = check;
+    check();
+    go.onclick = async () => {
+      const { W, H } = check();
+      this.job.realW = w.value; this.job.realH = h.value;
+      go.disabled = true;
+      try {
+        await this.autoRun(W, H, (line) => { status.append(el('p', {}, line)); });
+        this.go('result');
+      } catch (e) {
+        status.append(el('div', { class: 'bad-box' }, e.message || String(e)));
+        go.disabled = false;
+      }
+    };
+    this.view.appendChild(page);
+    if (!rect) setTimeout(() => w.focus(), 50);
+  }
+
+  // Photo + size -> corners, straightened photo, outline, details and cut types. say(line): progress.
+  async autoRun(W, H, say = () => {}) {
+    const notes = [];
+    const key = this.settings.apiKey;
+    const pw = this.photo.width, ph = this.photo.height;
+    let corners = null, info = null;
+    say('🔎 Finding the part in the photo…');
+    if (key) {
+      const k = Math.min(1, 1568 / Math.max(pw, ph));
+      const c = document.createElement('canvas');
+      c.width = Math.round(pw * k); c.height = Math.round(ph * k);
+      c.getContext('2d').drawImage(this.photo, 0, 0, c.width, c.height);
+      const t = this.job.parent;
+      const hint = t ? `${t.label.replace(/^D\d+\s*/, '')}${t.description ? ` (${t.description})` : ''}` +
+        (t.box ? `. It is roughly in the area from x=${t.box.x0.toFixed(2)} to ${t.box.x1.toFixed(2)} and y=${t.box.y0.toFixed(2)} to ${t.box.y1.toFixed(2)} of the photo.` : '') : '';
+      info = await locatePart({ apiKey: key, model: this.settings.model, imageBase64: c.toDataURL('image/jpeg', 0.85).split(',')[1], widthIn: formatInches(W, 16, ''), heightIn: formatInches(H, 16, ''), hint });
+      if (!info.found || !Array.isArray(info.corners) || info.corners.length !== 4) {
+        throw new Error('Claude couldn’t find the part in this photo. ' + (info.warnings || []).join(' ') + ' Try a photo with the whole part in view, or tap ✏️ Fix by hand.');
+      }
+      corners = info.corners.map((q) => [Math.min(1, Math.max(0, q.x)) * pw, Math.min(1, Math.max(0, q.y)) * ph]);
+      for (const wmsg of info.warnings || []) notes.push(wmsg);
+      if (info.rectangular) {
+        // Claude's corners are close; the part's own edges in the photo are exact
+        const q = await findQuad(this.photo, corners);
+        if (q) corners = q; else notes.push('The corners are Claude’s estimate (the part’s edges weren’t clear enough to lock on to). Check the outline against the photo.');
+      }
+    } else {
+      corners = await findQuad(this.photo, null);
+      if (!corners) throw new Error('Couldn’t find a four-sided part in the photo. Add a Claude key in Settings (⚙) so Claude can find it, or tap ✏️ Fix by hand.');
+    }
+    this.job.corners = orderCorners(corners);
+    this.job.rectIn = { W, H };
+    this.job.aspectGuess = false;
+    this.restraighten();
+    say('📐 Straightened the photo to your size.');
+
+    // outline: a rectangle, or the shape inside its rectangle
+    const rectOutline = [{ x: 0, y: 0 }, { x: W, y: 0 }, { x: W, y: H }, { x: 0, y: H }].map((q) => ({ ...q, corner: true }));
+    let outer = rectOutline, shaped = false;
+    const wantShape = info ? !info.rectangular : true;
+    if (wantShape) {
+      const Hm = homography(this.job.corners, [[0, 0], [W, 0], [W, H], [0, H]]);
+      const ip = info?.inside_point ? applyH(Hm, info.inside_point.x * pw, info.inside_point.y * ph) : [W / 2, H / 2];
+      const seed = this.px({ x: Math.min(W, Math.max(0, ip[0])), y: Math.min(H, Math.max(0, ip[1])) });
+      try {
+        const res = await detectOutline(this.straight.canvas, { mode: 'edges', sensitivity: 5, seed });
+        if (res) {
+          const pts = resampleOutline(res.outer, 0.08 * this.straight.ppi).map((q) => this.inch(q));
+          const b = ptsBBox(pts), a = Math.abs(polyArea(pts));
+          const fits = b.w > W * 0.8 && b.w < W * 1.12 && b.h > H * 0.8 && b.h < H * 1.12;
+          // a shaped part fills noticeably less than its rectangle; otherwise it's a rectangle after all
+          if (fits && (info ? true : a < W * H * 0.93)) {
+            // your tape measure beats the photo: stretch the trace to exactly the size you entered
+            const sx = W / b.w, sy = H / b.h;
+            outer = pts.map((q) => ({ x: (q.x - b.minX) * sx, y: (q.y - b.minY) * sy }));
+            shaped = true;
+          }
+          else if (info) notes.push('Couldn’t trace the shaped outline cleanly, so the outline is the part’s overall rectangle. Use ✏️ Fix by hand to trace it.');
+        } else if (info) notes.push('Couldn’t trace the shaped outline, so the outline is the part’s overall rectangle. Use ✏️ Fix by hand to trace it.');
+      } catch (e) { notes.push('Outline tracing failed: ' + e.message); }
+    }
+    this.job.contours.outer = outer;
+    this.job.features = [];
+    say(shaped ? '✏️ Traced the shaped outline.' : '▭ Outline: a rectangle, exactly your size.');
+
+    say('🔍 Looking for details inside…');
+    const n = await this.findDetails(true);
+    say(`Found ${n} detail${n === 1 ? '' : 's'} in the photo.`);
+    if (key) {
+      say('🤖 Asking Claude what each detail is…');
+      try {
+        const res = await this.suggestWithClaude();
+        for (const wmsg of res.warnings || []) notes.push(wmsg);
+        this.job.claudeSummary = res.summary || info?.summary || '';
+      } catch (e) { notes.push('Claude couldn’t check the details: ' + e.message); }
+    } else if (!key) notes.push('Cut types are the app’s guesses from the photo. With a Claude key, Claude checks each one and adds details the photo detection missed.');
+    this.job.partName = info?.part || '';
+    this.job.autoNotes = notes;
+    this.job.mirror = { on: false, cx: null, keep: 'left' };
+    this.undo = [];
+    this.rebuild();
+    this.save();
+  }
+
+  // What the automatic way found, drawn on the straightened photo, with a plain list. Accept or fix.
+  stepResult() {
+    this.rebuild();
+    const page = el('div', { class: 'page' });
+    const d = this.settings.denom;
+    const bb = this.shape ? shapeBBox({ outer: this.shape.outer, holes: [] }) : ptsBBox(this.job.contours.outer);
+    const wrap = el('div', { class: 'stage-wrap export-stage' });
+    const legend = el('div');
+    const refresh = () => { legend.replaceChildren(this.legendEl()); };
+    this.onLegend = refresh;
+    const list = el('div', { class: 'found-list' });
+    const fsize = (pts) => { const b = ptsBBox(pts); return `${formatInches(b.w, d)} × ${formatInches(b.h, d)}`; };
+    list.append(el('div', { class: 'feat-row' }, el('span', { class: 'dot', style: `background:${CUT_TYPES.outside.color}` }),
+      el('span', { class: 'grow' }, el('b', {}, 'Outline · Outside cut'), ` ${formatInches(bb.w, d)} × ${formatInches(bb.h, d)}`, el('div', { class: 'small muted' }, this.job.contours.outer.length === 4 ? 'Rectangle, your exact size.' : 'Shaped outline traced from the photo.'))));
+    this.job.features.forEach((f, i) => {
+      const t = CUT_TYPES[f.cut] || CUT_TYPES.skip;
+      const extra = [t.depth && f.depth ? `${formatInches(f.depth, 16)} deep` : '', t.bit && f.bit ? (bitsFor(f.cut).find((b) => b.id === f.bit)?.label || f.bit) : ''].filter(Boolean).join(', ');
+      list.append(el('div', { class: 'feat-row' }, el('span', { class: 'dot', style: `background:${t.color}` }),
+        el('span', { class: 'grow' }, el('b', {}, `#${i + 1} · ${t.label}`), ` ${fsize(f.pts)}${f.closed === false ? ' line' : ''}${extra ? ` · ${extra}` : ''}`,
+          f.why ? el('div', { class: 'small muted' }, f.why) : '')));
+    });
+    const ok = el('button', { class: 'go' }, '✓ Looks right: get the DXF →');
+    ok.onclick = () => this.go('export');
+    const fix = el('button', {}, '✏️ Fix something');
+    fix.onclick = () => { this.job.mode = 'manual'; this.go('details'); };
+    const again = el('button', {}, '↻ Find it again');
+    again.onclick = () => this.go('size');
+    const notes = this.job.autoNotes || [];
+    page.append(
+      el('h2', {}, `${this.job.partName ? this.job.partName[0].toUpperCase() + this.job.partName.slice(1) + ': ' : ''}${formatInches(bb.w, d)} wide × ${formatInches(bb.h, d)} tall`),
+      this.job.claudeSummary ? el('p', {}, this.job.claudeSummary) : '',
+      el('p', { class: 'small muted' }, 'This is what will be cut, drawn over your photo. Numbers match the list below. Tap a layer to hide or show it.'),
+      wrap, legend,
+      el('h3', {}, `What I found (${this.job.features.length + 1})`), list,
+      notes.length ? el('div', { class: 'note' }, el('b', {}, 'Check: '), notes.join(' ')) : '',
+      el('div', { class: 'stack', style: 'margin-top:12px' }, ok, fix, again),
+      el('div', { class: 'note' }, ACCURACY_NOTE),
+    );
+    this.view.appendChild(page);
+    refresh();
+    this.stage = new Stage(wrap, { draw: (ctx, st, inLoupe) => this.drawOverlay(ctx, st, inLoupe) });
+    this.stage.setImage(this.straight.canvas);
+    const pts = this.job.contours.outer.map((q) => this.px(q));
+    const xs = pts.map((q) => q[0]), ys = pts.map((q) => q[1]);
+    this.stage.fit({ x: Math.min(...xs) - 20, y: Math.min(...ys) - 20, w: Math.max(...xs) - Math.min(...xs) + 40, h: Math.max(...ys) - Math.min(...ys) + 40 });
   }
 
   restraighten() {
@@ -537,7 +744,7 @@ class ShapeEditor {
       const pts = c.map(S);
       const raw = this.step === 'trace' ? 'rgba(66,165,245,' : null;
       ctx.strokeStyle = raw ? raw + (isActive ? '.95)' : '.5)') : colorOf(f);
-      ctx.globalAlpha = this.step === 'clean' || this.step === 'export' ? 0.45 : 1;
+      ctx.globalAlpha = this.step === 'clean' || this.step === 'export' || this.step === 'result' ? 0.45 : 1;
       ctx.lineWidth = isActive ? 4 : editing ? 2.5 : 1.25;
       if (f && f.cut === 'skip') ctx.setLineDash([8, 6]);
       ctx.beginPath(); pts.forEach((p, i) => (i ? ctx.lineTo(...p) : ctx.moveTo(...p)));
@@ -559,8 +766,9 @@ class ShapeEditor {
         if (this.drawing && pts.length && closed) { ctx.strokeStyle = '#ffd60a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(pts[0][0], pts[0][1], 14, 0, 7); ctx.stroke(); }
       }
       // number tags so the list and the picture match
-      if (f && this.step === 'details' && !inLoupe && pts.length) {
-        const top = pts.reduce((m, p) => (p[1] < m[1] ? p : m), pts[0]);
+      if (f && (this.step === 'details' || this.step === 'result') && !inLoupe && pts.length) {
+        // tag at the shape's top-left corner, so nested shapes' tags don't sit on top of each other
+        const top = pts.reduce((m, p) => (p[0] + p[1] < m[0] + m[1] ? p : m), pts[0]);
         const label = String(k + 1);
         ctx.font = 'bold 13px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         ctx.fillStyle = colorOf(f); ctx.beginPath(); ctx.arc(top[0], top[1] - 2, 11, 0, 7); ctx.fill();
@@ -568,7 +776,7 @@ class ShapeEditor {
       }
     }
     // cleaned shape: lines and arcs, colored by cut type
-    if (this.shape && (this.step === 'clean' || this.step === 'export' || this.step === 'trace')) {
+    if (this.shape && (this.step === 'clean' || this.step === 'export' || this.step === 'trace' || this.step === 'result')) {
       ctx.lineJoin = 'round';
       const loops = [{ segs: this.shape.outer, closed: true, cut: 'outside' }, ...(this.shape.parts || [])];
       for (const loop of loops) {

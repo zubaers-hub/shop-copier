@@ -33,6 +33,7 @@ await shot('01-home');
 step('home');
 await page.getByRole('button', { name: /Shape → DXF/ }).click();
 await page.locator('input[type=file]:not([capture])').setInputFiles('tests/out/photo.jpg');
+await page.getByRole('button', { name: /do it by hand/ }).click(); // the paper-reference way
 await page.waitForSelector('.stage-wrap canvas');
 await page.waitForTimeout(400);
 step('photo loaded');

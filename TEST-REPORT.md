@@ -64,3 +64,15 @@ No extra shapes were found on either door. Find details took about 1 second. Als
 `tests/dxf.test.mjs` adds a layered door (66 of 66 checks): one layer per cut type in R2000 and R12, the groove stays open, "not cut" is left out, and the outline-only file has just the outline.
 
 **Not tested:** real door photos (only drawn ones), a real Claude call, and Mozaik / your CAM reading the layers. Raised-panel fields often blend into the bevel in a photo; that doesn't affect the file because the field isn't cut, but check the profile line before cutting.
+
+## 5. Automatic mode: photo + size only (`tests/e2e-auto.mjs`, 17 of 17 checks pass)
+
+Shape jobs now start in automatic mode. You give a photo and the part's width and height. The app finds the part, straightens it, traces the outline, finds the details and shows a "What I found" screen drawn over the photo before you export.
+
+| Photo | Claude | Corners found | Result |
+|---|---|---|---|
+| Glass door, 15 × 28 | Simulated, corners deliberately ~2% off | Snapped to the real edges, 2.5 px error | Glass as inside cut 9.97 × 22.97, V-groove 11.69 × 24.66, DXF 15 × 28 |
+| Cathedral door, 15 × 28 | No key | 3.0 px error | Profile edge 10.03 × 21.41, DXF 15 × 28 |
+| Shaped valance, 30 × 4.75 | Simulated | (shaped part, traced) | V bottom traced, DXF 29.994 × 4.750 |
+
+Each run took 1.4 to 3.3 s with the simulated Claude. Real Claude calls are not tested here (no key in the test setup). Without a key, only rectangular parts on a contrasting background are found reliably; shaped parts need a straight-on photo, since the size is applied to the traced shape's bounding box.

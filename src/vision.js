@@ -191,6 +191,76 @@ export async function detectOutline(canvas, { mode = 'edges', sensitivity = 5, s
   }
 }
 
+// Finds a four-sided outline in the photo (a door, a panel). hint: 4 rough corners in photo px (from Claude),
+// ordered TL, TR, BR, BL; the quad closest to them wins. Without a hint, the biggest one that isn't the
+// whole photo. Returns 4 corners in photo px (same order), or null.
+export async function findQuad(photo, hint = null) {
+  const cv = await loadOpenCV();
+  const mats = [];
+  const M = (m) => { mats.push(m); return m; };
+  try {
+    const k = Math.min(1, 1600 / Math.max(photo.width, photo.height));
+    const full = M(cv.imread(photo));
+    const src = M(new cv.Mat());
+    cv.resize(full, src, new cv.Size(Math.round(photo.width * k), Math.round(photo.height * k)), 0, 0, cv.INTER_AREA);
+    const W = src.cols, H = src.rows;
+    const edges = M(cv.Mat.zeros(H, W, cv.CV_8U));
+    const chans = M(new cv.MatVector());
+    cv.split(src, chans);
+    const gray = M(new cv.Mat());
+    cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+    for (const ch of [gray, chans.get(0), chans.get(1), chans.get(2)]) {
+      const b = new cv.Mat(), e = new cv.Mat();
+      cv.GaussianBlur(ch, b, new cv.Size(5, 5), 0);
+      cv.Canny(b, e, 40, 110);
+      cv.bitwise_or(edges, e, edges);
+      b.delete(); e.delete();
+      if (ch !== gray) ch.delete();
+    }
+    cv.dilate(edges, edges, M(cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(3, 3))));
+    const cs = M(new cv.MatVector()), hh = M(new cv.Mat());
+    cv.findContours(edges, cs, hh, cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE);
+    const diag = Math.hypot(W, H);
+    const h = hint ? hint.map(([x, y]) => [x * k, y * k]) : null;
+    let best = null;
+    for (let i = 0; i < cs.size(); i++) {
+      const c = cs.get(i);
+      const area = cv.contourArea(c);
+      if (area < W * H * 0.01 || area > W * H * 0.97) { c.delete(); continue; }
+      const hull = new cv.Mat();
+      cv.convexHull(c, hull);
+      const ap = new cv.Mat();
+      cv.approxPolyDP(hull, ap, 0.02 * cv.arcLength(hull, true), true);
+      if (ap.rows === 4) {
+        const d = ap.data32S;
+        const q = orderQuad([[d[0], d[1]], [d[2], d[3]], [d[4], d[5]], [d[6], d[7]]]);
+        const a = Math.abs(quadArea(q));
+        let score;
+        if (h) {
+          const dist = q.reduce((t, p, j) => t + Math.hypot(p[0] - h[j][0], p[1] - h[j][1]), 0) / 4;
+          score = dist < 0.06 * diag ? dist : null;
+        } else {
+          const touches = q.some(([x, y]) => x < 3 || y < 3 || x > W - 4 || y > H - 4);
+          score = touches ? null : -a;
+        }
+        if (score !== null && (!best || score < best.score)) best = { q, score };
+      }
+      hull.delete(); ap.delete(); c.delete();
+    }
+    return best ? best.q.map(([x, y]) => [x / k, y / k]) : null;
+  } finally {
+    mats.forEach((m) => { try { m.delete(); } catch { /* already freed */ } });
+  }
+}
+// TL, TR, BR, BL
+function orderQuad(q) {
+  const s = q.map(([x, y]) => x + y), d = q.map(([x, y]) => x - y);
+  const tl = q[s.indexOf(Math.min(...s))], br = q[s.indexOf(Math.max(...s))];
+  const tr = q[d.indexOf(Math.max(...d))], bl = q[d.indexOf(Math.min(...d))];
+  return [tl, tr, br, bl];
+}
+function quadArea(q) { let a = 0; for (let i = 0; i < 4; i++) { const p = q[i], r = q[(i + 1) % 4]; a += p[0] * r[1] - r[0] * p[1]; } return a / 2; }
+
 // Evens out a pixel-staircase outline into points about `step` inches apart (each one the average of the
 // pixels around it), so the cleanup sees a steady trace and the editor isn't flooded with handles.
 export function resampleOutline(pts, step) {
