@@ -19,7 +19,7 @@
    }
   ],
   "cornerErrPx": 2.5,
-  "ms": 2475,
+  "ms": 2515,
   "dxf": {
    "file": "tests/e2e-out/auto-glass.dxf",
    "layers": [
@@ -52,7 +52,7 @@
    }
   ],
   "cornerErrPx": 2.999999999999943,
-  "ms": 2452,
+  "ms": 2595,
   "dxf": {
    "file": "tests/e2e-out/auto-cathedral.dxf",
    "layers": [
@@ -73,7 +73,7 @@
    "midBottom": 4.75,
    "endBottom": 2.98841059602649
   },
-  "ms": 1415,
+  "ms": 1361,
   "dxf": {
    "file": "tests/e2e-out/auto-valance.dxf",
    "layers": [
@@ -84,5 +84,15 @@
     4.749963
    ]
   }
+ },
+ "valanceNoKey": {
+  "outline": {
+   "n": 693,
+   "w": 30,
+   "h": 4.75,
+   "midBottom": 4.75,
+   "endBottom": 2.9999999999999996
+  },
+  "ms": 1434
  }
 }

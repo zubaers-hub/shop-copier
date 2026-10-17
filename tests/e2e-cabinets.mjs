@@ -131,7 +131,7 @@ check('Sheet includes the numbered photo', await page.locator('.sheet img.photo-
 // decorative part → new shape job with the same photo
 await page.locator('nav.steps button', { hasText: 'Boxes' }).click();
 await page.waitForTimeout(300);
-await page.getByRole('button', { name: /Trace in Shape/ }).first().click();
+await page.getByRole('button', { name: /Make its DXF/ }).first().click();
 await page.waitForSelector('.task-banner', { timeout: 10000 }).catch(() => {});
 const autoFirst = await page.getByRole('button', { name: /Find the part/ }).count();
 const sizeHeading = await page.locator('.page h2').first().textContent().catch(() => '');
@@ -139,11 +139,11 @@ check('Tracing a part opens the automatic way first: just its size', autoFirst =
 await page.getByRole('button', { name: /do it by hand/ }).click(); // the hand-traced way is tested here; tests/e2e-auto.mjs covers automatic
 await page.waitForSelector('.stage-wrap canvas', { timeout: 10000 }).catch(() => {});
 const title = await page.locator('#title').textContent();
-check('“Trace in Shape → DXF” opens a shape job with the photo', (await page.locator('.stage-wrap canvas').count()) === 1, title);
+check('“Make its DXF” opens a shape job with the photo', (await page.locator('.stage-wrap canvas').count()) === 1, title);
 // the part to trace goes with it: a close-up, its name and description, and the way back
 const banner = await page.locator('.task-banner').innerText().catch(() => '');
 const cropOk = await page.locator('.task-banner img.task-crop').evaluate((im) => im.naturalWidth > 100).catch(() => false);
-check('Shape job shows what to trace (close-up, D1 valance, description) and a way back', /Tracing D1 Valance/.test(banner) && /Arched valance/.test(banner) && /Smith kitchen/.test(banner) && cropOk, banner.replace(/\n/g, ' | '));
+check('Shape job shows what to trace (close-up, D1 valance, description) and a way back', /D1 Valance for/.test(banner) && /Arched valance/.test(banner) && /Smith kitchen/.test(banner) && cropOk, banner.replace(/\n/g, ' | '));
 const zoom = await page.evaluate(() => { const st = window.__stage, w = st.imgW; const a = st.toScr([0.28 * w, 0]), b = st.toScr([0.75 * w, 0]); return { a: a[0], b: b[0], cw: st.cssW }; });
 check('Corner step starts zoomed on the part, outlined', zoom.a > 0 && zoom.b < zoom.cw && zoom.b - zoom.a > zoom.cw * 0.4, JSON.stringify(zoom));
 await page.screenshot({ path: `${OUT}/c4-trace-decor.png` });
@@ -179,16 +179,16 @@ await page.waitForSelector('.decor-progress');
 await page.waitForTimeout(800);
 const back = await page.evaluate(() => ({ title: document.querySelector('#title').textContent, step: document.querySelector('nav.steps .current')?.textContent,
   flashed: !!document.querySelector('.cab.flash[data-decor]'), progress: document.querySelector('.decor-progress').innerText, card: document.querySelector('.cab[data-decor]').innerText }));
-check('Back lands on the build sheet’s Boxes step at D1, ticked off', back.title === 'Smith kitchen' && back.step === 'Boxes' && back.flashed && /1 of 1 traced/.test(back.progress) && /DXF made: .*\.dxf/.test(back.card), JSON.stringify(back).slice(0, 300));
+check('Back lands on the build sheet’s Boxes step at D1, ticked off', back.title === 'Smith kitchen' && back.step === 'Boxes' && back.flashed && /1 of 1 done/.test(back.progress) && /DXF made: .*\.dxf/.test(back.card), JSON.stringify(back).slice(0, 300));
 await page.screenshot({ path: `${OUT}/c5-back-from-trace.png` });
 await page.locator('nav.steps button', { hasText: 'Build sheet' }).click();
 await page.waitForTimeout(300);
 check('Build sheet lists the valance as done with its DXF', /✓ D1 Valance.*\.dxf/.test(await page.locator('.sheet').innerText()));
 // opening it again goes to the same shape job, not a new one
 await page.locator('nav.steps button', { hasText: 'Boxes' }).click();
-await page.getByRole('button', { name: /Open the traced shape/ }).click();
+await page.getByRole('button', { name: /Open its DXF job/ }).click();
 await page.waitForSelector('.task-banner');
-check('“Open the traced shape” reopens the same job', /Tracing D1/.test(await page.locator('.task-banner').innerText()));
+check('“Open its DXF job” reopens the same job', /D1 Valance for/.test(await page.locator('.task-banner').innerText()));
 await page.goto(BASE);
 await page.waitForTimeout(400);
 const jobs = await page.locator('.card .name').allTextContents();

@@ -46,11 +46,12 @@ async function newPage(withKey) {
   return page;
 }
 
-async function runAuto(page, photo, W, H, tag) {
+async function runAuto(page, photo, W, H, tag, before = null) {
   await page.getByRole('button', { name: /Shape → DXF/ }).click();
   await page.locator('input[type=file]:not([capture])').setInputFiles(photo);
   await page.waitForSelector('input[aria-label="Width"]', { timeout: 15000 });
   const navText = await page.locator('nav.steps').innerText();
+  if (before) await page.evaluate(before);
   await page.locator('input[aria-label="Width"]').fill(W);
   await page.locator('input[aria-label="Height"]').fill(H);
   await page.screenshot({ path: `${OUT}/a-${tag}-1-size.png` });
@@ -157,6 +158,22 @@ const cornerErr = (page, truth, scale = 1) => page.evaluate(([truth, scale]) => 
     return { n: o.length, w: Math.max(...xs) - Math.min(...xs), h: Math.max(...ys) - Math.min(...ys), midBottom: Math.max(...mid), endBottom: Math.max(...end) }; });
   check('valance: traced the shaped outline (V bottom), not just a rectangle', o.n > 10 && Math.abs(o.w - 30) < 0.5 && o.midBottom - o.endBottom > 1.2, JSON.stringify(o));
   report.valance = { outline: o, ms: r.ms, dxf: await exportAndCheck(page, 'valance', 30, 4.75) };
+  await page.context().close();
+}
+
+// ---- 4) the same valance picked from a build sheet, no key: the search stays inside the part's box
+{
+  const page = await newPage(false);
+  calls.length = 0;
+  const r = await runAuto(page, 'tests/out/cabinets.jpg', '30', '4 3/4', 'valance-nokey', () => {
+    window.__editor.job.parent = { jobId: 'x', jobName: 'Smith kitchen', label: 'D1 Valance', description: 'Arched valance', box: { x0: 0.28, y0: 0.08, x1: 0.75, y1: 0.2 } };
+  });
+  check('build-sheet valance (no key): automatic run finishes without Claude', !r.err && calls.length === 0, r.err || `${r.ms} ms`);
+  const o = await page.evaluate(() => { const o = window.__editor.job.contours.outer; const xs = o.map((p) => p.x), ys = o.map((p) => p.y);
+    const mid = o.filter((p) => Math.abs(p.x - 15) < 1).map((p) => p.y), end = o.filter((p) => p.x > 1 && p.x < 3).map((p) => p.y);
+    return { n: o.length, w: Math.max(...xs) - Math.min(...xs), h: Math.max(...ys) - Math.min(...ys), midBottom: Math.max(...mid), endBottom: Math.max(...end) }; });
+  check('build-sheet valance (no key): traced the valance in its box, not a cabinet', o.n > 10 && Math.abs(o.w - 30) < 0.5 && o.midBottom - o.endBottom > 1.2, JSON.stringify(o));
+  report.valanceNoKey = { outline: o, ms: r.ms };
   await page.context().close();
 }
 

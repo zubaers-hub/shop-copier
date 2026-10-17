@@ -193,8 +193,8 @@ export async function detectOutline(canvas, { mode = 'edges', sensitivity = 5, s
 
 // Finds a four-sided outline in the photo (a door, a panel). hint: 4 rough corners in photo px (from Claude),
 // ordered TL, TR, BR, BL; the quad closest to them wins. Without a hint, the biggest one that isn't the
-// whole photo. Returns 4 corners in photo px (same order), or null.
-export async function findQuad(photo, hint = null) {
+// whole photo; with region (photo fractions x0,y0,x1,y1), the biggest one inside it. Returns 4 corners in photo px (same order), or null.
+export async function findQuad(photo, hint = null, region = null) {
   const cv = await loadOpenCV();
   const mats = [];
   const M = (m) => { mats.push(m); return m; };
@@ -239,6 +239,12 @@ export async function findQuad(photo, hint = null) {
         if (h) {
           const dist = q.reduce((t, p, j) => t + Math.hypot(p[0] - h[j][0], p[1] - h[j][1]), 0) / 4;
           score = dist < 0.06 * diag ? dist : null;
+        } else if (region) {
+          // a build-sheet part: inside its box (with some slack), the biggest one wins
+          const mx = (region.x1 - region.x0) * 0.15 * W, my = (region.y1 - region.y0) * 0.15 * H;
+          const inside = q.every(([x, y]) => x > region.x0 * W - mx && x < region.x1 * W + mx && y > region.y0 * H - my && y < region.y1 * H + my);
+          const big = a > (region.x1 - region.x0) * (region.y1 - region.y0) * W * H * 0.3;
+          score = inside && big ? -a : null;
         } else {
           const touches = q.some(([x, y]) => x < 3 || y < 3 || x > W - 4 || y > H - 4);
           score = touches ? null : -a;

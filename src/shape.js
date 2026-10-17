@@ -125,7 +125,7 @@ class ShapeEditor {
     back.onclick = () => this.backToParent();
     return el('div', { class: 'task-banner no-print' }, img,
       el('div', { class: 'task-text' },
-        el('div', { class: 'task-title' }, (this.job.parentDone ? '✓ ' : '') + `Tracing ${t.label} for ${t.jobName}`),
+        el('div', { class: 'task-title' }, (this.job.parentDone ? '✓ ' : '') + `${t.label} for ${t.jobName}`),
         t.description ? el('div', { class: 'small task-desc' }, t.description) : ''),
       back);
   }
@@ -394,7 +394,13 @@ class ShapeEditor {
         if (q) corners = q; else notes.push('The corners are Claude’s estimate (the part’s edges weren’t clear enough to lock on to). Check the outline against the photo.');
       }
     } else {
-      corners = await findQuad(this.photo, null);
+      const box = this.job.parent?.box;
+      corners = await findQuad(this.photo, null, box || null);
+      if (!corners && box) {
+        // no clear edges inside the box: use the box itself; the outline tracer finds the shape in it
+        corners = [[box.x0 * pw, box.y0 * ph], [box.x1 * pw, box.y0 * ph], [box.x1 * pw, box.y1 * ph], [box.x0 * pw, box.y1 * ph]];
+        notes.push('Used the area marked on the build sheet, not the part’s own corners. Check the outline against the photo.');
+      }
       if (!corners) throw new Error('Couldn’t find a four-sided part in the photo. Add a Claude key in Settings (⚙) so Claude can find it, or tap ✏️ Fix by hand.');
     }
     this.job.corners = orderCorners(corners);

@@ -401,8 +401,8 @@ function stepEdit(ctx) {
       kind.onchange = () => { p.kind = kind.value; save(ctx); };
       const desc = el('input', { value: p.description || '' });
       desc.onchange = () => { p.description = desc.value; save(ctx); };
-      const crop = el('img', { class: 'part-crop', alt: 'The part to trace' });
-      const cropBox = el('div', { class: 'part-crop-box' }, crop, el('p', { class: 'small muted' }, 'This is the part to trace. Take a straight-on photo of just this part for the best result, or use this one.'));
+      const crop = el('img', { class: 'part-crop', alt: 'The part' });
+      const cropBox = el('div', { class: 'part-crop-box' }, crop, el('p', { class: 'small muted' }, 'This is the part. Measure it, and the app does the rest: you just enter its width and height. A straight-on photo of just this part gives the best result.'));
       cropBox.style.display = 'none';
       if (p.box) partCrop(job.photo, p.box).then((u) => { if (u) { crop.src = u; cropBox.style.display = ''; } }).catch(() => {});
       const status = el('p', { class: 'small' });
@@ -411,12 +411,12 @@ function stepEdit(ctx) {
         status.className = 'small ok-line';
         status.textContent = `✓ DXF made: ${p.dxf.file}` + (p.dxf.w ? ` (${formatInches(p.dxf.w, 16)} × ${formatInches(p.dxf.h, 16)})` : '');
         trace.className = '';
-        trace.textContent = '✏️ Open the traced shape';
+        trace.textContent = 'Open its DXF job';
       } else if (p.shapeJobId) {
         status.textContent = 'Started tracing, no DXF yet.';
-        trace.textContent = '✏️ Continue tracing';
+        trace.textContent = '✨ Continue';
       } else {
-        trace.textContent = '✏️ Trace in Shape → DXF';
+        trace.textContent = '✨ Make its DXF (just enter the size)';
       }
       trace.onclick = () => traceDecor(ctx, p, i);
       const del = el('button', { class: 'danger' }, '✕');
@@ -430,9 +430,9 @@ function stepEdit(ctx) {
     progress.innerHTML = '';
     if (r.decor.length) {
       const done = r.decor.filter((p) => p.dxf).length;
-      progress.append(el('p', {}, el('b', {}, `${done} of ${r.decor.length} traced.`), done === r.decor.length ? ' All decorative parts have a DXF.' : ' Each one becomes its own DXF; you come back here when it’s done.'));
+      progress.append(el('p', {}, el('b', {}, `${done} of ${r.decor.length} done.`), done === r.decor.length ? ' All decorative parts have a DXF.' : ' Each one becomes its own DXF; you come back here when it’s done.'));
       if (todo >= 0) {
-        const nextB = el('button', { class: 'go' }, `✏️ Trace next: D${todo + 1} ${DECOR_LABEL[r.decor[todo].kind] || ''}`);
+        const nextB = el('button', { class: 'go' }, `✨ Next: D${todo + 1} ${DECOR_LABEL[r.decor[todo].kind] || ''}`);
         nextB.onclick = () => traceDecor(ctx, r.decor[todo], todo);
         progress.append(nextB);
       }
@@ -454,7 +454,7 @@ function stepEdit(ctx) {
   if (left) {
     const jump = el('button', {}, `Go to them ↓`);
     jump.onclick = () => document.getElementById('decor-head')?.scrollIntoView({ behavior: 'smooth' });
-    decorNote = el('div', { class: 'note decor-note' }, el('p', {}, `Claude flagged ${left} decorative part${left === 1 ? '' : 's'} to trace into a DXF (valance, corbel…). Each one opens in Shape → DXF with a close-up of what to trace, and brings you back here.`), jump);
+    decorNote = el('div', { class: 'note decor-note' }, el('p', {}, `Claude flagged ${left} decorative part${left === 1 ? '' : 's'} that need a DXF (valance, corbel…). For each one you only enter its width and height; the app finds it in the photo, draws the shape and its details, and brings you back here.`), jump);
   }
   page.append(
     decorNote,
@@ -466,7 +466,7 @@ function stepEdit(ctx) {
     el('h2', {}, 'Check it on the photo'), mapHolder,
     el('h2', {}, `Cabinets, left to right (${r.cabinets.length})`), list, addB,
     el('h2', {}, 'Style'), style,
-    el('h2', { id: 'decor-head' }, 'Decorative parts to trace'), progress, decor,
+    el('h2', { id: 'decor-head' }, 'Decorative parts (DXF)'), progress, decor,
     el('div', { style: 'margin-top:16px' }, toSheet),
   );
   ctx.view.appendChild(page);
@@ -477,7 +477,7 @@ function stepEdit(ctx) {
     const card = decorCards[i];
     if (card) {
       setTimeout(() => flash(card), 150);
-      if (r.decor[i].dxf) toast(`D${i + 1} done. ${r.decor.every((p) => p.dxf) ? 'All decorative parts are traced.' : 'Next one is below.'}`, 3500);
+      if (r.decor[i].dxf) toast(`D${i + 1} done. ${r.decor.every((p) => p.dxf) ? 'All decorative parts have a DXF.' : 'Next one is below.'}`, 3500);
     }
   }
 }
@@ -536,7 +536,7 @@ function stepSheet(ctx) {
     el('p', {}, `Base/tall run width (sum of boxes): ${formatInches(totalW, d)}`),
     styleRows.length ? el('h3', {}, 'Style') : '',
     styleRows.length ? el('table', {}, el('tbody', {}, ...styleRows.map(([k, v]) => el('tr', {}, el('th', {}, k), el('td', {}, String(v).replace(/_/g, ' ')))))) : '',
-    r.decor.length ? el('h3', {}, 'Decorative parts → trace these in Shape → DXF (Mode 1)') : '',
+    r.decor.length ? el('h3', {}, 'Decorative parts → DXF files') : '',
     r.decor.length ? el('ul', {}, ...r.decor.map((p, i) => el('li', {}, (p.dxf ? '✓ ' : '☐ ') + `D${i + 1} ${DECOR_LABEL[p.kind] || p.kind}: ${p.description || ''}${p.location ? ` (${p.location})` : ''}${p.dxf ? ` → ${p.dxf.file}` : ''}`))) : '',
     r.warnings.length ? el('h3', {}, 'Check on site') : '',
     r.warnings.length ? el('ul', {}, ...r.warnings.map((w) => el('li', {}, w))) : '',

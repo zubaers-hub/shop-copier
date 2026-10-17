@@ -102,6 +102,7 @@ function settingsPage() {
     el('label', {}, 'Round fractions to'), den,
     el('div', { style: 'margin-top:16px' }, saveB),
     el('div', { class: 'note' }, ACCURACY_NOTE),
+    el('p', { class: 'small muted' }, `App version ${__VERSION__}`),
   );
   view.appendChild(page);
 }
@@ -118,5 +119,11 @@ function route() {
 route();
 
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
-  navigator.serviceWorker.register('sw.js').catch(() => {});
+  const hadOld = !!navigator.serviceWorker.controller;
+  let reloaded = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    // a phone that had the old version gets the new one straight away, not on the next visit
+    if (hadOld && !reloaded) { reloaded = true; location.reload(); }
+  });
+  navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then((r) => r.update()).catch(() => {});
 }

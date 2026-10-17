@@ -32,7 +32,7 @@ End panels	none
 Countertop	laminate, 1 1/2" edge
 Hardware	none visible
 Finish	white paint
-Decorative parts → trace these in Shape → DXF (Mode 1)
+Decorative parts → DXF files
 ☐ D1 Valance: Arched valance, about 30" wide (above the sink)
 Check on site
 Depth cannot be seen; standard 24" assumed.

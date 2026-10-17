@@ -7,7 +7,8 @@ import { execFileSync } from 'node:child_process';
 const out = 'dist';
 fs.rmSync(out, { recursive: true, force: true });
 fs.mkdirSync(out, { recursive: true });
-await build({ entryPoints: ['src/app.js'], bundle: true, format: 'esm', target: 'es2020', minify: true, outfile: `${out}/app.js`, legalComments: 'eof' });
+await build({ entryPoints: ['src/app.js'], bundle: true, format: 'esm', target: 'es2020', minify: true, outfile: `${out}/app.js`, legalComments: 'eof',
+  define: { __VERSION__: JSON.stringify(new Date().toISOString().slice(0, 16).replace('T', ' ')) } });
 for (const f of ['index.html', 'styles.css', 'manifest.webmanifest', 'icon.svg']) fs.copyFileSync(`src/${f}`, `${out}/${f}`);
 fs.copyFileSync('node_modules/@techstark/opencv-js/dist/opencv.js', `${out}/opencv.js`);
 // app icons for home-screen install
