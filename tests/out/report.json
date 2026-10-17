@@ -112,12 +112,12 @@
   {
     "name": "corbel: outline and cutout are closed loops",
     "ok": true,
-    "detail": "outline 10 segs (6 arcs), cutout 2 segs"
+    "detail": "outline 10 segs (6 arcs), cutout 4 segs"
   },
   {
     "name": "corbel R2000: re-opened, only LINE and ARC entities",
     "ok": true,
-    "detail": "kinds=ARC,LINE, 4 lines, 8 arcs"
+    "detail": "kinds=ARC,LINE, 8 lines, 6 arcs"
   },
   {
     "name": "corbel R2000: every contour closed",
@@ -152,7 +152,7 @@
   {
     "name": "corbel R12: re-opened, only LINE and ARC entities",
     "ok": true,
-    "detail": "kinds=ARC,LINE, 4 lines, 8 arcs"
+    "detail": "kinds=ARC,LINE, 8 lines, 6 arcs"
   },
   {
     "name": "corbel R12: every contour closed",

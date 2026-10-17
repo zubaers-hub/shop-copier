@@ -76,3 +76,7 @@ Shape jobs now start in automatic mode. You give a photo and the part's width an
 | Shaped valance, 30 × 4.75 | Simulated | (shaped part, traced) | V bottom traced, DXF 29.994 × 4.750 |
 
 Each run took 1.4 to 3.3 s with the simulated Claude. Real Claude calls are not tested here (no key in the test setup). Without a key, only rectangular parts on a contrasting background are found reliably; shaped parts need a straight-on photo, since the size is applied to the traced shape's bounding box.
+
+## 6. Fretwork door from a real photo (`tests/e2e-auto.mjs`, 24 of 24 checks pass)
+
+Momo's photo of a pierced (fretwork) cabinet door showed most cutouts missing. The edge-based detector found 58 shapes on the right-hand door. A new check now runs first: when the part has many areas much darker than its own surface (see-through holes), each dark area becomes an inside cut directly. On the same door (13 × 35 3/16, no key) it found 132 cutouts in about 1.7 s, and the DXF has 132 closed INSIDE_CUT loops. Small shapes are now smoothed in proportion to their size so their tips and curves survive. The result list groups many details into one row per cut type. See `tests/e2e-out/fretwork-photo-vs-dxf.png`. Limit: that photo is only about 17 px per inch, so shapes are approximate; a straight-on photo of one door fills the frame and gives much better shapes.

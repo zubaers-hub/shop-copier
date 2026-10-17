@@ -992,6 +992,8 @@ function mirrorOpen(points, mirror, smooth, snap) {
 // Returns { outer, parts: [{ segs, closed, cut, depth, bit, src }], holes (closed inside cuts), warnings }.
 export function buildShape(raw, { mirror = { on: false }, smooth = 3, snap = true } = {}) {
   const warnings = [];
+  const smoothAll = smooth;
+  const bboxOf = (pts) => { const xs = pts.map((p) => p.x), ys = pts.map((p) => p.y); return { w: Math.max(...xs) - Math.min(...xs), h: Math.max(...ys) - Math.min(...ys) }; };
   const one = (pts) => {
     if (!pts || pts.length < 3) return [];
     if (!mirror.on) return cleanClosed(pts, smooth, snap);
@@ -1006,6 +1008,9 @@ export function buildShape(raw, { mirror = { on: false }, smooth = 3, snap = tru
     const h = f.pts;
     const meta = { closed: f.closed !== false, cut: f.cut || 'inside', depth: f.depth, bit: f.bit, src };
     if (!h || h.length < (meta.closed ? 3 : 2)) return;
+    // a small shape (a fretwork cutout) loses its tips and curves to full smoothing: smooth it in proportion
+    const fb = bboxOf(h), across = Math.max(fb.w, fb.h);
+    const smooth = meta.closed ? smoothAll * Math.min(1, Math.max(0.3, across / 3)) : smoothAll;
     let loops;
     try {
       if (!meta.closed) loops = mirror.on ? mirrorOpen(h, mirror, smooth, snap) : [cleanOpen(h, smooth, snap)];

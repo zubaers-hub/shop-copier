@@ -441,14 +441,18 @@ class ShapeEditor {
     say('🔍 Looking for details inside…');
     const n = await this.findDetails(true);
     say(`Found ${n} detail${n === 1 ? '' : 's'} in the photo.`);
-    if (key) {
+    if (this.found?.pierced) {
+      // see-through cutouts are cut through by definition; a hundred numbers on one picture only confuses Claude
+      this.job.claudeSummary = info?.summary || '';
+      notes.push(`Found ${n} see-through cutouts; each is an inside cut (all the way through). Zoom in on the picture to check none are missing or merged.`);
+    } else if (key) {
       say('🤖 Asking Claude what each detail is…');
       try {
         const res = await this.suggestWithClaude();
         for (const wmsg of res.warnings || []) notes.push(wmsg);
         this.job.claudeSummary = res.summary || info?.summary || '';
       } catch (e) { notes.push('Claude couldn’t check the details: ' + e.message); }
-    } else if (!key) notes.push('Cut types are the app’s guesses from the photo. With a Claude key, Claude checks each one and adds details the photo detection missed.');
+    } else notes.push('Cut types are the app’s guesses from the photo. With a Claude key, Claude checks each one and adds details the photo detection missed.');
     this.job.partName = info?.part || '';
     this.job.autoNotes = notes;
     this.job.mirror = { on: false, cx: null, keep: 'left' };
@@ -471,9 +475,23 @@ class ShapeEditor {
     const fsize = (pts) => { const b = ptsBBox(pts); return `${formatInches(b.w, d)} × ${formatInches(b.h, d)}`; };
     list.append(el('div', { class: 'feat-row' }, el('span', { class: 'dot', style: `background:${CUT_TYPES.outside.color}` }),
       el('span', { class: 'grow' }, el('b', {}, 'Outline · Outside cut'), ` ${formatInches(bb.w, d)} × ${formatInches(bb.h, d)}`, el('div', { class: 'small muted' }, this.job.contours.outer.length === 4 ? 'Rectangle, your exact size.' : 'Shaped outline traced from the photo.'))));
-    this.job.features.forEach((f, i) => {
+    const many = this.job.features.length > 30;
+    const extraOf = (f) => { const t = CUT_TYPES[f.cut] || CUT_TYPES.skip; return [t.depth && f.depth ? `${formatInches(f.depth, 16)} deep` : '', t.bit && f.bit ? (bitsFor(f.cut).find((b) => b.id === f.bit)?.label || f.bit) : ''].filter(Boolean).join(', '); };
+    if (many) {
+      // too many to list one by one: one row per kind of cut
+      const groups = new Map();
+      this.job.features.forEach((f) => { const key = `${f.cut}|${extraOf(f)}`; if (!groups.has(key)) groups.set(key, []); groups.get(key).push(f); });
+      for (const fs of groups.values()) {
+        const f = fs[0], t = CUT_TYPES[f.cut] || CUT_TYPES.skip, ex = extraOf(f);
+        const sizes = fs.map((g) => ptsBBox(g.pts)).map((b) => Math.max(b.w, b.h));
+        list.append(el('div', { class: 'feat-row' }, el('span', { class: 'dot', style: `background:${t.color}` }),
+          el('span', { class: 'grow' }, el('b', {}, `${fs.length} × ${t.label}`), ` ${formatInches(Math.min(...sizes), d)} to ${formatInches(Math.max(...sizes), d)} across${ex ? ` · ${ex}` : ''}`,
+            f.why ? el('div', { class: 'small muted' }, f.why) : '')));
+      }
+    }
+    if (!many) this.job.features.forEach((f, i) => {
       const t = CUT_TYPES[f.cut] || CUT_TYPES.skip;
-      const extra = [t.depth && f.depth ? `${formatInches(f.depth, 16)} deep` : '', t.bit && f.bit ? (bitsFor(f.cut).find((b) => b.id === f.bit)?.label || f.bit) : ''].filter(Boolean).join(', ');
+      const extra = extraOf(f);
       list.append(el('div', { class: 'feat-row' }, el('span', { class: 'dot', style: `background:${t.color}` }),
         el('span', { class: 'grow' }, el('b', {}, `#${i + 1} · ${t.label}`), ` ${fsize(f.pts)}${f.closed === false ? ' line' : ''}${extra ? ` · ${extra}` : ''}`,
           f.why ? el('div', { class: 'small muted' }, f.why) : '')));
@@ -488,7 +506,7 @@ class ShapeEditor {
     page.append(
       el('h2', {}, `${this.job.partName ? this.job.partName[0].toUpperCase() + this.job.partName.slice(1) + ': ' : ''}${formatInches(bb.w, d)} wide × ${formatInches(bb.h, d)} tall`),
       this.job.claudeSummary ? el('p', {}, this.job.claudeSummary) : '',
-      el('p', { class: 'small muted' }, 'This is what will be cut, drawn over your photo. Numbers match the list below. Tap a layer to hide or show it.'),
+      el('p', { class: 'small muted' }, many ? `This is what will be cut, drawn over your photo: ${this.job.features.length} details. Pinch to zoom in and check them. Tap a layer to hide or show it.` : 'This is what will be cut, drawn over your photo. Numbers match the list below. Tap a layer to hide or show it.'),
       wrap, legend,
       el('h3', {}, `What I found (${this.job.features.length + 1})`), list,
       notes.length ? el('div', { class: 'note' }, el('b', {}, 'Check: '), notes.join(' ')) : '',
@@ -772,7 +790,8 @@ class ShapeEditor {
         if (this.drawing && pts.length && closed) { ctx.strokeStyle = '#ffd60a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(pts[0][0], pts[0][1], 14, 0, 7); ctx.stroke(); }
       }
       // number tags so the list and the picture match
-      if (f && (this.step === 'details' || this.step === 'result') && !inLoupe && pts.length) {
+      // (a pierced panel can have a hundred cutouts: then only the picked one gets its number)
+      if (f && (this.step === 'details' || this.step === 'result') && !inLoupe && pts.length && (this.job.features.length <= 30 || k === this.active)) {
         // tag at the shape's top-left corner, so nested shapes' tags don't sit on top of each other
         const top = pts.reduce((m, p) => (p[0] + p[1] < m[0] + m[1] ? p : m), pts[0]);
         const label = String(k + 1);

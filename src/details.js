@@ -136,6 +136,20 @@ export function findDetails(cv, rgba, outer, ppiIn, { sensitivity = 5, minSize =
     cv.dilate(closedEdges, closedEdges, M(cv.getStructuringElement(cv.MORPH_ELLIPSE, new cv.Size(3, 3))));
 
     if (globalThis.__DBG) console.log('t1', Date.now() - T0);
+    // a pierced panel (fretwork, a grille): many areas much darker than the part, where you see through it.
+    // Those are the details; they come straight from the dark areas, which is far more complete than edges.
+    const cut = findCutouts(cv, gray, inner, ppi, minSize, M);
+    if (cut) {
+      const toIn = (p) => [p[0] / sc + x0, p[1] / sc + y0];
+      const shapes = cut.map((pts) => {
+        const bx = bbox(pts);
+        return { pts: pts.map(toIn), closed: true, size: { w: (bx.x1 - bx.x0) / ppi, h: (bx.y1 - bx.y0) / ppi }, score: polyArea(pts) / ppi / ppi,
+          guess: { cut: 'inside', why: 'A see-through cutout: much darker than the part, so you can see behind it. Cut all the way through.' } };
+      });
+      const edgeMap = new cv.Mat();
+      closedEdges.copyTo(edgeMap);
+      return { shapes, pierced: true, edges: { mat: edgeMap, x0, y0, sc, partMask: (() => { const m = new cv.Mat(); inner.copyTo(m); return m; })() }, threshold: hi };
+    }
     const contours = M(new cv.MatVector()), hier = M(new cv.Mat());
     cv.findContours(closedEdges, contours, hier, cv.RETR_CCOMP, cv.CHAIN_APPROX_NONE);
     const h = hier.data32S;
@@ -382,6 +396,54 @@ export function findDetails(cv, rgba, outer, ppiIn, { sensitivity = 5, minSize =
   } finally {
     for (const m of mats) { try { m.delete(); } catch { /* already freed */ } }
   }
+}
+
+// Dark see-through cutouts inside the part, or null when the part isn't pierced. The part's brightness
+// splits in two (Otsu); it counts as pierced when the dark side is clearly darker and made of several
+// solid areas (one dark area is glass or a panel, and thin dark lines are grooves or shadows).
+function findCutouts(cv, gray, inner, ppi, minSize, M) {
+  const gd = gray.data, md = inner.data, hist = new Float64Array(256);
+  let n = 0;
+  for (let i = 0; i < gd.length; i++) if (md[i]) { hist[gd[i]]++; n++; }
+  if (n < 100) return null;
+  let sum = 0; for (let v = 0; v < 256; v++) sum += v * hist[v];
+  let wB = 0, sB = 0, best = -1, t = 0;
+  for (let v = 0; v < 256; v++) {
+    wB += hist[v]; if (!wB) continue;
+    const wF = n - wB; if (!wF) break;
+    sB += v * hist[v];
+    const mB = sB / wB, mF = (sum - sB) / wF, between = wB * wF * (mB - mF) ** 2;
+    if (between > best) { best = between; t = v; }
+  }
+  let nd = 0, sd = 0; for (let v = 0; v <= t; v++) { nd += hist[v]; sd += v * hist[v]; }
+  const lo = sd / (nd || 1), hiM = (sum - sd) / ((n - nd) || 1), share = nd / n;
+  if (globalThis.__DBG) console.log('cutouts?', { t, lo: lo.toFixed(0), hi: hiM.toFixed(0), share: share.toFixed(2) });
+  if (share < 0.04 || share > 0.65 || hiM - lo < 40 || lo > hiM * 0.6) return null;
+  const dark = M(new cv.Mat());
+  cv.threshold(gray, dark, t, 255, cv.THRESH_BINARY_INV);
+  cv.bitwise_and(dark, inner, dark);
+  cv.morphologyEx(dark, dark, cv.MORPH_OPEN, M(cv.getStructuringElement(cv.MORPH_ELLIPSE, new cv.Size(3, 3))));
+  const cs = M(new cv.MatVector()), hh = M(new cv.Mat());
+  cv.findContours(dark, cs, hh, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE);
+  const smallest = Math.max(0.15, Math.min(minSize, 1) * 0.3) * ppi;
+  const out = [];
+  let total = 0;
+  for (let i = 0; i < cs.size(); i++) {
+    const pts = contourPts(cs.get(i));
+    if (pts.length < 6) continue;
+    const a = polyArea(pts), bx = bbox(pts);
+    if (Math.max(bx.x1 - bx.x0, bx.y1 - bx.y0) < smallest || a < (smallest * 0.6) ** 2) continue;
+    if (a / polyLen(pts) < 0.05 * ppi) continue; // a thin dark line: a groove or a shadow, not a hole
+    // cut off by the edge of the search area: a shadow or hardware at the part's edge, not a cutout
+    const onRim = pts.filter(([x, y]) => [[-2, 0], [2, 0], [0, -2], [0, 2]].some(([dx, dy]) => {
+      const xx = x + dx, yy = y + dy;
+      return xx < 0 || yy < 0 || xx >= inner.cols || yy >= inner.rows || !md[yy * inner.cols + xx];
+    })).length;
+    if (onRim > pts.length * 0.2) continue;
+    out.push(pts); total += a;
+  }
+  if (globalThis.__DBG) console.log('cutouts', out.length, (total / n).toFixed(3));
+  return out.length >= 5 && total > n * 0.03 ? out : null;
 }
 
 // Is `child` sitting inside `r` at a fairly even distance (a bevel band) rather than just somewhere inside?

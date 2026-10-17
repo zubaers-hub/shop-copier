@@ -76,7 +76,7 @@ async function exportAndCheck(page, tag, W, H) {
   const chk = checkDXF(fs.readFileSync(file, 'utf8'));
   const ez = JSON.parse(execFileSync('python3', ['tests/verify_layers.py', file], { encoding: 'utf8' }));
   check(`${tag}: DXF ok (closed, lines/arcs, inches, 0,0), size ${W} x ${H} within 1/8"`, chk.ok && ez.ok && Math.abs(chk.width - W) <= 0.125 && Math.abs(chk.height - H) <= 0.125, `${chk.width.toFixed(3)} x ${chk.height.toFixed(3)} layers ${Object.keys(chk.layers).join(',')}`);
-  return { file, layers: Object.keys(chk.layers), size: [chk.width, chk.height] };
+  return { file, layers: Object.keys(chk.layers), size: [chk.width, chk.height], insideClosed: chk.layers.INSIDE_CUT?.closed || 0 };
 }
 
 const feats = (page) => page.evaluate(() => window.__editor.job.features.map((f) => {
@@ -174,6 +174,23 @@ const cornerErr = (page, truth, scale = 1) => page.evaluate(([truth, scale]) => 
     return { n: o.length, w: Math.max(...xs) - Math.min(...xs), h: Math.max(...ys) - Math.min(...ys), midBottom: Math.max(...mid), endBottom: Math.max(...end) }; });
   check('build-sheet valance (no key): traced the valance in its box, not a cabinet', o.n > 10 && Math.abs(o.w - 30) < 0.5 && o.midBottom - o.endBottom > 1.2, JSON.stringify(o));
   report.valanceNoKey = { outline: o, ms: r.ms };
+  await page.context().close();
+}
+
+// ---- 5) a fretwork door (from a real product photo): ~130 see-through cutouts, all found
+{
+  const page = await newPage(false);
+  calls.length = 0;
+  const r = await runAuto(page, 'tests/real/fretwork-right.png', '13', '35 3/16', 'fretwork');
+  check('fretwork: automatic run finishes', !r.err, r.err || `${r.ms} ms`);
+  const f = await feats(page);
+  const inside = f.filter((x) => x.cut === 'inside' && x.closed);
+  check('fretwork: found the see-through cutouts (about 130 on this door; edges alone found 58)', inside.length >= 120 && inside.length === f.length, `${inside.length} inside cuts of ${f.length}`);
+  const list = await page.locator('.found-list').innerText();
+  check('fretwork: the list groups them instead of 130 rows', /\d+ × Inside cut/.test(list) && (await page.locator('.found-list .feat-row').count()) <= 4, list.replace(/\n/g, ' | ').slice(0, 200));
+  const dx = await exportAndCheck(page, 'fretwork', 13, 35.1875);
+  check('fretwork: DXF has every cutout as a closed INSIDE_CUT loop', dx.insideClosed === inside.length, `${dx.insideClosed} closed loops`);
+  report.fretwork = { n: inside.length, ms: r.ms, dxf: dx };
   await page.context().close();
 }
 
