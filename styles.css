@@ -210,3 +210,13 @@ input[type=checkbox] { width: 28px; height: 28px; accent-color: var(--accent); v
 .auto-status p { margin: 4px 0; }
 .found-list .feat-row { align-items: flex-start; }
 button.linkish { background: none; border: none; color: var(--ink); text-decoration: underline; font-weight: 600; min-height: 44px; padding: 6px 0; justify-content: flex-start; }
+
+.fronts { margin: 8px 0; padding: 8px; border: 1px dashed var(--line); border-radius: 10px; }
+.front-row { display: grid; grid-template-columns: 2.4em 1fr auto auto; align-items: center; gap: 6px; margin: 8px 0; }
+.front-row select { min-width: 0; }
+.front-row button { min-height: 40px; padding: 4px 10px; }
+.front-dims { grid-column: 2 / -1; display: flex; align-items: center; gap: 6px; }
+.front-dims input { width: 6em; }
+.front-tag { min-width: 2.2em; }
+.front-row.flash { outline: 4px solid var(--accent, #e85d04); outline-offset: 2px; border-radius: 6px; }
+.front-swatch { background: transparent !important; border: 2px dashed #555; }

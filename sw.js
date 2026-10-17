@@ -1,5 +1,5 @@
 // Offline support: the app and the edge-detection library are cached after the first visit.
-const CACHE = 'shop-copier-b43ba0d9c1';
+const CACHE = 'shop-copier-57b2c9dc62';
 const FILES = ['./', 'index.html', 'app.js', 'styles.css', 'manifest.webmanifest', 'icon.svg', 'icon-192.png', 'icon-512.png', 'opencv.js'];
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).then(() => self.skipWaiting()));
