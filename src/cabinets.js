@@ -1,7 +1,7 @@
 // Mode 2: photo of a cabinet run -> Claude identifies the boxes -> editable list -> printable build sheet.
 import { parseInches, formatInches } from './core.js';
 import { loadPhoto, canvasToBlob } from './vision.js';
-import { analyzeCabinets, CABINET_TYPES, DECOR_TYPES } from './claude.js';
+import { analyzeCabinets, CABINET_TYPES, DECOR_TYPES, FRONT_TYPES } from './claude.js';
 import { saveJob, getJob, newId } from './store.js';
 import { el, toast, ACCURACY_NOTE, fmtDate } from './ui.js';
 
@@ -14,6 +14,9 @@ const DECOR_LABEL = {
   valance: 'Valance', corbel: 'Corbel', bracket: 'Bracket', arched_door_top: 'Arched / cathedral door top',
   decorative_end_panel: 'Decorative end panel', applied_molding: 'Applied molding', cutout_pattern: 'Cutout pattern', other: 'Other',
 };
+const FRONT_LABEL = { door: 'Door', drawer: 'Drawer front', false_front: 'False front', open: 'Opening' };
+const FRONT_SHORT = { door: 'Door', drawer: 'Drawer', false_front: 'False front', open: 'Opening' };
+const FRONT_LETTER = (j) => String.fromCharCode(65 + (j % 26));
 const KNOWN = [
   ['none', 'Nothing measured: use standard sizes'],
   ['run', 'Overall width of the run'],
@@ -44,7 +47,7 @@ function photoBox(b) {
   return { x0, y0, x1, y1 };
 }
 
-export function normalize(result) {
+export function normalize(result, photoAspect = 0) {
   const cabs = (result.cabinets || []).slice().sort((a, b) => a.position - b.position).map((c) => {
     const est = { w: !c.width_measured, h: !c.height_measured, d: !c.depth_measured };
     let w = c.width_in, h = c.height_in, d = c.depth_in;
@@ -71,6 +74,33 @@ export function normalize(result) {
       box: photoBox(c.box_in_photo),
     };
   });
+  // each door and drawer front: its size comes from where it sits in the photo, scaled by its cabinet's
+  // (rounded) width so the fronts and the box agree; Claude's own estimate is the fallback
+  (result.cabinets || []).slice().sort((a, b) => a.position - b.position).forEach((c, i) => {
+    const cab = cabs[i];
+    cab.fronts = (c.fronts || []).filter((f) => FRONT_TYPES.includes(f.kind)).map((f) => {
+      const box = photoBox(f.box_in_photo);
+      let w = f.width_in, h = f.height_in;
+      if (box && cab.box && cab.w > 0 && photoAspect > 0) {
+        const perIn = (cab.box.x1 - cab.box.x0) / cab.w; // photo widths per inch at this cabinet
+        w = (box.x1 - box.x0) / perIn;
+        h = ((box.y1 - box.y0) / photoAspect) / perIn;
+      }
+      const r16 = (v) => (v > 0 ? Math.round(v * 16) / 16 : 0);
+      return { id: newId(), kind: f.kind, w: r16(w), h: r16(h), hinge: f.hinge || '', box };
+    });
+  });
+  // a pair of doors or a stack of equal drawers is one size, not sizes a pixel apart
+  const all = cabs.flatMap((c) => c.fronts);
+  for (const key of ['w', 'h']) {
+    const done = new Set();
+    for (const f of all) {
+      if (done.has(f) || !(f[key] > 0)) continue;
+      const near = all.filter((g) => !done.has(g) && g.kind === f.kind && Math.abs(g[key] - f[key]) <= Math.max(0.25, f[key] * 0.03));
+      const avg = Math.round((near.reduce((t, g) => t + g[key], 0) / near.length) * 16) / 16;
+      near.forEach((g) => { g[key] = avg; done.add(g); });
+    }
+  }
   return {
     summary: result.summary || '', scale_basis: result.scale_basis || '',
     style: { ...result.style }, cabinets: cabs,
@@ -193,7 +223,7 @@ function stepPhoto(ctx) {
       const c = await loadPhoto(job.photo, 1568);
       const b64 = c.toDataURL('image/jpeg', 0.85).split(',')[1];
       const res = await analyzeCabinets({ apiKey: settings.apiKey, model: settings.model, imageBase64: b64, known: knownText(job.known) });
-      job.result = normalize(res);
+      job.result = normalize(res, c.width / c.height);
       job.rawResult = res;
       if (!job.name || job.name.startsWith('Cabinet run')) job.name = `Cabinet run ${fmtDate(Date.now())}`;
       save(ctx);
@@ -248,14 +278,15 @@ function photoMap(ctx, { onPick, forPrint = false } = {}) {
   const canvas = el('canvas', { class: 'photo-map-canvas' });
   const legend = el('div', { class: 'map-legend' },
     ...[['base', 'Base'], ['wall', 'Wall'], ['tall', 'Tall']].map(([k, t]) => el('span', {}, el('span', { class: 'swatch', style: `background:${ROW_COLOR[k]}` }), t)),
-    el('span', {}, el('span', { class: 'swatch', style: `background:${DECOR_COLOR}` }), 'Decorative (D1, D2…)'));
+    el('span', {}, el('span', { class: 'swatch', style: `background:${DECOR_COLOR}` }), 'Decorative (D1, D2…)'),
+    r.cabinets.some((c) => c.fronts?.length) ? el('span', {}, el('span', { class: 'swatch front-swatch' }), 'Doors & drawers (1A, 1B…)') : '');
   const missing = r.cabinets.map((c, i) => (c.box ? null : i + 1)).filter(Boolean);
   const boxed = r.cabinets.length - missing.length;
   const note = el('p', { class: 'small' });
   if (!r.cabinets.some((c) => c.box) && !r.decor.some((p) => p.box)) {
     note.textContent = 'This run was analyzed before the app marked boxes on the photo. Analyze the photo again to see them.';
   } else {
-    note.textContent = `Every box Claude found is outlined and numbered like the list${forPrint ? '' : ' (tap one to jump to it)'}. A cabinet with no outline was missed: add it with “+ Add cabinet”. Two numbers on one cabinet means it was counted twice.`
+    note.textContent = `Every box Claude found is outlined and numbered like the list${forPrint ? '' : ' (tap one to jump to it)'}${r.cabinets.some((c) => c.fronts?.length) ? ', and each door (dashed) and drawer front (solid) inside it is lettered 1A, 1B…' : ''}. A cabinet with no outline was missed: add it with “+ Add cabinet”. Two numbers on one cabinet means it was counted twice.`
       + (missing.length ? ` Not on the photo: #${missing.join(', #')} (added by hand or not placed).` : '');
   }
   const hits = [];
@@ -282,6 +313,22 @@ function photoMap(ctx, { onPick, forPrint = false } = {}) {
       g.restore();
     };
     r.cabinets.forEach((c, i) => { if (c.box) { draw(c.box, ROW_COLOR[rowOf(c)], String(i + 1), false); hits.push({ kind: 'cab', i, b: c.box }); } });
+    // doors and drawer fronts: a thin white outline and a small tag (1A, 1B…) in each one's top-left corner
+    const fsS = Math.max(12, Math.round(fs * 0.55)), lwS = Math.max(2, Math.round(lw * 0.6));
+    r.cabinets.forEach((c, i) => (c.fronts || []).forEach((f, j) => {
+      if (!f.box) return;
+      const x = f.box.x0 * W, y = f.box.y0 * H, w = (f.box.x1 - f.box.x0) * W, h = (f.box.y1 - f.box.y0) * H;
+      g.save();
+      g.strokeStyle = '#fff'; g.lineWidth = lwS; g.setLineDash(f.kind === 'drawer' ? [] : [lwS * 3, lwS * 2]);
+      g.strokeRect(x + lwS, y + lwS, w - 2 * lwS, h - 2 * lwS);
+      const label = `${i + 1}${FRONT_LETTER(j)}`;
+      g.font = `800 ${fsS}px system-ui, sans-serif`;
+      const tw = g.measureText(label).width + fsS * 0.5, th = fsS * 1.25;
+      g.fillStyle = ROW_COLOR[rowOf(c)]; g.fillRect(x + lwS * 2, y + lwS * 2, tw, th);
+      g.fillStyle = '#fff'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(label, x + lwS * 2 + tw / 2, y + lwS * 2 + th / 2 + 1);
+      g.restore();
+      hits.push({ kind: 'front', i, j, b: f.box });
+    }));
     r.decor.forEach((p, i) => { if (p.box) { draw(p.box, DECOR_COLOR, `D${i + 1}`, true); hits.push({ kind: 'decor', i, b: p.box }); } });
     if (forPrint) {
       // a printed sheet can't show a canvas reliably: swap in an image
@@ -296,12 +343,42 @@ function photoMap(ctx, { onPick, forPrint = false } = {}) {
       // smallest box under the tap (a wall cabinet can sit inside a tall one's rectangle)
       const under = hits.filter((h) => fx >= h.b.x0 && fx <= h.b.x1 && fy >= h.b.y0 && fy <= h.b.y1)
         .sort((a, b) => (a.b.x1 - a.b.x0) * (a.b.y1 - a.b.y0) - (b.b.x1 - b.b.x0) * (b.b.y1 - b.b.y0));
-      if (under.length) onPick(under[0].kind, under[0].i);
+      if (under.length) onPick(under[0].kind, under[0].i, under[0].j);
     };
   }
   wrap.append(canvas, legend, note);
   wrap.dataset.boxed = String(boxed);
   return wrap;
+}
+
+// The doors and drawer fronts of one cabinet: kind and size of each, editable, each one a tap away from its DXF.
+function frontsEditor(ctx, c, i, fmt, rerender) {
+  const box = el('div', { class: 'fronts' });
+  const fronts = c.fronts || (c.fronts = []);
+  const sync = () => { c.doors = fronts.filter((f) => f.kind === 'door').length; c.drawers = fronts.filter((f) => f.kind === 'drawer').length; };
+  box.append(el('label', {}, `Doors & drawer fronts (${fronts.length})`));
+  if (!fronts.length) box.append(el('p', { class: 'small muted' }, 'None listed. Analyze the photo again to have Claude find them, or add them here.'));
+  fronts.forEach((f, j) => {
+    const kind = el('select', { 'aria-label': 'Front type' }, ...FRONT_TYPES.map((t) => el('option', { value: t }, FRONT_SHORT[t])));
+    kind.value = f.kind;
+    kind.onchange = () => { f.kind = kind.value; sync(); save(ctx); rerender(); };
+    const dim = (key, label) => {
+      const inp = el('input', { value: fmt(f[key]), inputmode: 'text', 'aria-label': `${label} ${i + 1}${FRONT_LETTER(j)}` });
+      inp.onchange = () => { const v = parseInches(inp.value); if (v > 0) { f[key] = v; inp.value = fmt(v); save(ctx); } else { toast('Use inches like 15 3/4'); inp.value = fmt(f[key]); } };
+      return inp;
+    };
+    const dxfB = el('button', { class: f.dxf ? '' : 'primary', title: 'Make this front’s DXF' }, f.dxf ? '✓ DXF' : '✨ DXF');
+    dxfB.onclick = () => traceItem(ctx, f, `${i + 1}${FRONT_LETTER(j)} ${FRONT_LABEL[f.kind]}`, `${FRONT_LABEL[f.kind]} of cabinet #${i + 1}${f.hinge ? `, hinged ${f.hinge}` : ''}`, { w: f.w, h: f.h });
+    const del = el('button', { class: 'danger', 'aria-label': 'Remove front' }, '✕');
+    del.onclick = () => { fronts.splice(j, 1); sync(); save(ctx); rerender(); };
+    box.append(el('div', { class: 'front-row', 'data-front': String(j) },
+      el('b', { class: 'front-tag' }, `${i + 1}${FRONT_LETTER(j)}`), kind, dxfB, del,
+      el('div', { class: 'front-dims' }, dim('w', 'Width'), el('span', {}, '×'), dim('h', 'Height'))));
+  });
+  const add = el('button', { class: 'linkish' }, '+ Add a door or drawer front');
+  add.onclick = () => { fronts.push({ id: newId(), kind: 'drawer', w: c.w || 0, h: 6, hinge: '', box: null }); sync(); save(ctx); rerender(); };
+  box.append(add);
+  return box;
 }
 
 // ---------------------------------------------------------------- edit
@@ -354,6 +431,7 @@ function stepEdit(ctx) {
         c.confidence ? el('p', { class: 'small muted' }, `Claude’s confidence: ${c.confidence}` + (c.raw ? ` · raw estimate ${fmt(c.raw.w)} × ${fmt(c.raw.h)} × ${fmt(c.raw.d)}` : '')) : '',
         el('div', { class: 'dim3' }, dimInput('w', 'Width'), dimInput('h', 'Height'), dimInput('d', 'Depth')),
         el('div', { class: 'grid2' }, numInput('doors', 'Doors'), numInput('drawers', 'Drawers')),
+        frontsEditor(ctx, c, i, fmt, () => render()),
         textInput('layout', 'Door / drawer layout'),
         textInput('hinge', 'Hinge side'),
         textInput('notes', 'Notes', true),
@@ -368,7 +446,7 @@ function stepEdit(ctx) {
   const flash = (node) => { if (!node) return; node.scrollIntoView({ behavior: 'smooth', block: 'center' }); node.classList.add('flash'); setTimeout(() => node.classList.remove('flash'), 1500); };
   const refreshMap = () => {
     mapHolder.innerHTML = '';
-    mapHolder.append(photoMap(ctx, { onPick: (kind, i) => flash(kind === 'cab' ? cards[i] : decorCards[i]) }));
+    mapHolder.append(photoMap(ctx, { onPick: (kind, i, j) => flash(kind === 'cab' ? cards[i] : kind === 'front' ? (cards[i]?.querySelector(`[data-front="${j}"]`) || cards[i]) : decorCards[i]) }));
   };
   const decorCards = [];
   render();
@@ -473,6 +551,13 @@ function stepEdit(ctx) {
   // back from tracing a part: show where you were
   if (ctx.focusDecor) {
     const i = r.decor.findIndex((p) => p.id === ctx.focusDecor);
+    // a door or drawer front: flash its row in its cabinet's card
+    r.cabinets.forEach((c, ci) => (c.fronts || []).forEach((f, j) => {
+      if (f.id !== ctx.focusDecor) return;
+      const row = cards[ci]?.querySelector(`[data-front="${j}"]`);
+      setTimeout(() => flash(row || cards[ci]), 150);
+      if (f.dxf) toast(`${ci + 1}${FRONT_LETTER(j)} done.`, 3000);
+    }));
     ctx.focusDecor = null;
     const card = decorCards[i];
     if (card) {
@@ -485,19 +570,48 @@ function stepEdit(ctx) {
 // Opens Shape → DXF for one decorative part: the part's close-up and description go with it, and the
 // shape job knows to come back here when it's done.
 async function traceDecor(ctx, p, i) {
+  const label = `D${i + 1} ${DECOR_LABEL[p.kind] || p.kind}`;
+  return traceItem(ctx, p, label, [p.description, p.location].filter(Boolean).join(' · '));
+}
+
+// Shared by decorative parts and fronts: a shape job with this photo, the item's close-up, and its size
+// filled in when known, that comes back here when its DXF is saved.
+async function traceItem(ctx, p, label, description, size = null) {
   const { job } = ctx;
   if (p.shapeJobId && (await getJob(p.shapeJobId))) { ctx.onOpenJob(p.shapeJobId); return; }
-  const label = `D${i + 1} ${DECOR_LABEL[p.kind] || p.kind}`;
   const shapeJob = {
     id: newId(), kind: 'shape', name: `${job.name} – ${label}`, created: Date.now(), photo: job.photo, thumb: job.thumb, step: 'corners',
-    parent: { jobId: job.id, jobName: job.name, decorId: p.id, label, description: [p.description, p.location].filter(Boolean).join(' · '),
+    parent: { jobId: job.id, jobName: job.name, decorId: p.id, label, description,
       box: p.box || null, crop: p.box ? await partCrop(job.photo, p.box).catch(() => null) : null },
   };
+  if (size?.w > 0 && size?.h > 0) { shapeJob.realW = formatInches(size.w, 16, ''); shapeJob.realH = formatInches(size.h, 16, ''); }
   await saveJob(shapeJob);
   p.shapeJobId = shapeJob.id;
   clearTimeout(ctx.saveT);
   await saveJob(job);
   ctx.onOpenJob(shapeJob.id);
+}
+
+// Doors and drawer fronts as a cut list: one line per kind and size, with which cabinets they're on.
+function frontsSheet(r, d) {
+  const groups = new Map();
+  r.cabinets.forEach((c, i) => (c.fronts || []).forEach((f, j) => {
+    if (f.kind === 'open') return;
+    const key = `${f.kind}|${formatInches(f.w, d)}|${formatInches(f.h, d)}`;
+    if (!groups.has(key)) groups.set(key, { f, tags: [] });
+    groups.get(key).tags.push(`${i + 1}${FRONT_LETTER(j)}${f.dxf ? ' ✓' : ''}`);
+  }));
+  if (!groups.size) return [];
+  const rows = [...groups.values()].sort((a, b) => a.f.kind.localeCompare(b.f.kind) || b.f.h - a.f.h || b.f.w - a.f.w);
+  return [
+    el('h3', {}, 'Doors & drawer fronts (cut list)'),
+    el('p', { class: 'small muted' }, 'Sizes are measured off the photo against each cabinet’s width (≈). Check overlay and reveals before cutting. ✓ = DXF made.'),
+    el('table', {},
+      el('thead', {}, el('tr', {}, ...['Qty', 'Part', 'W', 'H', 'On'].map((h) => el('th', {}, h)))),
+      el('tbody', {}, ...rows.map(({ f, tags }) => el('tr', {},
+        el('td', {}, String(tags.length)), el('td', {}, FRONT_LABEL[f.kind]),
+        el('td', {}, '≈ ' + formatInches(f.w, d)), el('td', {}, '≈ ' + formatInches(f.h, d)), el('td', {}, tags.join(', ')))))),
+  ];
 }
 
 // ---------------------------------------------------------------- printable sheet
@@ -534,6 +648,7 @@ function stepSheet(ctx) {
         el('td', {}, [c.layout, c.hinge ? `Hinge: ${c.hinge}` : '', c.notes].filter(Boolean).join(' · '))))),
     ),
     el('p', {}, `Base/tall run width (sum of boxes): ${formatInches(totalW, d)}`),
+    ...frontsSheet(r, d),
     styleRows.length ? el('h3', {}, 'Style') : '',
     styleRows.length ? el('table', {}, el('tbody', {}, ...styleRows.map(([k, v]) => el('tr', {}, el('th', {}, k), el('td', {}, String(v).replace(/_/g, ' ')))))) : '',
     r.decor.length ? el('h3', {}, 'Decorative parts → DXF files') : '',

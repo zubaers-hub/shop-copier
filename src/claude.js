@@ -7,6 +7,8 @@ export const CABINET_TYPES = [
 ];
 export const DECOR_TYPES = ['valance', 'corbel', 'bracket', 'arched_door_top', 'decorative_end_panel', 'applied_molding', 'cutout_pattern', 'other'];
 
+export const FRONT_TYPES = ['door', 'drawer', 'false_front', 'open'];
+
 const str = { type: 'string' };
 const num = { type: 'number' };
 const int = { type: 'integer' };
@@ -37,6 +39,7 @@ const SCHEMA = obj({
       layout: str, hinge: str, notes: str,
       confidence: { type: 'string', enum: ['low', 'medium', 'high'] },
       box_in_photo: box(),
+      fronts: { type: 'array', items: obj({ kind: { type: 'string', enum: FRONT_TYPES }, width_in: num, height_in: num, hinge: str, box_in_photo: box() }) },
     }),
   },
   decorative_parts: { type: 'array', items: obj({ kind: { type: 'string', enum: DECOR_TYPES }, description: str, location: str, box_in_photo: box() }) },
@@ -53,6 +56,8 @@ ${known ? `- The user measured: ${known}. Scale everything from that. Mark that 
 - Mark a dimension "measured": true only if it comes straight from the user's measurement.
 
 For each box give: door count, drawer count, a short layout description (for example "1 drawer over 2 doors", "4 drawers", "2 doors, 1 adjustable shelf visible"), hinge side for single doors if visible, and anything unusual in notes. Include fillers, end panels and appliance openings as their own entries when they take up width in the run.
+
+Fronts: for every box, list each door and drawer front you can see in "fronts", top to bottom, then left to right within a row. kind is door, drawer, false_front (a fixed panel that looks like a drawer, e.g. in front of a sink) or open (an opening with no front). Give each front's width and height in inches on the same scale as the boxes, the hinge side for doors if you can tell (left or right, from the front; leave empty otherwise), and its own box_in_photo covering just that front. The number of door and drawer fronts must match the box's door and drawer counts.
 
 Style: door style (shaker, slab, raised panel, recessed panel, beadboard, glass, etc.), face frame or frameless, overlay, toe kick, crown, light rail, fillers, end panels, countertop, hardware, finish, and anything else worth knowing.
 

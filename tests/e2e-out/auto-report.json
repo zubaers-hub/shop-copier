@@ -19,7 +19,7 @@
    }
   ],
   "cornerErrPx": 2.5,
-  "ms": 2907,
+  "ms": 2479,
   "dxf": {
    "file": "tests/e2e-out/auto-glass.dxf",
    "layers": [
@@ -53,7 +53,7 @@
    }
   ],
   "cornerErrPx": 2.999999999999943,
-  "ms": 2882,
+  "ms": 2528,
   "dxf": {
    "file": "tests/e2e-out/auto-cathedral.dxf",
    "layers": [
@@ -75,7 +75,7 @@
    "midBottom": 4.75,
    "endBottom": 2.98841059602649
   },
-  "ms": 1618,
+  "ms": 1312,
   "dxf": {
    "file": "tests/e2e-out/auto-valance.dxf",
    "layers": [
@@ -96,11 +96,11 @@
    "midBottom": 4.75,
    "endBottom": 2.9999999999999996
   },
-  "ms": 1431
+  "ms": 1424
  },
  "fretwork": {
   "n": 132,
-  "ms": 1704,
+  "ms": 1390,
   "dxf": {
    "file": "tests/e2e-out/auto-fretwork.dxf",
    "layers": [

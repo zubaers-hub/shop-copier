@@ -144,7 +144,8 @@ class ShapeEditor {
     const bb = shapeBBox({ outer: this.shape.outer, holes: [] });
     try {
       const cab = await getJob(t.jobId);
-      const part = cab?.result?.decor?.find((d) => d.id === t.decorId);
+      const part = cab?.result?.decor?.find((d) => d.id === t.decorId)
+        || (cab?.result?.cabinets || []).flatMap((c) => c.fronts || []).find((f) => f.id === t.decorId);
       if (part) {
         part.dxf = { file, w: bb.w, h: bb.h, at: Date.now() };
         part.shapeJobId = this.job.id;

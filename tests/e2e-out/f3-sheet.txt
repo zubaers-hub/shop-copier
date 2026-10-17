@@ -1,0 +1,40 @@
+🖨 Print / save as PDF
+Vanity
+
+Date: Oct 17, 2026 · Scale: Standard vanity sizes.
+
+≈ marks a size estimated from the photo (rounded to standard sizes). Sizes from a photo are estimates. Lens distortion, camera angle and parts that aren’t flat all add error. Entering one real measured edge (tape measure) makes everything else much more accurate.
+What was found in the photo
+Base
+Wall
+Tall
+Decorative (D1, D2…)
+Doors & drawers (1A, 1B…)
+
+Every box Claude found is outlined and numbered like the list, and each door (dashed) and drawer front (solid) inside it is lettered 1A, 1B…. A cabinet with no outline was missed: add it with “+ Add cabinet”. Two numbers on one cabinet means it was counted twice.
+
+Cabinets, left to right
+#	Type	W	H	D	Doors / drawers	Layout & notes
+1	Vanity	≈ 30"	≈ 34 1/2"	≈ 21"	2 doors, 0 drawers	2 doors
+2	Vanity	≈ 15"	≈ 34 1/2"	≈ 21"	0 doors, 3 drawers	3 drawers
+3	Vanity	≈ 30"	≈ 34 1/2"	≈ 21"	2 doors, 0 drawers	2 doors
+
+Base/tall run width (sum of boxes): 75"
+
+Doors & drawer fronts (cut list)
+
+Sizes are measured off the photo against each cabinet’s width (≈). Check overlay and reveals before cutting. ✓ = DXF made.
+
+Qty	Part	W	H	On
+4	Door	≈ 14 5/8"	≈ 31 1/8"	1A, 1B, 3A, 3B
+3	Drawer front	≈ 14 9/16"	≈ 9 7/8"	2A, 2B, 2C
+Style
+Door style	Shaker
+Construction	frameless
+Overlay	full overlay
+Toe kick	furniture base
+Countertop	quartz
+Hardware	black bar pulls
+Finish	white oak
+Decorative parts → DXF files
+☐ D1 Other: Furniture-style base (below the cabinets)
